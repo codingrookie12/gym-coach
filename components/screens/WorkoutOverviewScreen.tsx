@@ -7,11 +7,13 @@ import { ExercisePlan } from '@/lib/coaching'
 interface WorkoutOverviewScreenProps {
   split: Split
   plan: ExercisePlan[]
+  hasResumable?: boolean
   onBegin: () => void
+  onResume?: () => void
   onBack: () => void
 }
 
-export default function WorkoutOverviewScreen({ split, plan, onBegin, onBack }: WorkoutOverviewScreenProps) {
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
 
   function toggleSwap(i: number) {
@@ -114,28 +116,48 @@ export default function WorkoutOverviewScreen({ split, plan, onBegin, onBack }: 
         })}
       </div>
 
-      {/* Begin CTA */}
+      {/* Begin / Resume CTA */}
       <div
         className="safe-bottom px-5"
-        style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}
+        style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}
       >
+        {hasResumable && onResume && (
+          <button
+            onClick={onResume}
+            style={{
+              width: '100%',
+              background: 'var(--accent)',
+              color: '#0A0A0A',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '16px',
+              fontFamily: 'DM Mono, monospace',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+            }}
+          >
+            RESUME SESSION →
+          </button>
+        )}
         <button
           onClick={onBegin}
           style={{
             width: '100%',
-            background: 'var(--accent)',
-            color: '#0A0A0A',
-            border: 'none',
+            background: hasResumable ? 'none' : 'var(--accent)',
+            color: hasResumable ? 'var(--text-secondary)' : '#0A0A0A',
+            border: hasResumable ? '1px solid var(--border)' : 'none',
             borderRadius: '4px',
             padding: '16px',
             fontFamily: 'DM Mono, monospace',
             fontSize: '0.9rem',
-            fontWeight: 600,
+            fontWeight: hasResumable ? 400 : 600,
             letterSpacing: '0.08em',
             cursor: 'pointer',
           }}
         >
-          BEGIN WORKOUT →
+          {hasResumable ? 'START FRESH' : 'BEGIN WORKOUT →'}
         </button>
       </div>
     </div>

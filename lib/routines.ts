@@ -7,6 +7,8 @@ export interface Exercise {
   backup: string
   split: Split
   weightConvention?: string
+  availableWeights?: number[]
+  weightUnit?: 'lbs' | 'pins'
 }
 
 export const PUSH_ROUTINE: Exercise[] = [
@@ -32,8 +34,8 @@ export const PULL_ROUTINE: Exercise[] = [
 export const LEGS_ROUTINE: Exercise[] = [
   { name: 'Linear Hack Press or Squat', sets: 3, repRange: [8, 10], backup: 'Standing Hack Squat Machine', split: 'Legs' },
   { name: 'Leg Press Pendular', sets: 3, repRange: [10, 12], backup: 'Linear Hack Press', split: 'Legs', weightConvention: 'per side' },
-  { name: 'Leg Extension', sets: 3, repRange: [12, 12], backup: 'Single-Leg Extension', split: 'Legs' },
-  { name: 'Seated Leg Curl', sets: 3, repRange: [10, 12], backup: 'Prone Leg Curl', split: 'Legs', weightConvention: 'pin increment' },
+  { name: 'Leg Extension', sets: 3, repRange: [12, 12], backup: 'Single-Leg Extension', split: 'Legs', availableWeights: [5, 15, 25, 35, 45, 55, 65, 75, 85, 95] },
+  { name: 'Seated Leg Curl', sets: 3, repRange: [10, 12], backup: 'Prone Leg Curl', split: 'Legs', weightUnit: 'pins', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20] },
   { name: 'Romanian Deadlift', sets: 3, repRange: [10, 12], backup: 'Good Morning', split: 'Legs' },
   { name: 'Standing Calf Raise', sets: 3, repRange: [15, 20], backup: 'Seated Calf Raise', split: 'Legs' },
 ]

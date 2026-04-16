@@ -213,10 +213,18 @@ export function analyzeCoaching(
     let coachingNote: string | null = null
 
     if (shouldProgress && !recoveryHold) {
-      // Suggest weight increase (conservative: +5 lbs for barbells, +2.5 for dumbbells/cables)
-      const increment = exerciseName.toLowerCase().includes('dumbbell') ||
-                        exerciseName.toLowerCase().includes('cable') ? 2.5 : 5
-      targetWeight = latestMaxWeight + increment
+      // Suggest weight increase — snap to next available weight if defined, else +5/+2.5
+      let nextWeight: number
+      if (exercise.availableWeights && exercise.availableWeights.length > 0) {
+        const nextAvailable = exercise.availableWeights.find(w => w > latestMaxWeight)
+        nextWeight = nextAvailable ?? latestMaxWeight
+      } else {
+        const increment = exercise.weightUnit === 'pins' ? 1
+          : exerciseName.toLowerCase().includes('dumbbell') ||
+            exerciseName.toLowerCase().includes('cable') ? 2.5 : 5
+        nextWeight = latestMaxWeight + increment
+      }
+      targetWeight = nextWeight
       trending.push(`${exerciseName}: ready to increase (${latestMaxWeight} → ${targetWeight} lbs)`)
       coachingNote = `Hit ${topOfRange} reps all sets × 2 sessions — increase to ${targetWeight} lbs`
     } else if (shouldProgress && recoveryHold) {
@@ -241,8 +249,7 @@ export function analyzeCoaching(
   if (lastSession) {
     lastSessionDate = lastSession.date
     const exerciseCount = Object.keys(lastSession.exercises).length
-    const vol = totalVolume(lastSession)
-    lastSessionSummary = `${exerciseCount} exercises · ${vol.toLocaleString()} lbs total volume`
+    lastSessionSummary = `${exerciseCount} exercises`
     if (volumeFlag) {
       flags.push({ exercise: 'Session Volume', type: 'fatigue', message: volumeFlag })
     }

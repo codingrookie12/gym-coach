@@ -26,6 +26,9 @@ export interface AppState {
   plan: ExercisePlan[] | null
   sessions: SessionRecord[] | null
   exerciseLogs: ExerciseLog[]
+  // Persisted mid-session state for resume
+  savedLogs: ExerciseLog[] | null
+  savedExIdx: number
 }
 
 export default function App() {
@@ -36,6 +39,8 @@ export default function App() {
     plan: null,
     sessions: null,
     exerciseLogs: [],
+    savedLogs: null,
+    savedExIdx: 0,
   })
 
   const navigate = useCallback((to: Screen) => {
@@ -53,9 +58,17 @@ export default function App() {
       plan: null,
       sessions: null,
       exerciseLogs: [],
+      savedLogs: null,
+      savedExIdx: 0,
     })
     setScreen('home')
   }, [])
+
+  // Called when user presses back mid-session — saves progress, goes to overview
+  const handleSessionBack = useCallback((logs: ExerciseLog[], exIdx: number) => {
+    updateState({ savedLogs: logs, savedExIdx: exIdx })
+    navigate('workout-overview')
+  }, [updateState, navigate])
 
   return (
     <div
@@ -71,7 +84,7 @@ export default function App() {
       {screen === 'home' && (
         <HomeScreen
           onSelectSplit={(split) => {
-            updateState({ split })
+            updateState({ split, savedLogs: null, savedExIdx: 0 })
             navigate('coaching-context')
           }}
           onSettings={() => navigate('manage-weights')}
@@ -93,7 +106,13 @@ export default function App() {
         <WorkoutOverviewScreen
           split={appState.split}
           plan={appState.plan}
-          onBegin={() => navigate('active-session')}
+          hasResumable={!!appState.savedLogs}
+          onBegin={() => {
+            // Clear saved progress when starting fresh from overview
+            updateState({ savedLogs: null, savedExIdx: 0 })
+            navigate('active-session')
+          }}
+          onResume={() => navigate('active-session')}
           onBack={() => navigate('coaching-context')}
         />
       )}
@@ -101,11 +120,13 @@ export default function App() {
         <ActiveSessionScreen
           split={appState.split}
           plan={appState.plan}
+          initialLogs={appState.savedLogs ?? undefined}
+          initialExIdx={appState.savedExIdx}
           onFinish={(logs) => {
-            updateState({ exerciseLogs: logs })
+            updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0 })
             navigate('session-summary')
           }}
-          onBack={() => navigate('workout-overview')}
+          onBack={handleSessionBack}
         />
       )}
       {screen === 'session-summary' && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
