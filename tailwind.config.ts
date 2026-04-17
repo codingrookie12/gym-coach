@@ -9,14 +9,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0A0A0A",
-        surface: "#141414",
-        border: "#1F1F1F",
-        accent: "#C8F135",
+        bg:       "#0C0B09",
+        surface:  "#131210",
+        "surface-2": "#1A1916",
+        border:   "#252320",
+        "border-2": "#2E2B27",
+        accent:   "#D4F13A",
+        rust:     "#E8633A",
       },
       fontFamily: {
-        mono: ["DM Mono", "monospace"],
-        sans: ["Syne", "sans-serif"],
+        display: ["Bebas Neue", "sans-serif"],
+        mono:    ["Space Mono", "monospace"],
+        sans:    ["Barlow Condensed", "sans-serif"],
       },
     },
   },

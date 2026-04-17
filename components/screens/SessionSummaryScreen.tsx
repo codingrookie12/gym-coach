@@ -14,13 +14,8 @@ interface SessionSummaryScreenProps {
 }
 
 export default function SessionSummaryScreen({
-  split,
-  exerciseLogs,
-  plan,
-  previousSessions,
-  onDone,
+  split, exerciseLogs, plan, previousSessions, onDone,
 }: SessionSummaryScreenProps) {
-  // Coaching flags
   const progressFlags: string[] = []
   const stallFlags: string[] = []
 
@@ -43,106 +38,98 @@ export default function SessionSummaryScreen({
     }
   }
 
+  const totalSets = exerciseLogs.reduce((a, ex) => a + ex.sets.filter(s => s.completed).length, 0)
+
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh' }}>
+
       {/* Header */}
       <div
         className="safe-top px-5"
         style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}
       >
-        <p className="font-mono-display" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: '0 0 4px 0' }}>
-          SESSION COMPLETE
-        </p>
-        <h1 className="font-mono-display" style={{ fontSize: '1.5rem', fontWeight: 500, margin: 0, color: 'var(--accent)' }}>
-          {split} Done ✓
-        </h1>
+        <p className="section-label" style={{ margin: '0 0 4px 0' }}>SESSION COMPLETE</p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <h1 className="font-display" style={{ fontSize: '2.4rem', margin: 0, color: 'var(--accent)', letterSpacing: '0.04em', lineHeight: 1 }}>
+            {split} Done
+          </h1>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+            <span className="font-display" style={{ fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '0.02em' }}>
+              {totalSets}
+            </span>
+            <span className="section-label">sets logged</span>
+          </div>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="scroll-area flex-1 px-5 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="scroll-area flex-1 px-5 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
-        {/* Full workout log */}
-        <div className="card p-4">
-          <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', margin: '0 0 12px 0' }}>
-            WORKOUT LOG
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {exerciseLogs.map((ex, exIdx) => {
-              const completedSets = ex.sets.filter(s => s.completed)
-              if (!completedSets.length) return null
-              return (
-                <div key={exIdx}>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: '0 0 6px 0', fontWeight: 500 }}>
-                    {ex.exerciseName}
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {ex.sets.map((set, si) =>
-                      set.completed ? (
-                        <span
-                          key={si}
-                          className="font-mono-display"
-                          style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--text-secondary)',
-                            background: 'var(--bg)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '3px',
-                            padding: '3px 8px',
-                          }}
-                        >
-                          {set.weight}×{set.reps}
-                        </span>
-                      ) : null
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Next session flags */}
-        {(progressFlags.length > 0 || stallFlags.length > 0) && (
+          {/* Full workout log */}
           <div className="card p-4">
-            <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', margin: '0 0 10px 0' }}>
-              NEXT SESSION
-            </p>
-            {progressFlags.map((f, i) => (
-              <p key={i} style={{ fontSize: '0.8rem', color: 'var(--accent)', margin: '0 0 6px 0', fontFamily: 'DM Mono, monospace' }}>
-                ↑ {f}
-              </p>
-            ))}
-            {stallFlags.map((f, i) => (
-              <p key={i} style={{ fontSize: '0.8rem', color: '#ffa500', margin: '0 0 6px 0', fontFamily: 'DM Mono, monospace' }}>
-                ⚠ {f}
-              </p>
-            ))}
+            <p className="section-label" style={{ margin: '0 0 12px 0' }}>WORKOUT LOG</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {exerciseLogs.map((ex, exIdx) => {
+                const completedSets = ex.sets.filter(s => s.completed)
+                if (!completedSets.length) return null
+                return (
+                  <div key={exIdx}>
+                    <p className="font-sans" style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 7px 0', letterSpacing: '0.02em' }}>
+                      {ex.exerciseName}
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {ex.sets.map((set, si) =>
+                        set.completed ? (
+                          <span
+                            key={si}
+                            className="font-mono"
+                            style={{
+                              fontSize: '0.68rem',
+                              color: 'var(--text-mid)',
+                              background: 'var(--surface-2)',
+                              border: '1px solid var(--border-2)',
+                              borderRadius: '2px',
+                              padding: '4px 9px',
+                            }}
+                          >
+                            {set.weight}×{set.reps}
+                          </span>
+                        ) : null
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        )}
 
+          {/* Next session flags */}
+          {(progressFlags.length > 0 || stallFlags.length > 0) && (
+            <div className="card p-4">
+              <p className="section-label" style={{ margin: '0 0 10px 0' }}>NEXT SESSION</p>
+              {progressFlags.map((f, i) => (
+                <p key={i} className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--accent)', margin: '0 0 6px 0' }}>
+                  ↑ {f}
+                </p>
+              ))}
+              {stallFlags.map((f, i) => (
+                <p key={i} className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--rust)', margin: '0 0 6px 0' }}>
+                  ⚠ {f}
+                </p>
+              ))}
+            </div>
+          )}
+
+        </div>
       </div>
 
-      {/* Done */}
+      {/* Done CTA */}
       <div
         className="safe-bottom px-5"
-        style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', flexShrink: 0 }}
+        style={{ paddingTop: '14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}
       >
-        <button
-          onClick={onDone}
-          style={{
-            width: '100%',
-            background: 'var(--surface)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
-            borderRadius: '4px',
-            padding: '16px',
-            fontFamily: 'DM Mono, monospace',
-            fontSize: '0.9rem',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            cursor: 'pointer',
-          }}
-        >
+        <button className="btn-secondary" onClick={onDone}>
           DONE
         </button>
       </div>

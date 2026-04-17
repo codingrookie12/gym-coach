@@ -8,7 +8,7 @@ export default function LoadingScreen({ message = 'Loading...' }: LoadingScreenP
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
       <div className="spinner" />
-      <p className="font-mono-display text-sm" style={{ color: 'var(--text-secondary)' }}>
+      <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
         {message}
       </p>
     </div>

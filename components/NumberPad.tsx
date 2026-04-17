@@ -44,11 +44,11 @@ export default function NumberPad({
   const keys = ['1','2','3','4','5','6','7','8','9', allowDecimal ? '.' : '', '0', '⌫']
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(10,10,10,0.95)' }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(12,11,9,0.97)' }}>
       {/* Label + display */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <p className="text-secondary-color font-mono-display text-sm mb-3">{label}</p>
-        <div className="font-mono-display text-6xl font-medium tracking-tight" style={{ color: input ? 'var(--text-primary)' : 'var(--text-secondary)', minHeight: '72px' }}>
+        <p className="section-label" style={{ marginBottom: '10px' }}>{label}</p>
+        <div className="font-display" style={{ fontSize: '5rem', letterSpacing: '0.02em', lineHeight: 1, color: input ? 'var(--text-primary)' : 'var(--text-secondary)', minHeight: '80px' }}>
           {input || '—'}
         </div>
       </div>
