@@ -1,6 +1,6 @@
 'use client'
 
-import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
+import { Split } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
 import { SessionRecord } from '@/lib/notion'
@@ -20,30 +20,6 @@ export default function SessionSummaryScreen({
   previousSessions,
   onDone,
 }: SessionSummaryScreenProps) {
-  const cardio = CARDIO_RECOMMENDATION[split]
-
-  // Calculate current session volume
-  let currentVolume = 0
-  for (const ex of exerciseLogs) {
-    for (const set of ex.sets) {
-      if (set.completed) currentVolume += set.weight * set.reps
-    }
-  }
-
-  // Calculate previous session volume
-  let prevVolume = 0
-  if (previousSessions.length > 0) {
-    const prev = previousSessions[0]
-    for (const ex of Object.values(prev.exercises)) {
-      for (const s of ex.sets) {
-        prevVolume += s.weight * s.reps
-      }
-    }
-  }
-
-  const volumeDiff = prevVolume > 0 ? currentVolume - prevVolume : null
-  const volumePct = prevVolume > 0 ? Math.round((volumeDiff! / prevVolume) * 100) : null
-
   // Coaching flags
   const progressFlags: string[] = []
   const stallFlags: string[] = []
@@ -84,33 +60,6 @@ export default function SessionSummaryScreen({
 
       {/* Content */}
       <div className="scroll-area flex-1 px-5 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-        {/* Volume summary */}
-        <div className="card p-4">
-          <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', margin: '0 0 8px 0' }}>
-            TOTAL VOLUME
-          </p>
-          <div className="flex items-end gap-3">
-            <span className="font-mono-display" style={{ fontSize: '2rem', fontWeight: 500, color: 'var(--text-primary)' }}>
-              {currentVolume.toLocaleString()}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', marginBottom: '4px' }}>
-              lbs · reps
-            </span>
-            {volumeDiff !== null && (
-              <span
-                className="font-mono-display"
-                style={{
-                  fontSize: '0.85rem',
-                  color: volumeDiff >= 0 ? 'var(--accent)' : '#ff6b6b',
-                  marginBottom: '4px',
-                }}
-              >
-                {volumeDiff >= 0 ? '+' : ''}{volumePct}%
-              </span>
-            )}
-          </div>
-        </div>
 
         {/* Full workout log */}
         <div className="card p-4">
@@ -171,15 +120,6 @@ export default function SessionSummaryScreen({
           </div>
         )}
 
-        {/* Cardio recommendation */}
-        <div className="card p-4" style={{ borderColor: 'rgba(200,241,53,0.15)' }}>
-          <p style={{ fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', margin: '0 0 6px 0' }}>
-            CARDIO
-          </p>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0, fontFamily: 'DM Mono, monospace' }}>
-            {cardio}
-          </p>
-        </div>
       </div>
 
       {/* Done */}

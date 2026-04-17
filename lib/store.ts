@@ -7,10 +7,12 @@ export interface SetLog {
   weight: number
   reps: number
   completed: boolean
+  skipped?: boolean
 }
 
 export interface ExerciseLog {
   exerciseName: string
+  notionName: string  // Exact name used in Notion DB Exercise select field
   backupName: string
   sets: SetLog[]
 }

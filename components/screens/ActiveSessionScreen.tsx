@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { Split } from '@/lib/routines'
+import { useState, useEffect, useRef } from 'react'
+import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
-import { ExerciseLog, SetLog } from '@/lib/store'
+import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/NumberPad'
 
 interface ActiveSessionScreenProps {
@@ -18,30 +18,34 @@ interface ActiveSessionScreenProps {
 type PadMode = 'reps' | 'weight' | null
 
 // ── Rest Timer ────────────────────────────────────────────────────────────────
-function RestTimer({ onDismiss }: { onDismiss: () => void }) {
-  const [seconds, setSeconds] = useState(0)
-  const [targetSeconds, setTargetSeconds] = useState(120) // default 2 min
-  const [editingTarget, setEditingTarget] = useState(false)
-  const [inputVal, setInputVal] = useState('120')
+function RestTimer() {
+  const [targetMinutes, setTargetMinutes] = useState(3)
+  const [elapsed, setElapsed] = useState(0)
+  const [running, setRunning] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setSeconds(s => s + 1)
-    }, 1000)
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [])
-
-  const elapsed = seconds
+  const targetSeconds = targetMinutes * 60
   const remaining = Math.max(targetSeconds - elapsed, 0)
-  const done = elapsed >= targetSeconds
-  const progress = Math.min(elapsed / targetSeconds, 1)
+  const done = running && elapsed >= targetSeconds
+  const progress = running ? Math.min(elapsed / targetSeconds, 1) : 0
 
-  // Circle math
-  const r = 28
-  const circ = 2 * Math.PI * r
-  const dash = circ * progress
-  const gap = circ - dash
+  useEffect(() => {
+    if (running) {
+      intervalRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [running])
+
+  function start() { setElapsed(0); setRunning(true) }
+  function pause() { setRunning(false) }
+  function stop() { setRunning(false); setElapsed(0) }
+
+  function adjustMinutes(delta: number) {
+    setTargetMinutes(m => Math.max(1, Math.min(10, m + delta)))
+    if (running) stop()
+  }
 
   function fmt(s: number) {
     const m = Math.floor(s / 60)
@@ -49,11 +53,13 @@ function RestTimer({ onDismiss }: { onDismiss: () => void }) {
     return `${m}:${String(sec).padStart(2, '0')}`
   }
 
-  function commitTarget() {
-    const val = parseInt(inputVal)
-    if (!isNaN(val) && val > 0) setTargetSeconds(val)
-    setEditingTarget(false)
-  }
+  const r = 22
+  const circ = 2 * Math.PI * r
+  const dash = circ * progress
+
+  const circleColor = !running ? 'var(--text-secondary)'
+    : done ? 'var(--accent)'
+    : '#ff6464'
 
   return (
     <div
@@ -62,132 +68,117 @@ function RestTimer({ onDismiss }: { onDismiss: () => void }) {
         alignItems: 'center',
         gap: '12px',
         padding: '10px 14px',
-        background: done ? 'rgba(200,241,53,0.06)' : 'rgba(255,100,100,0.06)',
-        border: `1px solid ${done ? 'rgba(200,241,53,0.3)' : 'rgba(255,100,100,0.25)'}`,
+        background: done ? 'rgba(200,241,53,0.06)'
+          : running ? 'rgba(255,100,100,0.05)'
+          : 'var(--surface)',
+        border: `1px solid ${done ? 'rgba(200,241,53,0.3)' : running ? 'rgba(255,100,100,0.2)' : 'var(--border)'}`,
         borderRadius: '6px',
         flexShrink: 0,
+        transition: 'all 0.3s',
       }}
     >
-      {/* Circle indicator */}
-      <svg width="64" height="64" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-        <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
+      {/* Circle */}
+      <svg width="52" height="52" style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx="26" cy="26" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
         <circle
-          cx="32" cy="32" r={r} fill="none"
-          stroke={done ? 'var(--accent)' : '#ff6464'}
-          strokeWidth="4"
-          strokeDasharray={`${dash} ${gap}`}
+          cx="26" cy="26" r={r} fill="none"
+          stroke={circleColor}
+          strokeWidth="3"
+          strokeDasharray={`${dash} ${circ - dash}`}
           strokeLinecap="round"
-          style={{ transition: 'stroke-dasharray 0.5s linear' }}
+          style={{ transition: 'stroke-dasharray 0.5s linear, stroke 0.3s' }}
         />
       </svg>
 
-      {/* Time display */}
+      {/* Time + controls */}
       <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '6px' }}>
           <span
             className="font-mono-display"
-            style={{ fontSize: '1.6rem', fontWeight: 500, color: done ? 'var(--accent)' : '#ff6464', lineHeight: 1 }}
-          >
-            {done ? fmt(elapsed) : fmt(remaining)}
-          </span>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>
-            {done ? 'done' : 'left'}
-          </span>
-        </div>
-
-        {editingTarget ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-            <input
-              type="number"
-              value={inputVal}
-              onChange={e => setInputVal(e.target.value)}
-              onBlur={commitTarget}
-              onKeyDown={e => e.key === 'Enter' && commitTarget()}
-              autoFocus
-              style={{
-                width: '60px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-                fontFamily: 'DM Mono, monospace',
-                fontSize: '0.75rem',
-                padding: '3px 6px',
-                borderRadius: '3px',
-              }}
-            />
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>sec</span>
-          </div>
-        ) : (
-          <button
-            onClick={() => { setInputVal(String(targetSeconds)); setEditingTarget(true) }}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace',
-              padding: 0, marginTop: '3px', display: 'block',
+              fontSize: '1.4rem', fontWeight: 500, lineHeight: 1,
+              color: done ? 'var(--accent)' : running ? '#ff6464' : 'var(--text-secondary)',
             }}
           >
-            target: {fmt(targetSeconds)} · tap to edit
+            {running ? fmt(remaining) : fmt(targetSeconds)}
+          </span>
+          {done && (
+            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', fontFamily: 'DM Mono, monospace' }}>
+              REST DONE
+            </span>
+          )}
+        </div>
+
+        {/* Target minutes adjuster */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => adjustMinutes(-1)} style={adjBtnStyle}>−</button>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', minWidth: '36px', textAlign: 'center' }}>
+            {targetMinutes} min
+          </span>
+          <button onClick={() => adjustMinutes(1)} style={adjBtnStyle}>+</button>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        {!running ? (
+          <button onClick={start} style={timerActionBtn('var(--accent)', '#0A0A0A')}>
+            START
+          </button>
+        ) : (
+          <button onClick={pause} style={timerActionBtn('var(--surface)', 'var(--text-primary)')}>
+            PAUSE
+          </button>
+        )}
+        {(running || elapsed > 0) && (
+          <button onClick={stop} style={timerActionBtn('var(--surface)', 'var(--text-secondary)')}>
+            STOP
           </button>
         )}
       </div>
-
-      {/* Dismiss */}
-      <button
-        onClick={onDismiss}
-        style={{
-          background: 'none', border: '1px solid var(--border)', borderRadius: '4px',
-          color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.7rem',
-          padding: '6px 10px', cursor: 'pointer',
-        }}
-      >
-        ✕
-      </button>
     </div>
   )
 }
 
+const adjBtnStyle: React.CSSProperties = {
+  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px',
+  color: 'var(--text-primary)', fontFamily: 'DM Mono, monospace', fontSize: '0.9rem',
+  width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  padding: 0,
+}
+
+function timerActionBtn(bg: string, color: string): React.CSSProperties {
+  return {
+    background: bg, border: '1px solid var(--border)', borderRadius: '3px',
+    color, fontFamily: 'DM Mono, monospace', fontSize: '0.6rem',
+    letterSpacing: '0.06em', padding: '4px 8px', cursor: 'pointer', fontWeight: 600,
+  }
+}
+
 // ── Workout Overview Modal ────────────────────────────────────────────────────
 function WorkoutOverviewModal({
-  plan,
-  logs,
-  currentExIdx,
-  onClose,
+  plan, logs, currentExIdx, split,
+  onNavigate, onClose,
 }: {
   plan: ExercisePlan[]
   logs: ExerciseLog[]
   currentExIdx: number
+  split: Split
+  onNavigate: (idx: number) => void
   onClose: () => void
 }) {
+  const cardio = CARDIO_RECOMMENDATION[split]
+
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 40,
-        background: 'rgba(10,10,10,0.96)',
-        display: 'flex', flexDirection: 'column',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 20px 14px',
-          borderBottom: '1px solid var(--border)',
-          flexShrink: 0,
-        }}
-      >
+    <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(10,10,10,0.97)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div>
           <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.12em', margin: 0 }}>SESSION OVERVIEW</p>
           <h2 style={{ fontSize: '1.1rem', fontFamily: 'DM Mono, monospace', fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
             {plan.length} exercises
           </h2>
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none', border: '1px solid var(--border)', borderRadius: '4px',
-            color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.8rem',
-            padding: '8px 12px', cursor: 'pointer',
-          }}
-        >
+        <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', padding: '8px 12px', cursor: 'pointer' }}>
           CLOSE
         </button>
       </div>
@@ -195,88 +186,61 @@ function WorkoutOverviewModal({
         {plan.map((item, i) => {
           const log = logs[i]
           const completedSets = log.sets.filter(s => s.completed).length
+          const skipped = log.sets.every(s => s.skipped)
           const totalSets = log.sets.length
           const isCurrent = i === currentExIdx
           const isDone = completedSets === totalSets
           return (
-            <div
+            <button
               key={i}
+              onClick={() => { onNavigate(i); onClose() }}
               style={{
-                padding: '12px 14px',
-                borderRadius: '4px',
+                padding: '12px 14px', borderRadius: '4px', textAlign: 'left', cursor: 'pointer',
                 background: isCurrent ? 'rgba(200,241,53,0.04)' : 'var(--surface)',
                 border: `1px solid ${isCurrent ? 'rgba(200,241,53,0.25)' : isDone ? 'rgba(200,241,53,0.15)' : 'var(--border)'}`,
+                width: '100%',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>{String(i + 1).padStart(2, '0')}</span>
                   <span style={{ fontSize: '0.85rem', color: isCurrent ? 'var(--accent)' : 'var(--text-primary)' }}>
                     {log.exerciseName}
                     {isCurrent && <span style={{ fontSize: '0.6rem', color: 'var(--accent)', fontFamily: 'DM Mono, monospace', marginLeft: '6px' }}>← NOW</span>}
                   </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: isDone ? 'var(--accent)' : 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>
-                  {isDone ? '✓ done' : i < currentExIdx ? `${completedSets}/${totalSets}` : i === currentExIdx ? `${completedSets}/${totalSets}` : '—'}
+                <span style={{ fontSize: '0.7rem', fontFamily: 'DM Mono, monospace', color: skipped ? '#ffa500' : isDone ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                  {skipped ? 'SKIPPED' : isDone ? '✓ done' : i <= currentExIdx ? `${completedSets}/${totalSets}` : '—'}
                 </span>
               </div>
-            </div>
+            </button>
           )
         })}
+
+        {/* Cardio */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(200,241,53,0.04)', border: '1px solid rgba(200,241,53,0.15)', borderRadius: '4px', marginTop: '4px' }}>
+          <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em', flexShrink: 0 }}>CARDIO</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontFamily: 'DM Mono, monospace' }}>{cardio}</span>
+        </div>
       </div>
     </div>
   )
 }
 
-// ── Back Nav Guard ────────────────────────────────────────────────────────────
-function BackGuardModal({
-  onResume,
-  onGoBack,
-}: {
-  onResume: () => void
-  onGoBack: () => void
-}) {
+// ── Back Guard Modal ──────────────────────────────────────────────────────────
+function BackGuardModal({ onResume, onGoBack }: { onResume: () => void; onGoBack: () => void }) {
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        background: 'rgba(10,10,10,0.97)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '32px',
-      }}
-    >
-      <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: '0 0 12px 0' }}>
-        SESSION IN PROGRESS
-      </p>
-      <h2 style={{ fontFamily: 'DM Mono, monospace', fontSize: '1.2rem', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 8px 0', textAlign: 'center' }}>
-        Go back?
-      </h2>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(10,10,10,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+      <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: '0 0 12px 0' }}>SESSION IN PROGRESS</p>
+      <h2 style={{ fontFamily: 'DM Mono, monospace', fontSize: '1.2rem', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 8px 0', textAlign: 'center' }}>Go back?</h2>
       <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 32px 0', textAlign: 'center', lineHeight: 1.6 }}>
         Your progress is saved. You can resume from where you left off.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
-        <button
-          onClick={onResume}
-          style={{
-            width: '100%', background: 'var(--accent)', color: '#0A0A0A',
-            border: 'none', borderRadius: '4px', padding: '16px',
-            fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', fontWeight: 600,
-            letterSpacing: '0.08em', cursor: 'pointer',
-          }}
-        >
+        <button onClick={onResume} style={{ width: '100%', background: 'var(--accent)', color: '#0A0A0A', border: 'none', borderRadius: '4px', padding: '16px', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.08em', cursor: 'pointer' }}>
           KEEP GOING
         </button>
-        <button
-          onClick={onGoBack}
-          style={{
-            width: '100%', background: 'none', color: 'var(--text-secondary)',
-            border: '1px solid var(--border)', borderRadius: '4px', padding: '14px',
-            fontFamily: 'DM Mono, monospace', fontSize: '0.85rem',
-            letterSpacing: '0.08em', cursor: 'pointer',
-          }}
-        >
+        <button onClick={onGoBack} style={{ width: '100%', background: 'none', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: '4px', padding: '14px', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', letterSpacing: '0.08em', cursor: 'pointer' }}>
           GO BACK (progress saved)
         </button>
       </div>
@@ -284,24 +248,77 @@ function BackGuardModal({
   )
 }
 
+// ── Weight Input (step picker or freeform) ────────────────────────────────────
+function WeightInput({
+  activeSetIdx, currentEx, currentPlan, activeUnit, onConfirm, onCancel,
+}: {
+  activeSetIdx: number
+  currentEx: ExerciseLog
+  currentPlan: ExercisePlan
+  activeUnit: 'lbs' | 'pins'
+  onConfirm: (v: number) => void
+  onCancel: () => void
+}) {
+  const availableWeights = currentPlan.exercise.availableWeights
+  const currentWeight = currentEx.sets[activeSetIdx].weight
+
+  if (availableWeights && availableWeights.length > 0) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(10,10,10,0.97)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: '0 0 6px 0' }}>
+            SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
+          </p>
+          <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 24px 0' }}>{currentEx.exerciseName}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '100%', maxWidth: '320px' }}>
+            {availableWeights.map(w => (
+              <button key={w} onClick={() => onConfirm(w)} style={{
+                padding: '16px 8px', borderRadius: '4px', cursor: 'pointer',
+                background: currentWeight === w ? 'var(--accent)' : 'var(--surface)',
+                color: currentWeight === w ? '#0A0A0A' : 'var(--text-primary)',
+                border: `1px solid ${currentWeight === w ? 'var(--accent)' : 'var(--border)'}`,
+                fontFamily: 'DM Mono, monospace', fontSize: '1rem',
+                fontWeight: currentWeight === w ? 600 : 400,
+              }}>{w}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '0 24px 32px' }}>
+          <button onClick={onCancel} style={{ width: '100%', background: 'none', border: '1px solid var(--border)', borderRadius: '4px', padding: '14px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', cursor: 'pointer' }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <NumberPad
+      initialValue={currentWeight || null}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      label={`Set ${activeSetIdx + 1} — weight (${activeUnit})`}
+      maxValue={999}
+      allowDecimal={true}
+    />
+  )
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split,
-  plan,
-  initialLogs,
-  initialExIdx = 0,
-  onFinish,
-  onBack,
+  split, plan, initialLogs, initialExIdx = 0, onFinish, onBack,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
     plan.map(item => ({
       exerciseName: item.exercise.name,
+      notionName: item.exercise.notionName,
       backupName: item.exercise.backup,
       sets: Array.from({ length: item.exercise.sets }, () => ({
         weight: item.targetWeight ?? 0,
         reps: 0,
         completed: false,
+        skipped: false,
       })),
     }))
   )
@@ -311,69 +328,33 @@ export default function ActiveSessionScreen({
   const [padMode, setPadMode] = useState<PadMode>(null)
   const [flashSet, setFlashSet] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
-
-  // Per-exercise unit override: 'lbs' | 'pins'
   const [unitOverrides, setUnitOverrides] = useState<Record<number, 'lbs' | 'pins'>>({})
-
-  // Timer
-  const [timerKey, setTimerKey] = useState(0)
-  const [timerVisible, setTimerVisible] = useState(false)
-
-  // Overview modal
   const [overviewVisible, setOverviewVisible] = useState(false)
-
-  // Back guard
   const [backGuardVisible, setBackGuardVisible] = useState(false)
-
-  // Backup swap
   const [swapShown, setSwapShown] = useState(false)
 
   const currentEx = logs[currentExIdx]
   const currentPlan = plan[currentExIdx]
   const exerciseDef = currentPlan.exercise
-
-  // Determine active unit for current exercise
   const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
   const activeUnit = unitOverrides[currentExIdx] ?? defaultUnit
-
-  function getWeightLabel(weight: number) {
-    return activeUnit === 'pins' ? `pin ${weight}` : `${weight}`
-  }
-
-  function getWeightSuffix() {
-    return activeUnit === 'pins' ? '' : 'lbs'
-  }
 
   function toggleUnit() {
     setUnitOverrides(prev => ({
       ...prev,
-      [currentExIdx]: prev[currentExIdx] === 'pins' ? 'lbs'
-        : prev[currentExIdx] === 'lbs' ? 'pins'
-        : defaultUnit === 'pins' ? 'lbs' : 'pins',
+      [currentExIdx]: (prev[currentExIdx] ?? defaultUnit) === 'pins' ? 'lbs' : 'pins',
     }))
   }
 
-  // Available weights for step picker (pins or stack)
-  const availableWeights = exerciseDef.availableWeights
-
-  function openRepPad(setIdx: number) {
-    setActiveSetIdx(setIdx)
-    setPadMode('reps')
-  }
-
-  function openWeightPad(setIdx: number) {
-    setActiveSetIdx(setIdx)
-    setPadMode('weight')
-  }
+  function openRepPad(setIdx: number) { setActiveSetIdx(setIdx); setPadMode('reps') }
+  function openWeightPad(setIdx: number) { setActiveSetIdx(setIdx); setPadMode('weight') }
 
   function confirmReps(value: number) {
     if (activeSetIdx === null) return
     setLogs(prev => {
       const next = [...prev]
-      const ex = { ...next[currentExIdx] }
-      const sets = [...ex.sets]
-      sets[activeSetIdx] = { ...sets[activeSetIdx], reps: value, completed: true }
-      ex.sets = sets
+      const ex = { ...next[currentExIdx], sets: [...next[currentExIdx].sets] }
+      ex.sets[activeSetIdx] = { ...ex.sets[activeSetIdx], reps: value, completed: true, skipped: false }
       next[currentExIdx] = ex
       return next
     })
@@ -381,39 +362,17 @@ export default function ActiveSessionScreen({
     setTimeout(() => setFlashSet(null), 500)
     setPadMode(null)
     setActiveSetIdx(null)
-
-    // Start rest timer after logging reps
-    setTimerKey(k => k + 1)
-    setTimerVisible(true)
-
-    // Auto-advance after all sets done
-    const allDone = currentEx.sets.every((s, i) =>
-      i === activeSetIdx ? true : s.completed
-    )
-    if (allDone && currentExIdx < plan.length - 1) {
-      setTimeout(() => {
-        setCurrentExIdx(idx => idx + 1)
-        setSwapShown(false)
-        setTimerVisible(false)
-      }, 600)
-    }
   }
 
   function confirmWeight(value: number) {
     if (activeSetIdx === null) return
     setLogs(prev => {
       const next = [...prev]
-      const ex = { ...next[currentExIdx] }
-      const sets = [...ex.sets]
-      // Always update THIS set's weight, even if completed
-      // Pre-fill uncompleted subsequent sets too
-      sets[activeSetIdx] = { ...sets[activeSetIdx], weight: value }
-      for (let i = activeSetIdx + 1; i < sets.length; i++) {
-        if (!sets[i].completed) {
-          sets[i] = { ...sets[i], weight: value }
-        }
+      const ex = { ...next[currentExIdx], sets: [...next[currentExIdx].sets] }
+      ex.sets[activeSetIdx] = { ...ex.sets[activeSetIdx], weight: value }
+      for (let i = activeSetIdx + 1; i < ex.sets.length; i++) {
+        if (!ex.sets[i].completed) ex.sets[i] = { ...ex.sets[i], weight: value }
       }
-      ex.sets = sets
       next[currentExIdx] = ex
       return next
     })
@@ -421,11 +380,24 @@ export default function ActiveSessionScreen({
     setActiveSetIdx(null)
   }
 
+  function skipExercise() {
+    setLogs(prev => {
+      const next = [...prev]
+      const ex = { ...next[currentExIdx] }
+      ex.sets = ex.sets.map(s => ({ ...s, skipped: true, completed: false, reps: 0 }))
+      next[currentExIdx] = ex
+      return next
+    })
+    if (currentExIdx < plan.length - 1) {
+      setCurrentExIdx(i => i + 1)
+      setSwapShown(false)
+    }
+  }
+
   function swapToBackup() {
     setLogs(prev => {
       const next = [...prev]
       const ex = { ...next[currentExIdx] }
-      // Swap primary and backup names
       const prevPrimary = ex.exerciseName
       ex.exerciseName = ex.backupName
       ex.backupName = prevPrimary
@@ -435,139 +407,24 @@ export default function ActiveSessionScreen({
     setSwapShown(false)
   }
 
-  async function handleFinish() {
-    setSaving(true)
-    const today = new Date().toISOString().split('T')[0]
-    const entries: any[] = []
-
-    for (const exLog of logs) {
-      for (let si = 0; si < exLog.sets.length; si++) {
-        const set = exLog.sets[si]
-        if (!set.completed) continue
-        entries.push({
-          exercise: exLog.exerciseName,
-          date: today,
-          split,
-          weight: set.weight,
-          set: si + 1,
-          reps: set.reps,
-          entry: `${exLog.exerciseName} — Set ${si + 1}`,
-        })
-      }
-    }
-
-    try {
-      await fetch('/api/session/write', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entries }),
-      })
-    } catch (e) {
-      console.error('Write failed:', e)
-    }
-
-    setSaving(false)
-    onFinish(logs)
+  function navigateToExercise(idx: number) {
+    setCurrentExIdx(idx)
+    setSwapShown(false)
+    setPadMode(null)
+    setActiveSetIdx(null)
   }
 
-  const allCurrentSetsDone = currentEx.sets.every(s => s.completed)
+  const allCurrentSetsDone = currentEx.sets.every(s => s.completed || s.skipped)
   const isLastExercise = currentExIdx === plan.length - 1
-
-  // Weight pad: if availableWeights defined, show step picker; else freeform
-  function WeightInput() {
-    if (activeSetIdx === null) return null
-    const currentWeight = currentEx.sets[activeSetIdx].weight
-
-    if (availableWeights && availableWeights.length > 0) {
-      return (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 50,
-            background: 'rgba(10,10,10,0.97)',
-            display: 'flex', flexDirection: 'column',
-          }}
-        >
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-            <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: '0 0 8px 0' }}>
-              SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
-            </p>
-            <p style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 24px 0' }}>
-              {currentEx.exerciseName}
-            </p>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '8px',
-              width: '100%',
-              maxWidth: '320px',
-            }}>
-              {availableWeights.map(w => (
-                <button
-                  key={w}
-                  onClick={() => confirmWeight(w)}
-                  style={{
-                    padding: '16px 8px',
-                    background: currentWeight === w ? 'var(--accent)' : 'var(--surface)',
-                    color: currentWeight === w ? '#0A0A0A' : 'var(--text-primary)',
-                    border: `1px solid ${currentWeight === w ? 'var(--accent)' : 'var(--border)'}`,
-                    borderRadius: '4px',
-                    fontFamily: 'DM Mono, monospace',
-                    fontSize: '1rem',
-                    fontWeight: currentWeight === w ? 600 : 400,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {activeUnit === 'pins' ? w : w}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ padding: '0 24px 32px' }}>
-            <button
-              onClick={() => { setPadMode(null); setActiveSetIdx(null) }}
-              style={{
-                width: '100%', background: 'none', border: '1px solid var(--border)',
-                borderRadius: '4px', padding: '14px',
-                color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <NumberPad
-        initialValue={currentWeight || null}
-        onConfirm={confirmWeight}
-        onCancel={() => { setPadMode(null); setActiveSetIdx(null) }}
-        label={`Set ${activeSetIdx + 1} — weight (${activeUnit})`}
-        maxValue={999}
-        allowDecimal={true}
-      />
-    )
-  }
+  const allExercisesDone = logs.every(ex => ex.sets.every(s => s.completed || s.skipped))
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh' }}>
-      {/* Back guard */}
-      {backGuardVisible && (
-        <BackGuardModal
-          onResume={() => setBackGuardVisible(false)}
-          onGoBack={() => onBack(logs, currentExIdx)}
-        />
-      )}
-
-      {/* Overview modal */}
+      {backGuardVisible && <BackGuardModal onResume={() => setBackGuardVisible(false)} onGoBack={() => onBack(logs, currentExIdx)} />}
       {overviewVisible && (
         <WorkoutOverviewModal
-          plan={plan}
-          logs={logs}
-          currentExIdx={currentExIdx}
-          onClose={() => setOverviewVisible(false)}
+          plan={plan} logs={logs} currentExIdx={currentExIdx} split={split}
+          onNavigate={navigateToExercise} onClose={() => setOverviewVisible(false)}
         />
       )}
 
@@ -577,42 +434,18 @@ export default function ActiveSessionScreen({
       </div>
 
       {/* Header */}
-      <div
-        className="safe-top flex items-center justify-between px-5"
-        style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}
-      >
-        <button
-          onClick={() => setBackGuardVisible(true)}
-          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', padding: '4px' }}
-        >
-          ←
-        </button>
-
-        {/* Overview button */}
-        <button
-          onClick={() => setOverviewVisible(true)}
-          style={{
-            background: 'none', border: '1px solid var(--border)', borderRadius: '4px',
-            color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.65rem',
-            letterSpacing: '0.08em', padding: '5px 10px', cursor: 'pointer',
-          }}
-        >
+      <div className="safe-top flex items-center justify-between px-5" style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <button onClick={() => setBackGuardVisible(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'DM Mono, monospace', fontSize: '0.85rem', padding: '4px' }}>←</button>
+        <button onClick={() => setOverviewVisible(true)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '5px 10px', cursor: 'pointer' }}>
           {currentExIdx + 1} / {plan.length} · OVERVIEW
         </button>
-
-        {allCurrentSetsDone && isLastExercise ? (
+        {allExercisesDone ? (
           <button
-            onClick={handleFinish}
+            onClick={() => onFinish(logs)}
             disabled={saving}
-            style={{
-              background: 'var(--accent)', color: '#0A0A0A',
-              border: 'none', borderRadius: '4px', padding: '8px 14px',
-              fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', fontWeight: 600,
-              letterSpacing: '0.08em', cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.6 : 1,
-            }}
+            style={{ background: 'var(--accent)', color: '#0A0A0A', border: 'none', borderRadius: '4px', padding: '8px 14px', fontFamily: 'DM Mono, monospace', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
           >
-            {saving ? 'SAVING...' : 'FINISH'}
+            FINISH
           </button>
         ) : (
           <div style={{ width: '60px' }} />
@@ -621,57 +454,30 @@ export default function ActiveSessionScreen({
 
       {/* Exercise name + controls */}
       <div className="px-5 py-4" style={{ flexShrink: 0 }}>
-        <h2
-          style={{
-            fontSize: '1.4rem', fontFamily: 'DM Mono, monospace', fontWeight: 500,
-            color: 'var(--text-primary)', margin: '0 0 6px 0', lineHeight: 1.2,
-          }}
-        >
+        <h2 style={{ fontSize: '1.4rem', fontFamily: 'DM Mono, monospace', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 6px 0', lineHeight: 1.2 }}>
           {currentEx.exerciseName}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>
-            {exerciseDef.sets}×
-            {exerciseDef.repRange[0] === exerciseDef.repRange[1]
-              ? exerciseDef.repRange[0]
-              : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} reps
+            {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} reps
           </span>
-
-          {/* Unit toggle */}
-          <button
-            onClick={toggleUnit}
-            style={{
-              background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px',
-              color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.6rem',
-              letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer',
-            }}
-          >
+          <button onClick={toggleUnit} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}>
             {activeUnit.toUpperCase()}
           </button>
-
-          {/* Swap button */}
-          <button
-            className="swap-badge"
-            onClick={() => setSwapShown(s => !s)}
-          >
+          <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
             {swapShown ? 'HIDE' : 'SWAP'}
           </button>
+          <button
+            onClick={skipExercise}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
+          >
+            SKIP
+          </button>
         </div>
-
-        {/* Backup exercise row */}
         {swapShown && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>
-              {currentEx.backupName}
-            </span>
-            <button
-              onClick={swapToBackup}
-              style={{
-                background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px',
-                color: 'var(--accent)', fontFamily: 'DM Mono, monospace', fontSize: '0.6rem',
-                letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer',
-              }}
-            >
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace' }}>{currentEx.backupName}</span>
+            <button onClick={swapToBackup} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '3px', color: 'var(--accent)', fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}>
               USE THIS
             </button>
           </div>
@@ -680,97 +486,67 @@ export default function ActiveSessionScreen({
 
       <div className="divider" />
 
-      {/* Rest timer */}
-      {timerVisible && (
-        <div className="px-5 pt-3" style={{ flexShrink: 0 }}>
-          <RestTimer key={timerKey} onDismiss={() => setTimerVisible(false)} />
-        </div>
-      )}
+      {/* Timer — always visible */}
+      <div className="px-5 pt-3" style={{ flexShrink: 0 }}>
+        <RestTimer />
+      </div>
 
       {/* Sets */}
       <div className="scroll-area flex-1 px-5 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {currentEx.sets.map((set, i) => (
-          <div
-            key={i}
-            className={`card p-4 ${flashSet === i ? 'set-complete-flash' : ''}`}
-            style={{
-              borderColor: set.completed ? 'rgba(200,241,53,0.3)' : 'var(--border)',
-              transition: 'border-color 0.2s',
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono-display" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-                SET {i + 1}
-              </span>
-              {set.completed && <span style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>✓</span>}
+        {currentEx.sets.map((set, i) => {
+          const isSkipped = set.skipped
+          return (
+            <div
+              key={i}
+              className={`card p-4 ${flashSet === i ? 'set-complete-flash' : ''}`}
+              style={{ borderColor: set.completed ? 'rgba(200,241,53,0.3)' : isSkipped ? 'rgba(255,165,0,0.2)' : 'var(--border)', transition: 'border-color 0.2s', opacity: isSkipped ? 0.5 : 1 }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono-display" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>SET {i + 1}</span>
+                {set.completed && <span style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>✓</span>}
+                {isSkipped && <span style={{ color: '#ffa500', fontSize: '0.7rem', fontFamily: 'DM Mono, monospace' }}>SKIPPED</span>}
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                {/* Weight — always tappable */}
+                <button
+                  onClick={() => !isSkipped && openWeightPad(i)}
+                  style={{ background: 'none', border: 'none', cursor: isSkipped ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
+                >
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em' }}>
+                    {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
+                  </span>
+                  <span className="font-mono-display" style={{ fontSize: '2rem', fontWeight: 500, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    {set.weight > 0 ? set.weight : '—'}
+                    {set.weight > 0 && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>
+                        {activeUnit === 'pins' ? '' : 'lbs'}
+                      </span>
+                    )}
+                  </span>
+                </button>
+                {/* Reps */}
+                <button
+                  onClick={() => !isSkipped && openRepPad(i)}
+                  style={{ background: set.completed ? 'rgba(200,241,53,0.08)' : 'var(--surface)', border: `1px solid ${set.completed ? 'rgba(200,241,53,0.3)' : 'var(--border)'}`, borderRadius: '4px', padding: '12px 18px', cursor: isSkipped ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: '80px' }}
+                >
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em' }}>REPS</span>
+                  <span className="font-mono-display" style={{ fontSize: '2rem', fontWeight: 500, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                    {set.reps > 0 ? set.reps : '—'}
+                  </span>
+                </button>
+              </div>
             </div>
-
-            <div className="flex items-center justify-between mt-3">
-              {/* Weight — always tappable, even after completed */}
-              <button
-                onClick={() => openWeightPad(i)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0,
-                }}
-              >
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em' }}>
-                  {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
-                </span>
-                <span className="font-mono-display" style={{ fontSize: '2rem', fontWeight: 500, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                  {set.weight > 0 ? (activeUnit === 'pins' ? set.weight : set.weight) : '—'}
-                  {set.weight > 0 && (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>
-                      {getWeightSuffix()}
-                    </span>
-                  )}
-                </span>
-              </button>
-
-              {/* Reps */}
-              <button
-                onClick={() => openRepPad(i)}
-                style={{
-                  background: set.completed ? 'rgba(200,241,53,0.08)' : 'var(--surface)',
-                  border: `1px solid ${set.completed ? 'rgba(200,241,53,0.3)' : 'var(--border)'}`,
-                  borderRadius: '4px', padding: '12px 18px', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: '80px',
-                }}
-              >
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em' }}>REPS</span>
-                <span className="font-mono-display" style={{ fontSize: '2rem', fontWeight: 500, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                  {set.reps > 0 ? set.reps : '—'}
-                </span>
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Next exercise preview */}
         {allCurrentSetsDone && !isLastExercise && (
-          <div
-            style={{
-              marginTop: '8px', padding: '16px',
-              background: 'rgba(200,241,53,0.04)',
-              border: '1px solid rgba(200,241,53,0.15)',
-              borderRadius: '4px',
-            }}
-          >
-            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em', margin: '0 0 4px 0' }}>
-              NEXT UP
-            </p>
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>
-              {plan[currentExIdx + 1].exercise.name}
-            </p>
+          <div style={{ marginTop: '8px', padding: '16px', background: 'rgba(200,241,53,0.04)', border: '1px solid rgba(200,241,53,0.15)', borderRadius: '4px' }}>
+            <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em', margin: '0 0 4px 0' }}>NEXT UP</p>
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', margin: 0 }}>{plan[currentExIdx + 1].exercise.name}</p>
             <button
-              onClick={() => { setCurrentExIdx(i => i + 1); setSwapShown(false); setTimerVisible(false) }}
-              style={{
-                marginTop: '12px', width: '100%',
-                background: 'var(--accent)', color: '#0A0A0A',
-                border: 'none', borderRadius: '4px', padding: '12px',
-                fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', fontWeight: 600,
-                letterSpacing: '0.08em', cursor: 'pointer',
-              }}
+              onClick={() => { setCurrentExIdx(i => i + 1); setSwapShown(false) }}
+              style={{ marginTop: '12px', width: '100%', background: 'var(--accent)', color: '#0A0A0A', border: 'none', borderRadius: '4px', padding: '12px', fontFamily: 'DM Mono, monospace', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.08em', cursor: 'pointer' }}
             >
               NEXT EXERCISE →
             </button>
@@ -789,7 +565,14 @@ export default function ActiveSessionScreen({
         />
       )}
       {padMode === 'weight' && activeSetIdx !== null && (
-        <WeightInput />
+        <WeightInput
+          activeSetIdx={activeSetIdx}
+          currentEx={currentEx}
+          currentPlan={currentPlan}
+          activeUnit={activeUnit}
+          onConfirm={confirmWeight}
+          onCancel={() => { setPadMode(null); setActiveSetIdx(null) }}
+        />
       )}
     </div>
   )

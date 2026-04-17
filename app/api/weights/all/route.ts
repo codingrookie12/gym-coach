@@ -5,8 +5,7 @@ import { getAllExercises } from '@/lib/routines'
 export async function GET() {
   try {
     const exercises = getAllExercises()
-    const names = exercises.map(e => e.name)
-    const weights = await fetchAllLatestWeights(names)
+    const weights = await fetchAllLatestWeights(exercises)
     return NextResponse.json({ weights })
   } catch (error) {
     console.error('Weights fetch error:', error)

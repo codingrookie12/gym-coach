@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0]
 
     await writeSessionEntry({
-      exercise: exerciseName,
+      exercise: ex.notionName,
       date: today,
       split: ex.split,
       weight: Number(weight),
       set: 1,
       reps: 0,
-      entry: `${exerciseName} — Weight Update`,
+      entry: `${ex.notionName} — Weight Update`,
     })
 
     return NextResponse.json({ success: true })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Split } from '@/lib/routines'
+import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 
 interface WorkoutOverviewScreenProps {
@@ -15,6 +15,7 @@ interface WorkoutOverviewScreenProps {
 
 export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
+  const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
@@ -114,6 +115,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
             </div>
           )
         })}
+      </div>
+
+      {/* Cardio recommendation */}
+      <div className="px-5 pb-3" style={{ flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(200,241,53,0.04)', border: '1px solid rgba(200,241,53,0.15)', borderRadius: '4px' }}>
+          <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', letterSpacing: '0.1em', flexShrink: 0 }}>CARDIO</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontFamily: 'DM Mono, monospace' }}>{cardio}</span>
+        </div>
       </div>
 
       {/* Begin / Resume CTA */}

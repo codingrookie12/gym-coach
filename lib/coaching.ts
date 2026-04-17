@@ -2,6 +2,7 @@ import { Split, Exercise, getRoutine } from './routines'
 import { SessionRecord } from './notion'
 
 // Maps canonical routine names → all known Notion aliases (case-insensitive)
+// Read-only — only affects coaching analysis, never writes
 const EXERCISE_ALIASES: Record<string, string[]> = {
   'Cable Pulldown (bar)': ['pulldown bar cable', 'cable pulldown', 'pulldown cable', 'lat pulldown', 'mts front pulldown'],
   'Cable Row (wide grip)': ['row cable wide grip', 'cable row wide', 'wide grip row', 'cable row wide grip'],
@@ -11,14 +12,14 @@ const EXERCISE_ALIASES: Record<string, string[]> = {
   'Single-Arm Preacher Hammer Curl': ['single-arm preacher hammer curl', 'preacher hammer curl'],
   'Forearm Behind Back': ['forearm behind back'],
   'Bench Press': ['bench press', 'barbell bench press'],
-  'Incline Dumbbell Press': ['incline dumbbell press', 'dumbbell incline press'],
-  'Seated Cable Fly': ['seated cable fly', 'cable fly'],
+  'Incline Dumbbell Press': ['incline dumbbell press', 'dumbbell incline press', 'dumbbell incline press'],
+  'Seated Cable Fly': ['seated cable fly', 'cable fly', 'chest fly'],
   'Shoulder Press': ['shoulder press', 'overhead press', 'barbell shoulder press'],
   'Lateral Raise': ['lateral raise', 'side lateral raise'],
   'Facepull': ['facepull', 'face pull'],
-  'Tricep Pushdown (rope)': ['tricep pushdown (rope)', 'tricep rope pushdown', 'rope pushdown'],
-  'Single-Arm Overhead Tricep Extension (cable)': ['single-arm overhead tricep extension', 'overhead tricep extension', 'cable overhead tricep'],
-  'Linear Hack Press or Squat': ['linear hack press', 'hack press', 'hack squat', 'squat'],
+  'Tricep Pushdown (rope)': ['tricep pushdown (rope)', 'tricep rope pushdown', 'rope pushdown', 'tricep vertical rope'],
+  'Single-Arm Overhead Tricep Extension (cable)': ['single-arm overhead tricep extension', 'overhead tricep extension', 'cable overhead tricep', 'tricep iso behind head'],
+  'Linear Hack Press or Squat': ['linear hack press or squat', 'linear hack press', 'hack press', 'hack squat', 'squat'],
   'Leg Press Pendular': ['leg press', 'pendular leg press', 'leg press pendular'],
   'Leg Extension': ['leg extension'],
   'Seated Leg Curl': ['seated leg curl', 'leg curl', 'lying leg curl'],
@@ -80,15 +81,6 @@ function daysBetween(dateA: string, dateB: string): number {
   return Math.abs(Math.round((a - b) / (1000 * 60 * 60 * 24)))
 }
 
-function totalVolume(session: SessionRecord): number {
-  let vol = 0
-  for (const ex of Object.values(session.exercises)) {
-    for (const s of ex.sets) {
-      vol += s.weight * s.reps
-    }
-  }
-  return vol
-}
 
 export function analyzeCoaching(
   split: Split,
@@ -123,15 +115,6 @@ export function analyzeCoaching(
     }
   }
 
-  // Volume comparison
-  let volumeFlag = ''
-  if (sessions.length >= 2) {
-    const vol0 = totalVolume(sessions[0])
-    const vol1 = totalVolume(sessions[1])
-    if (vol0 < vol1 * 0.9) {
-      volumeFlag = `Volume dropped vs last session (${vol0} vs ${vol1} total lbs·reps)`
-    }
-  }
 
   const plan: ExercisePlan[] = routine.map(exercise => {
     // Handle Pull day cable row swap
@@ -209,20 +192,37 @@ export function analyzeCoaching(
       deloadRecommended = true
     }
 
+    // Determine increment size for this exercise
+    const increment = exercise.weightUnit === 'pins' ? 1
+      : exercise.availableWeights && exercise.availableWeights.length > 0 ? null // handled per-case below
+      : exerciseName.toLowerCase().includes('dumbbell') ||
+        exerciseName.toLowerCase().includes('cable') ? 2.5 : 5
+
+    // Check fatigue flag for this exercise
+    const hasFatigue = flags.some(f => f.exercise === exerciseName && f.type === 'fatigue')
+
     let targetWeight = latestMaxWeight
     let coachingNote: string | null = null
 
-    if (shouldProgress && !recoveryHold) {
-      // Suggest weight increase — snap to next available weight if defined, else +5/+2.5
+    if (hasFatigue) {
+      // Step weight down one increment — fatigue takes priority over progression
+      let reducedWeight: number
+      if (exercise.availableWeights && exercise.availableWeights.length > 0) {
+        const prevAvailable = [...exercise.availableWeights].reverse().find(w => w < latestMaxWeight)
+        reducedWeight = prevAvailable ?? latestMaxWeight
+      } else {
+        reducedWeight = latestMaxWeight - (increment ?? 5)
+      }
+      targetWeight = Math.max(reducedWeight, 0)
+      coachingNote = `Reps dropped last session — reducing to ${targetWeight} lbs to recover form`
+    } else if (shouldProgress && !recoveryHold) {
+      // Suggest weight increase — snap to next available weight if defined, else +increment
       let nextWeight: number
       if (exercise.availableWeights && exercise.availableWeights.length > 0) {
         const nextAvailable = exercise.availableWeights.find(w => w > latestMaxWeight)
         nextWeight = nextAvailable ?? latestMaxWeight
       } else {
-        const increment = exercise.weightUnit === 'pins' ? 1
-          : exerciseName.toLowerCase().includes('dumbbell') ||
-            exerciseName.toLowerCase().includes('cable') ? 2.5 : 5
-        nextWeight = latestMaxWeight + increment
+        nextWeight = latestMaxWeight + (increment ?? 5)
       }
       targetWeight = nextWeight
       trending.push(`${exerciseName}: ready to increase (${latestMaxWeight} → ${targetWeight} lbs)`)
@@ -250,9 +250,6 @@ export function analyzeCoaching(
     lastSessionDate = lastSession.date
     const exerciseCount = Object.keys(lastSession.exercises).length
     lastSessionSummary = `${exerciseCount} exercises`
-    if (volumeFlag) {
-      flags.push({ exercise: 'Session Volume', type: 'fatigue', message: volumeFlag })
-    }
   }
 
   // Generate focus cue

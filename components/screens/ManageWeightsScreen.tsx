@@ -14,6 +14,7 @@ type SplitFilter = Split | 'All'
 export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps) {
   const [weights, setWeights] = useState<Record<string, number | null>>({})
   const [loading, setLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [filter, setFilter] = useState<SplitFilter>('All')
@@ -21,6 +22,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
   const allExercises = getAllExercises()
 
   useEffect(() => {
+    setLoading(true)
     fetch('/api/weights/all')
       .then(r => r.json())
       .then(data => {
@@ -28,7 +30,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [refreshKey])
 
   async function handleSetWeight(value: number) {
     if (!editingExercise) return
@@ -76,12 +78,18 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
         >
           ←
         </button>
-        <div>
+        <div style={{ flex: 1 }}>
           <p className="font-mono-display" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', margin: 0 }}>SETTINGS</p>
           <h1 className="font-mono-display" style={{ fontSize: '1.25rem', fontWeight: 500, margin: 0, color: 'var(--text-primary)' }}>
             Manage Weights
           </h1>
         </div>
+        <button
+          onClick={() => setRefreshKey(k => k + 1)}
+          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-secondary)', fontFamily: 'DM Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '6px 10px', cursor: 'pointer' }}
+        >
+          ↻ REFRESH
+        </button>
       </div>
 
       {/* Filter tabs */}
