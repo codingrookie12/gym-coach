@@ -11,7 +11,7 @@ import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
 import { Split } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { SessionRecord } from '@/lib/notion'
-import { ExerciseLog } from '@/lib/store'
+import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 
 export type Screen =
   | 'home'
@@ -30,6 +30,7 @@ export interface AppState {
   exerciseLogs: ExerciseLog[]
   savedLogs: ExerciseLog[] | null
   savedExIdx: number
+  savedSnapshot: SavedSnapshot
 }
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
     exerciseLogs: [],
     savedLogs: null,
     savedExIdx: 0,
+    savedSnapshot: {},
   })
 
   const navigate = useCallback((to: Screen) => setScreen(to), [])
@@ -51,44 +53,96 @@ export default function App() {
   }, [])
 
   const goHome = useCallback(() => {
-    setAppState({ split: null, coachingContext: null, plan: null, sessions: null, exerciseLogs: [], savedLogs: null, savedExIdx: 0 })
+    setAppState({
+      split: null, coachingContext: null, plan: null, sessions: null,
+      exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+    })
     setScreen('home')
   }, [])
 
-  const handleSessionBack = useCallback((logs: ExerciseLog[], exIdx: number) => {
-    updateState({ savedLogs: logs, savedExIdx: exIdx })
+  const handleSessionBack = useCallback((
+    logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot
+  ) => {
+    updateState({ savedLogs: logs, savedExIdx: exIdx, savedSnapshot: snapshot })
     navigate('workout-overview')
   }, [updateState, navigate])
 
-  // Write to Notion and advance to summary
+  const handleSessionFinish = useCallback((logs: ExerciseLog[], snapshot: SavedSnapshot) => {
+    updateState({ exerciseLogs: logs, savedSnapshot: snapshot })
+    navigate('pre-save')
+  }, [updateState, navigate])
+
+  // Diff-and-sync: compare confirmed logs against auto-save snapshot.
+  // Changed sets → PATCH. New sets (not in snapshot) → POST. Unchanged → no-op.
   async function handleSaveSession(logs: ExerciseLog[]) {
     const today = new Date().toISOString().split('T')[0]
-    const entries: any[] = []
+    const snapshot = appState.savedSnapshot
+
+    const patchPromises: Promise<any>[] = []
+    const newEntries: any[] = []
+
     for (const exLog of logs) {
       for (let si = 0; si < exLog.sets.length; si++) {
         const set = exLog.sets[si]
         if (!set.completed) continue
-        entries.push({
-          exercise: exLog.notionName,
-          date: today,
-          split: appState.split,
-          weight: set.weight,
-          set: si + 1,
-          reps: set.reps,
-          entry: `${exLog.notionName} — Set ${si + 1}`,
-        })
+
+        const key = `${exLog.notionName}:${si + 1}`
+        const prior = snapshot[key]
+
+        if (prior) {
+          // Check if anything changed
+          const weightChanged = set.weight !== prior.weight
+          const repsChanged = set.reps !== prior.reps
+          const notesChanged = (exLog.notes ?? '') !== prior.notes
+
+          if (weightChanged || repsChanged || notesChanged) {
+            const changes: { weight?: number; reps?: number; notes?: string } = {}
+            if (weightChanged) changes.weight = set.weight
+            if (repsChanged) changes.reps = set.reps
+            if (notesChanged) changes.notes = exLog.notes ?? ''
+
+            patchPromises.push(
+              fetch('/api/session/update', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pageId: prior.pageId, changes }),
+              })
+            )
+          }
+          // If nothing changed — no-op, row already exists in Notion
+        } else {
+          // Set was added after auto-save (e.g. user added extra set in pre-save)
+          newEntries.push({
+            exercise: exLog.notionName,
+            date: today,
+            split: appState.split,
+            weight: set.weight,
+            set: si + 1,
+            reps: set.reps,
+            entry: `${exLog.notionName} — Set ${si + 1}`,
+            notes: exLog.notes || undefined,
+          })
+        }
       }
     }
+
     try {
-      await fetch('/api/session/write', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entries }),
-      })
+      const ops: Promise<any>[] = [...patchPromises]
+      if (newEntries.length > 0) {
+        ops.push(
+          fetch('/api/session/write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entries: newEntries }),
+          })
+        )
+      }
+      await Promise.all(ops)
     } catch (e) {
-      console.error('Write failed:', e)
+      console.error('Save failed:', e)
     }
-    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0 })
+
+    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
     navigate('session-summary')
   }
 
@@ -96,7 +150,7 @@ export default function App() {
     <div style={{ background: 'var(--bg)', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
       {screen === 'home' && (
         <HomeScreen
-          onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0 }); navigate('coaching-context') }}
+          onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
           onSettings={() => navigate('manage-weights')}
         />
       )}
@@ -115,7 +169,7 @@ export default function App() {
           split={appState.split}
           plan={appState.plan}
           hasResumable={!!appState.savedLogs}
-          onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0 }); navigate('active-session') }}
+          onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
           onResume={() => navigate('active-session')}
           onBack={() => navigate('coaching-context')}
         />
@@ -126,7 +180,8 @@ export default function App() {
           plan={appState.plan}
           initialLogs={appState.savedLogs ?? undefined}
           initialExIdx={appState.savedExIdx}
-          onFinish={(logs) => { updateState({ exerciseLogs: logs }); navigate('pre-save') }}
+          initialSnapshot={appState.savedSnapshot}
+          onFinish={handleSessionFinish}
           onBack={handleSessionBack}
         />
       )}

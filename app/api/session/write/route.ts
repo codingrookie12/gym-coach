@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid entries' }, { status: 400 })
     }
 
-    await writeSessionEntries(entries)
-    return NextResponse.json({ success: true })
+    const pageIds = await writeSessionEntries(entries)
+    return NextResponse.json({ success: true, pageIds })
   } catch (error) {
     console.error('Write error:', error)
     return NextResponse.json({ error: 'Failed to write entries' }, { status: 500 })

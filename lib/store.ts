@@ -15,7 +15,16 @@ export interface ExerciseLog {
   notionName: string  // Exact name used in Notion DB Exercise select field
   backupName: string
   sets: SetLog[]
+  notes?: string
 }
+
+// Keyed by `notionName:setNumber` (1-indexed), e.g. "Bench press:1"
+export type SavedSnapshot = Record<string, {
+  pageId: string
+  weight: number
+  reps: number
+  notes: string
+}>
 
 export interface SessionState {
   split: Split | null

@@ -12,6 +12,7 @@ export interface NotionEntry {
   set: number
   reps: number
   entry: string
+  notes?: string
 }
 
 export interface SessionRecord {
@@ -186,25 +187,43 @@ export async function fetchAllLatestWeights(exercises: Exercise[]): Promise<Reco
   return results
 }
 
-// Write a set entry to Notion
-export async function writeSessionEntry(entry: NotionEntry): Promise<void> {
-  await notion.pages.create({
+// Write a set entry to Notion — returns the created page ID
+export async function writeSessionEntry(entry: NotionEntry): Promise<string> {
+  const properties: any = {
+    Entry: { title: [{ text: { content: entry.entry } }] },
+    Exercise: { select: { name: entry.exercise } },
+    Date: { date: { start: entry.date } },
+    Split: { select: { name: entry.split } },
+    'Weight (Lbs)': { number: entry.weight },
+    Set: { number: entry.set },
+    Reps: { number: entry.reps },
+  }
+  if (entry.notes) {
+    properties['Notes'] = { rich_text: [{ text: { content: entry.notes } }] }
+  }
+  const page = await notion.pages.create({
     parent: { database_id: DATABASE_ID },
-    properties: {
-      // Entry is the Title field
-      Entry: { title: [{ text: { content: entry.entry } }] },
-      // Exercise is a Select field
-      Exercise: { select: { name: entry.exercise } },
-      Date: { date: { start: entry.date } },
-      Split: { select: { name: entry.split } },
-      'Weight (Lbs)': { number: entry.weight },
-      Set: { number: entry.set },
-      Reps: { number: entry.reps },
-    },
+    properties,
   })
+  return page.id
 }
 
-// Write multiple entries in parallel (for session finish)
-export async function writeSessionEntries(entries: NotionEntry[]): Promise<void> {
-  await Promise.all(entries.map(writeSessionEntry))
+// Write multiple entries in parallel — returns array of page IDs in same order
+export async function writeSessionEntries(entries: NotionEntry[]): Promise<string[]> {
+  return Promise.all(entries.map(writeSessionEntry))
+}
+
+// Update an existing Notion page with changed values
+export async function updateSessionEntry(
+  pageId: string,
+  changes: { weight?: number; reps?: number; notes?: string }
+): Promise<void> {
+  const properties: any = {}
+  if (changes.weight !== undefined) properties['Weight (Lbs)'] = { number: changes.weight }
+  if (changes.reps !== undefined) properties['Reps'] = { number: changes.reps }
+  if (changes.notes !== undefined) {
+    properties['Notes'] = { rich_text: [{ text: { content: changes.notes } }] }
+  }
+  if (Object.keys(properties).length === 0) return
+  await notion.pages.update({ page_id: pageId, properties })
 }

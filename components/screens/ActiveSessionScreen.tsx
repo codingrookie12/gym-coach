@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
-import { ExerciseLog } from '@/lib/store'
+import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import NumberPad from '@/components/NumberPad'
 
 interface ActiveSessionScreenProps {
@@ -11,40 +11,67 @@ interface ActiveSessionScreenProps {
   plan: ExercisePlan[]
   initialLogs?: ExerciseLog[]
   initialExIdx?: number
-  onFinish: (logs: ExerciseLog[]) => void
-  onBack: (logs: ExerciseLog[], exIdx: number) => void
+  initialSnapshot?: SavedSnapshot
+  onFinish: (logs: ExerciseLog[], snapshot: SavedSnapshot) => void
+  onBack: (logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot) => void
 }
 
 type PadMode = 'reps' | 'weight' | null
 
-// ── Rest Timer ────────────────────────────────────────────────────────────────
+// ── Rest Timer (timestamp-based, background-safe) ─────────────────────────────
 function RestTimer() {
   const [targetMinutes, setTargetMinutes] = useState(3)
-  const [elapsed, setElapsed] = useState(0)
-  const [running, setRunning] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [startTs, setStartTs] = useState<number | null>(null)     // ms timestamp when started
+  const [elapsed, setElapsed] = useState(0)                        // seconds, for display
+  const [finished, setFinished] = useState(false)
+  const rafRef = useRef<number | null>(null)
 
   const targetSeconds = targetMinutes * 60
-  const remaining = Math.max(targetSeconds - elapsed, 0)
-  const done = running && elapsed >= targetSeconds
-  const progress = running ? Math.min(elapsed / targetSeconds, 1) : 0
+
+  // Tick loop — uses requestAnimationFrame but derives elapsed from wall clock
+  const tick = useCallback(() => {
+    if (startTs === null) return
+    const now = Date.now()
+    const secs = Math.floor((now - startTs) / 1000)
+    setElapsed(secs)
+    if (secs >= targetSeconds) {
+      setFinished(true)
+      setStartTs(null)
+    } else {
+      rafRef.current = requestAnimationFrame(tick)
+    }
+  }, [startTs, targetSeconds])
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
+    if (startTs !== null) {
+      rafRef.current = requestAnimationFrame(tick)
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [running])
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [startTs, tick])
 
-  function start() { setElapsed(0); setRunning(true) }
-  function pause() { setRunning(false) }
-  function stop() { setRunning(false); setElapsed(0) }
+  const running = startTs !== null
+  const remaining = Math.max(targetSeconds - elapsed, 0)
+  const progress = targetSeconds > 0 ? Math.min(elapsed / targetSeconds, 1) : 0
+  const done = finished
+
+  function start() {
+    setFinished(false)
+    setElapsed(0)
+    setStartTs(Date.now())
+  }
+
+  function stop() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    setStartTs(null)
+    setElapsed(0)
+    setFinished(false)
+  }
+
   function adjustMinutes(delta: number) {
     setTargetMinutes(m => Math.max(1, Math.min(10, m + delta)))
-    if (running) stop()
+    stop()
   }
+
   function fmt(s: number) {
     const m = Math.floor(s / 60)
     const sec = s % 60
@@ -54,7 +81,7 @@ function RestTimer() {
   const r = 20
   const circ = 2 * Math.PI * r
   const dash = circ * progress
-  const circleColor = !running ? 'var(--border-2)' : done ? 'var(--accent)' : 'var(--rust)'
+  const circleColor = !running && !done ? 'var(--border-2)' : done ? 'var(--accent)' : 'var(--rust)'
 
   return (
     <div style={{
@@ -90,7 +117,7 @@ function RestTimer() {
             color: done ? 'var(--accent)' : running ? 'var(--rust)' : 'var(--text-secondary)',
             letterSpacing: '0.04em',
           }}>
-            {running ? fmt(remaining) : fmt(targetSeconds)}
+            {running ? fmt(remaining) : done ? '0:00' : fmt(targetSeconds)}
           </span>
           {done && <span className="section-label" style={{ color: 'var(--accent)' }}>REST DONE</span>}
         </div>
@@ -105,15 +132,15 @@ function RestTimer() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions — START when idle, RESET+STOP when running or done */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        {!running ? (
+        {!running && !done ? (
           <button onClick={start} style={timerActionBtn('var(--accent)', '#0C0B09', true)}>START</button>
         ) : (
-          <button onClick={pause} style={timerActionBtn('var(--surface-2)', 'var(--text-primary)', false)}>PAUSE</button>
-        )}
-        {(running || elapsed > 0) && (
-          <button onClick={stop} style={timerActionBtn('var(--surface-2)', 'var(--text-secondary)', false)}>STOP</button>
+          <>
+            <button onClick={start} style={timerActionBtn('var(--surface-2)', 'var(--text-primary)', false)}>RESET</button>
+            <button onClick={stop} style={timerActionBtn('var(--surface-2)', 'var(--text-secondary)', false)}>STOP</button>
+          </>
         )}
       </div>
     </div>
@@ -250,51 +277,153 @@ function WeightInput({
 }) {
   const availableWeights = currentPlan.exercise.availableWeights
   const currentWeight = currentEx.sets[activeSetIdx].weight
+  const [showCustom, setShowCustom] = useState(false)
 
-  if (availableWeights && availableWeights.length > 0) {
+  if (showCustom || !availableWeights || availableWeights.length === 0) {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <p className="section-label" style={{ margin: '0 0 4px 0' }}>
-            SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
-          </p>
-          <p className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-mid)', margin: '0 0 24px 0', fontWeight: 500 }}>{currentEx.exerciseName}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '100%', maxWidth: '320px' }}>
-            {availableWeights.map(w => (
-              <button key={w} onClick={() => onConfirm(w)} style={{
-                padding: '18px 8px', borderRadius: '2px', cursor: 'pointer',
-                background: currentWeight === w ? 'var(--accent)' : 'var(--surface-2)',
-                color: currentWeight === w ? '#0C0B09' : 'var(--text-primary)',
-                border: `1px solid ${currentWeight === w ? 'var(--accent)' : 'var(--border)'}`,
-                fontFamily: 'Space Mono, monospace', fontSize: '0.9rem',
-                fontWeight: currentWeight === w ? 700 : 400,
-                transition: 'all 0.1s',
-              }}>{w}</button>
-            ))}
-          </div>
-        </div>
-        <div style={{ padding: '0 24px 32px' }}>
-          <button className="btn-secondary" onClick={onCancel}>Cancel</button>
-        </div>
-      </div>
+      <NumberPad
+        initialValue={currentWeight || null}
+        onConfirm={onConfirm}
+        onCancel={() => {
+          if (showCustom && availableWeights && availableWeights.length > 0) {
+            setShowCustom(false)
+          } else {
+            onCancel()
+          }
+        }}
+        label={`Set ${activeSetIdx + 1} — weight (${activeUnit})`}
+        maxValue={999}
+        allowDecimal={true}
+      />
     )
   }
 
   return (
-    <NumberPad
-      initialValue={currentWeight || null}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
-      label={`Set ${activeSetIdx + 1} — weight (${activeUnit})`}
-      maxValue={999}
-      allowDecimal={true}
-    />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}>
+        <p className="section-label" style={{ margin: '0 0 4px 0' }}>
+          SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
+        </p>
+        <p className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-mid)', margin: '0 0 24px 0', fontWeight: 500 }}>{currentEx.exerciseName}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '100%', maxWidth: '320px' }}>
+          {availableWeights.map(w => (
+            <button key={w} onClick={() => onConfirm(w)} style={{
+              padding: '18px 8px', borderRadius: '2px', cursor: 'pointer',
+              background: currentWeight === w ? 'var(--accent)' : 'var(--surface-2)',
+              color: currentWeight === w ? '#0C0B09' : 'var(--text-primary)',
+              border: `1px solid ${currentWeight === w ? 'var(--accent)' : 'var(--border)'}`,
+              fontFamily: 'Space Mono, monospace', fontSize: '0.9rem',
+              fontWeight: currentWeight === w ? 700 : 400,
+              transition: 'all 0.1s',
+            }}>{w}</button>
+          ))}
+        </div>
+        {/* Custom input option */}
+        <button
+          onClick={() => setShowCustom(true)}
+          style={{
+            marginTop: '16px',
+            background: 'none',
+            border: '1px dashed var(--border-2)',
+            borderRadius: '2px',
+            color: 'var(--text-secondary)',
+            fontFamily: 'Space Mono, monospace',
+            fontSize: '0.6rem',
+            letterSpacing: '0.08em',
+            padding: '8px 20px',
+            cursor: 'pointer',
+          }}
+        >
+          CUSTOM VALUE
+        </button>
+      </div>
+      <div style={{ padding: '0 24px 32px' }}>
+        <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+// ── Notes Input ───────────────────────────────────────────────────────────────
+function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [expanded, setExpanded] = useState(!!value)
+
+  return (
+    <div style={{ marginTop: '8px' }}>
+      {!expanded ? (
+        <button
+          onClick={() => setExpanded(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'none',
+            border: '1px dashed var(--border-2)',
+            borderRadius: '2px',
+            color: 'var(--text-secondary)',
+            fontFamily: 'Space Mono, monospace',
+            fontSize: '0.55rem',
+            letterSpacing: '0.08em',
+            padding: '6px 12px',
+            cursor: 'pointer',
+            width: '100%',
+            justifyContent: 'flex-start',
+          }}
+        >
+          + ADD NOTE
+        </button>
+      ) : (
+        <div style={{ position: 'relative' }}>
+          <textarea
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder="Notes for next time..."
+            autoFocus
+            className="notes-area"
+            style={{
+              width: '100%',
+              minHeight: '72px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '2px',
+              color: 'var(--text-primary)',
+              fontFamily: 'Space Mono, monospace',
+              fontSize: '0.7rem',
+              lineHeight: 1.6,
+              padding: '10px 12px',
+              resize: 'none',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+          {!value && (
+            <button
+              onClick={() => setExpanded(false)}
+              style={{
+                position: 'absolute',
+                top: '6px',
+                right: '8px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontFamily: 'Space Mono, monospace',
+                fontSize: '0.55rem',
+                cursor: 'pointer',
+                padding: '2px 4px',
+              }}
+            >
+              HIDE
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split, plan, initialLogs, initialExIdx = 0, onFinish, onBack,
+  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
@@ -308,6 +437,7 @@ export default function ActiveSessionScreen({
         completed: false,
         skipped: false,
       })),
+      notes: '',
     }))
   )
 
@@ -320,12 +450,87 @@ export default function ActiveSessionScreen({
   const [overviewVisible, setOverviewVisible] = useState(false)
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
+  // Snapshot: maps "notionName:setNum" -> { pageId, weight, reps, notes }
+  const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
+  // Track which exercise indices have been auto-saved (to avoid double-fire)
+  const savedExIndices = useRef<Set<number>>(new Set(
+    initialSnapshot
+      ? Object.keys(initialSnapshot).map(k => {
+          // Recover which exercise indices were already saved
+          const notionName = k.split(':')[0]
+          return plan.findIndex(p => p.exercise.notionName === notionName)
+        }).filter(i => i >= 0)
+      : []
+  ))
 
   const currentEx = logs[currentExIdx]
   const currentPlan = plan[currentExIdx]
   const exerciseDef = currentPlan.exercise
   const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
   const activeUnit = unitOverrides[currentExIdx] ?? defaultUnit
+
+  const [showSaved, setShowSaved] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function flashSaved() {
+    setShowSaved(true)
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    savedTimerRef.current = setTimeout(() => setShowSaved(false), 1800)
+  }
+
+  // Auto-save when all sets of an exercise are done
+  useEffect(() => {
+    const ex = logs[currentExIdx]
+    const allDone = ex.sets.every(s => s.completed || s.skipped)
+    if (!allDone) return
+
+    // Only auto-save once per exercise (on first completion)
+    if (savedExIndices.current.has(currentExIdx)) return
+    savedExIndices.current.add(currentExIdx)
+
+    const today = new Date().toISOString().split('T')[0]
+    const entries: any[] = []
+    const setIndices: number[] = []  // track which set numbers correspond to each entry
+    for (let si = 0; si < ex.sets.length; si++) {
+      const set = ex.sets[si]
+      if (!set.completed) continue
+      entries.push({
+        exercise: ex.notionName,
+        date: today,
+        split,
+        weight: set.weight,
+        set: si + 1,
+        reps: set.reps,
+        entry: `${ex.notionName} — Set ${si + 1}`,
+        notes: ex.notes || undefined,
+      })
+      setIndices.push(si + 1)  // 1-indexed set number
+    }
+    if (entries.length === 0) return
+
+    fetch('/api/session/write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        // Store page IDs in snapshot keyed by "notionName:setNum"
+        if (data.pageIds && Array.isArray(data.pageIds)) {
+          data.pageIds.forEach((pageId: string, i: number) => {
+            const key = `${ex.notionName}:${setIndices[i]}`
+            snapshot.current[key] = {
+              pageId,
+              weight: entries[i].weight,
+              reps: entries[i].reps,
+              notes: entries[i].notes ?? '',
+            }
+          })
+        }
+        flashSaved()
+      })
+      .catch(e => console.error('Auto-save failed:', e))
+  }, [logs, currentExIdx, split])
 
   function toggleUnit() {
     setUnitOverrides(prev => ({
@@ -346,6 +551,8 @@ export default function ActiveSessionScreen({
       next[currentExIdx] = ex
       return next
     })
+    // If this exercise was previously saved, allow re-save on next change
+    savedExIndices.current.delete(currentExIdx)
     setFlashSet(activeSetIdx)
     setTimeout(() => setFlashSet(null), 500)
     setPadMode(null)
@@ -366,6 +573,16 @@ export default function ActiveSessionScreen({
     })
     setPadMode(null)
     setActiveSetIdx(null)
+  }
+
+  function updateNotes(value: string) {
+    setLogs(prev => {
+      const next = [...prev]
+      next[currentExIdx] = { ...next[currentExIdx], notes: value }
+      return next
+    })
+    // Allow re-save if notes changed
+    savedExIndices.current.delete(currentExIdx)
   }
 
   function skipExercise() {
@@ -406,7 +623,6 @@ export default function ActiveSessionScreen({
   const isLastExercise = currentExIdx === plan.length - 1
   const allExercisesDone = logs.every(ex => ex.sets.every(s => s.completed || s.skipped))
 
-  // Progress: completed sets / total sets across all exercises
   const totalSets = logs.reduce((acc, ex) => acc + ex.sets.length, 0)
   const completedSets = logs.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed || s.skipped).length, 0)
   const progressPct = totalSets > 0 ? (completedSets / totalSets) * 100 : 0
@@ -419,6 +635,7 @@ export default function ActiveSessionScreen({
       next[currentExIdx] = ex
       return next
     })
+    savedExIndices.current.delete(currentExIdx)
   }
 
   function unskipSet(setIdx: number) {
@@ -429,6 +646,7 @@ export default function ActiveSessionScreen({
       next[currentExIdx] = ex
       return next
     })
+    savedExIndices.current.delete(currentExIdx)
   }
 
   function addSet() {
@@ -440,11 +658,12 @@ export default function ActiveSessionScreen({
       next[currentExIdx] = ex
       return next
     })
+    savedExIndices.current.delete(currentExIdx)
   }
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh' }}>
-      {backGuardVisible && <BackGuardModal onResume={() => setBackGuardVisible(false)} onGoBack={() => onBack(logs, currentExIdx)} />}
+      {backGuardVisible && <BackGuardModal onResume={() => setBackGuardVisible(false)} onGoBack={() => onBack(logs, currentExIdx, snapshot.current)} />}
       {overviewVisible && (
         <WorkoutOverviewModal
           plan={plan} logs={logs} currentExIdx={currentExIdx} split={split}
@@ -465,15 +684,22 @@ export default function ActiveSessionScreen({
         >
           ←
         </button>
-        <button
-          onClick={() => setOverviewVisible(true)}
-          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.06em', padding: '5px 10px', cursor: 'pointer' }}
-        >
-          {currentExIdx + 1}/{plan.length} · OVERVIEW
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {showSaved && (
+            <span className="saved-indicator font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
+              ✓ SAVED
+            </span>
+          )}
+          <button
+            onClick={() => setOverviewVisible(true)}
+            style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.06em', padding: '5px 10px', cursor: 'pointer' }}
+          >
+            {currentExIdx + 1}/{plan.length} · OVERVIEW
+          </button>
+        </div>
         {allExercisesDone ? (
           <button
-            onClick={() => onFinish(logs)}
+            onClick={() => onFinish(logs, snapshot.current)}
             disabled={saving}
             style={{ background: 'var(--accent)', color: '#0C0B09', border: 'none', borderRadius: '2px', padding: '8px 16px', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.1em', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
           >
@@ -576,38 +802,40 @@ export default function ActiveSessionScreen({
                   {/* Weight */}
                   <button
                     onClick={() => openWeightPad(i)}
+                    className="weight-btn"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
                   >
                     <span className="section-label">{activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                      <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
                         {set.weight > 0 ? set.weight : '—'}
                       </span>
                       {set.weight > 0 && activeUnit !== 'pins' && (
-                        <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>lbs</span>
+                        <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>lbs</span>
                       )}
                     </div>
                   </button>
 
-                  {/* Reps */}
+                  {/* Reps — bigger touch target */}
                   <button
                     onClick={() => openRepPad(i)}
+                    className="reps-btn"
                     style={{
                       background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
                       border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
                       borderRadius: '2px',
-                      padding: '12px 20px',
+                      padding: '16px 28px',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '2px',
-                      minWidth: '80px',
+                      gap: '4px',
+                      minWidth: '100px',
                       transition: 'all 0.15s',
                     }}
                   >
                     <span className="section-label">REPS</span>
-                    <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                    <span className="font-display" style={{ fontSize: '3.2rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
                       {set.reps > 0 ? set.reps : '—'}
                     </span>
                   </button>
@@ -641,6 +869,12 @@ export default function ActiveSessionScreen({
         >
           + ADD SET
         </button>
+
+        {/* Notes field */}
+        <NotesField
+          value={currentEx.notes ?? ''}
+          onChange={updateNotes}
+        />
 
         {/* Next exercise preview */}
         {allCurrentSetsDone && !isLastExercise && (

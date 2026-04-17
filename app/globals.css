@@ -368,3 +368,58 @@ html, body {
   color: var(--text-secondary);
   text-transform: uppercase;
 }
+
+/* ── font-sans alias ──────────────────────────────────────────────────── */
+.font-sans {
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+/* ── Set card active state ────────────────────────────────────────────── */
+.set-card {
+  transition: border-color 0.15s, background 0.15s, transform 0.06s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Reps button press feedback ───────────────────────────────────────── */
+.reps-btn {
+  transition: all 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.reps-btn:active {
+  transform: scale(0.96);
+  border-color: var(--accent) !important;
+}
+
+/* ── Weight button press feedback ─────────────────────────────────────── */
+.weight-btn {
+  transition: opacity 0.1s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.weight-btn:active {
+  opacity: 0.7;
+}
+
+/* ── Notes textarea focus ─────────────────────────────────────────────── */
+.notes-area:focus {
+  border-color: var(--accent) !important;
+  outline: none;
+}
+
+/* ── Auto-save indicator pulse ────────────────────────────────────────── */
+@keyframes savedPulse {
+  0%   { opacity: 0; transform: scale(0.9); }
+  30%  { opacity: 1; transform: scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.saved-indicator {
+  animation: savedPulse 1.6s ease forwards;
+  pointer-events: none;
+}
