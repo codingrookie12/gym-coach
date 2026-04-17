@@ -405,7 +405,22 @@ export default function ActiveSessionScreen({
   const allCurrentSetsDone = currentEx.sets.every(s => s.completed || s.skipped)
   const isLastExercise = currentExIdx === plan.length - 1
   const allExercisesDone = logs.every(ex => ex.sets.every(s => s.completed || s.skipped))
-  const progressPct = (currentExIdx / plan.length) * 100
+
+  // Progress: completed sets / total sets across all exercises
+  const totalSets = logs.reduce((acc, ex) => acc + ex.sets.length, 0)
+  const completedSets = logs.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed || s.skipped).length, 0)
+  const progressPct = totalSets > 0 ? (completedSets / totalSets) * 100 : 0
+
+  function addSet() {
+    setLogs(prev => {
+      const next = [...prev]
+      const ex = { ...next[currentExIdx], sets: [...next[currentExIdx].sets] }
+      const lastSet = ex.sets[ex.sets.length - 1]
+      ex.sets = [...ex.sets, { weight: lastSet?.weight ?? 0, reps: 0, completed: false, skipped: false }]
+      next[currentExIdx] = ex
+      return next
+    })
+  }
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh' }}>
@@ -496,71 +511,91 @@ export default function ActiveSessionScreen({
 
       {/* Sets */}
       <div className="scroll-area flex-1 px-5 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-        {currentEx.sets.map((set, i) => {
-          const isSkipped = set.skipped
-          return (
-            <div
-              key={i}
-              className={`${flashSet === i ? 'set-complete-flash' : ''}`}
-              style={{
-                background: 'var(--surface)',
-                border: `1px solid ${set.completed ? 'var(--accent-border)' : isSkipped ? 'var(--rust-border)' : 'var(--border)'}`,
-                borderLeft: set.completed ? '3px solid var(--accent)' : isSkipped ? '3px solid var(--rust)' : '1px solid var(--border)',
-                borderRadius: set.completed || isSkipped ? '0 2px 2px 0' : '2px',
-                padding: '14px',
-                transition: 'border-color 0.2s',
-                opacity: isSkipped ? 0.45 : 1,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span className="section-label">SET {i + 1}</span>
-                {set.completed && <span style={{ color: 'var(--accent)', fontSize: '0.8rem' }}>✓</span>}
-                {isSkipped && <span className="section-label" style={{ color: 'var(--rust)' }}>SKIPPED</span>}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                {/* Weight */}
-                <button
-                  onClick={() => !isSkipped && openWeightPad(i)}
-                  style={{ background: 'none', border: 'none', cursor: isSkipped ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
-                >
-                  <span className="section-label">{activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}</span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                    <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
-                      {set.weight > 0 ? set.weight : '—'}
-                    </span>
-                    {set.weight > 0 && activeUnit !== 'pins' && (
-                      <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>lbs</span>
-                    )}
-                  </div>
-                </button>
-
-                {/* Reps */}
-                <button
-                  onClick={() => !isSkipped && openRepPad(i)}
-                  style={{
-                    background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
-                    border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
-                    borderRadius: '2px',
-                    padding: '12px 20px',
-                    cursor: isSkipped ? 'default' : 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px',
-                    minWidth: '80px',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  <span className="section-label">REPS</span>
-                  <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
-                    {set.reps > 0 ? set.reps : '—'}
-                  </span>
-                </button>
-              </div>
+        {currentEx.sets.map((set, i) => (
+          <div
+            key={i}
+            className={`${flashSet === i ? 'set-complete-flash' : ''}`}
+            style={{
+              background: 'var(--surface)',
+              border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
+              borderLeft: set.completed ? '3px solid var(--accent)' : '1px solid var(--border)',
+              borderRadius: set.completed ? '0 2px 2px 0' : '2px',
+              padding: '14px',
+              transition: 'border-color 0.2s',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <span className="section-label">SET {i + 1}</span>
+              {set.completed && <span style={{ color: 'var(--accent)', fontSize: '0.8rem' }}>✓</span>}
             </div>
-          )
-        })}
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              {/* Weight */}
+              <button
+                onClick={() => openWeightPad(i)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
+              >
+                <span className="section-label">{activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                    {set.weight > 0 ? set.weight : '—'}
+                  </span>
+                  {set.weight > 0 && activeUnit !== 'pins' && (
+                    <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>lbs</span>
+                  )}
+                </div>
+              </button>
+
+              {/* Reps */}
+              <button
+                onClick={() => openRepPad(i)}
+                style={{
+                  background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
+                  border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
+                  borderRadius: '2px',
+                  padding: '12px 20px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '2px',
+                  minWidth: '80px',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <span className="section-label">REPS</span>
+                <span className="font-display" style={{ fontSize: '2.2rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                  {set.reps > 0 ? set.reps : '—'}
+                </span>
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Add Set button */}
+        <button
+          onClick={addSet}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            padding: '11px 14px',
+            background: 'none',
+            border: '1px dashed var(--border-2)',
+            borderRadius: '2px',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontFamily: 'Bebas Neue, sans-serif',
+            fontSize: '0.9rem',
+            letterSpacing: '0.1em',
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
+        >
+          + ADD SET
+        </button>
 
         {/* Next exercise preview */}
         {allCurrentSetsDone && !isLastExercise && (
