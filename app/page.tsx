@@ -1,19 +1,28 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import HomeScreen from '@/components/screens/HomeScreen'
+import ResumePromptScreen from '@/components/screens/ResumePromptScreen'
 import CoachingContextScreen from '@/components/screens/CoachingContextScreen'
 import WorkoutOverviewScreen from '@/components/screens/WorkoutOverviewScreen'
 import ActiveSessionScreen from '@/components/screens/ActiveSessionScreen'
 import PreSaveSummaryScreen from '@/components/screens/PreSaveSummaryScreen'
 import SessionSummaryScreen from '@/components/screens/SessionSummaryScreen'
 import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
+import LoadingScreen from '@/components/LoadingScreen'
 import { Split } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
+import {
+  loadSessionFromStorage,
+  clearSessionFromStorage,
+  PersistedSession,
+} from '@/lib/sessionStorage'
 
 export type Screen =
+  | 'detecting'        // checking localStorage + Notion on first load
+  | 'resume-prompt'    // found unfinished session → ask resume or fresh
   | 'home'
   | 'coaching-context'
   | 'workout-overview'
@@ -31,10 +40,13 @@ export interface AppState {
   savedLogs: ExerciseLog[] | null
   savedExIdx: number
   savedSnapshot: SavedSnapshot
+  // From resume detection
+  detectedSession: PersistedSession | null
+  detectedSplit: Split | null  // from Notion fallback (no full log data)
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('home')
+  const [screen, setScreen] = useState<Screen>('detecting')
   const [appState, setAppState] = useState<AppState>({
     split: null,
     coachingContext: null,
@@ -44,6 +56,8 @@ export default function App() {
     savedLogs: null,
     savedExIdx: 0,
     savedSnapshot: {},
+    detectedSession: null,
+    detectedSplit: null,
   })
 
   const navigate = useCallback((to: Screen) => setScreen(to), [])
@@ -53,11 +67,42 @@ export default function App() {
   }, [])
 
   const goHome = useCallback(() => {
-    setAppState({
+    setAppState(prev => ({
+      ...prev,
       split: null, coachingContext: null, plan: null, sessions: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
-    })
+      detectedSession: null, detectedSplit: null,
+    }))
     setScreen('home')
+  }, [])
+
+  // On mount: check localStorage → then Notion fallback
+  useEffect(() => {
+    async function detect() {
+      // 1. localStorage — fast, full data
+      const stored = loadSessionFromStorage()
+      if (stored) {
+        setAppState(prev => ({ ...prev, detectedSession: stored }))
+        setScreen('resume-prompt')
+        return
+      }
+
+      // 2. Notion fallback — slower, only tells us split + that entries exist
+      try {
+        const res = await fetch('/api/session/today')
+        const data = await res.json()
+        if (data.found) {
+          setAppState(prev => ({ ...prev, detectedSplit: data.split }))
+          setScreen('resume-prompt')
+          return
+        }
+      } catch {
+        // Notion unreachable — proceed normally
+      }
+
+      setScreen('home')
+    }
+    detect()
   }, [])
 
   const handleSessionBack = useCallback((
@@ -72,8 +117,6 @@ export default function App() {
     navigate('pre-save')
   }, [updateState, navigate])
 
-  // Diff-and-sync: compare confirmed logs against auto-save snapshot.
-  // Changed sets → PATCH. New sets (not in snapshot) → POST. Unchanged → no-op.
   async function handleSaveSession(logs: ExerciseLog[]) {
     const today = new Date().toISOString().split('T')[0]
     const snapshot = appState.savedSnapshot
@@ -90,7 +133,6 @@ export default function App() {
         const prior = snapshot[key]
 
         if (prior) {
-          // Check if anything changed
           const weightChanged = set.weight !== prior.weight
           const repsChanged = set.reps !== prior.reps
           const notesChanged = (exLog.notes ?? '') !== prior.notes
@@ -109,9 +151,8 @@ export default function App() {
               })
             )
           }
-          // If nothing changed — no-op, row already exists in Notion
         } else {
-          // Set was added after auto-save (e.g. user added extra set in pre-save)
+          const planItem = appState.plan?.find(p => p.exercise.notionName === exLog.notionName)
           newEntries.push({
             exercise: exLog.notionName,
             date: today,
@@ -121,6 +162,7 @@ export default function App() {
             reps: set.reps,
             entry: `${exLog.notionName} — Set ${si + 1}`,
             notes: exLog.notes || undefined,
+            unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
           })
         }
       }
@@ -142,18 +184,56 @@ export default function App() {
       console.error('Save failed:', e)
     }
 
+    clearSessionFromStorage()
     updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
     navigate('session-summary')
   }
 
+  // Resume a detected localStorage session
+  function handleResume() {
+    const s = appState.detectedSession
+    if (!s) return
+    updateState({
+      split: s.split,
+      savedLogs: s.logs,
+      savedExIdx: s.exIdx,
+      savedSnapshot: s.snapshot,
+    })
+    // Need coaching context + plan — go through coaching screen first
+    navigate('coaching-context')
+  }
+
+  // Start fresh — clear stored session, go to split selection
+  function handleStartFresh() {
+    clearSessionFromStorage()
+    updateState({ detectedSession: null, detectedSplit: null })
+    navigate('home')
+  }
+
   return (
     <div style={{ background: 'var(--bg)', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+
+      {screen === 'detecting' && (
+        <LoadingScreen message="Checking today's session..." />
+      )}
+
+      {screen === 'resume-prompt' && (
+        <ResumePromptScreen
+          detectedSession={appState.detectedSession}
+          detectedSplit={appState.detectedSplit}
+          onResume={handleResume}
+          onFresh={handleStartFresh}
+          onSettings={() => navigate('manage-weights')}
+        />
+      )}
+
       {screen === 'home' && (
         <HomeScreen
           onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
           onSettings={() => navigate('manage-weights')}
         />
       )}
+
       {screen === 'coaching-context' && appState.split && (
         <CoachingContextScreen
           split={appState.split}
@@ -164,6 +244,7 @@ export default function App() {
           onBack={goHome}
         />
       )}
+
       {screen === 'workout-overview' && appState.plan && appState.split && (
         <WorkoutOverviewScreen
           split={appState.split}
@@ -174,6 +255,7 @@ export default function App() {
           onBack={() => navigate('coaching-context')}
         />
       )}
+
       {screen === 'active-session' && appState.plan && appState.split && (
         <ActiveSessionScreen
           split={appState.split}
@@ -185,6 +267,7 @@ export default function App() {
           onBack={handleSessionBack}
         />
       )}
+
       {screen === 'pre-save' && appState.plan && appState.split && (
         <PreSaveSummaryScreen
           split={appState.split}
@@ -194,6 +277,7 @@ export default function App() {
           onBack={() => navigate('active-session')}
         />
       )}
+
       {screen === 'session-summary' && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
         <SessionSummaryScreen
           split={appState.split}
@@ -203,6 +287,7 @@ export default function App() {
           onDone={goHome}
         />
       )}
+
       {screen === 'manage-weights' && (
         <ManageWeightsScreen onBack={goHome} />
       )}

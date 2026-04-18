@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
+import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/NumberPad'
 
 interface ActiveSessionScreenProps {
@@ -469,6 +470,18 @@ export default function ActiveSessionScreen({
   const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
   const activeUnit = unitOverrides[currentExIdx] ?? defaultUnit
 
+  // Persist session to localStorage on every change for resume detection
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0]
+    saveSessionToStorage({
+      date: today,
+      split,
+      exIdx: currentExIdx,
+      logs,
+      snapshot: snapshot.current,
+    })
+  }, [logs, currentExIdx, split])
+
   const [showSaved, setShowSaved] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -503,6 +516,7 @@ export default function ActiveSessionScreen({
         reps: set.reps,
         entry: `${ex.notionName} — Set ${si + 1}`,
         notes: ex.notes || undefined,
+        unit: (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
       })
       setIndices.push(si + 1)  // 1-indexed set number
     }
@@ -716,7 +730,7 @@ export default function ActiveSessionScreen({
           {currentEx.exerciseName}
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)' }}>
+          <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--text-mid)' }}>
             {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} reps
           </span>
           <button
@@ -835,7 +849,7 @@ export default function ActiveSessionScreen({
                     }}
                   >
                     <span className="section-label">REPS</span>
-                    <span className="font-display" style={{ fontSize: '3.2rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                    <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
                       {set.reps > 0 ? set.reps : '—'}
                     </span>
                   </button>

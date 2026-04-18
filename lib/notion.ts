@@ -13,6 +13,7 @@ export interface NotionEntry {
   reps: number
   entry: string
   notes?: string
+  unit?: 'Lbs' | 'Pins'
 }
 
 export interface SessionRecord {
@@ -200,6 +201,9 @@ export async function writeSessionEntry(entry: NotionEntry): Promise<string> {
   }
   if (entry.notes) {
     properties['Notes'] = { rich_text: [{ text: { content: entry.notes } }] }
+  }
+  if (entry.unit) {
+    properties['Unit'] = { select: { name: entry.unit } }
   }
   const page = await notion.pages.create({
     parent: { database_id: DATABASE_ID },

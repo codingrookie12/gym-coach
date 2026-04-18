@@ -31,7 +31,7 @@ export default function HomeScreen({ onSelectSplit, onSettings }: HomeScreenProp
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v2
+            v3
           </span>
         </div>
         <button
@@ -137,11 +137,9 @@ export default function HomeScreen({ onSelectSplit, onSettings }: HomeScreenProp
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
           SELECT SPLIT TO BEGIN
         </span>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--border-2)' }} />
-          ))}
-        </div>
+        <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.1em' }}>
+          PUSH · PULL · LEGS
+        </span>
       </div>
     </div>
   )
