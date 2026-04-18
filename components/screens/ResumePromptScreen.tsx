@@ -137,7 +137,7 @@ export default function ResumePromptScreen({
         style={{ paddingTop: '12px', borderTop: '1px solid var(--border)' }}
       >
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
-          TODAY'S SESSION
+          TODAY&apos;S SESSION
         </span>
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.1em' }}>
           PUSH · PULL · LEGS

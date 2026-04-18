@@ -544,7 +544,7 @@ export default function ActiveSessionScreen({
         flashSaved()
       })
       .catch(e => console.error('Auto-save failed:', e))
-  }, [logs, currentExIdx, split])
+  }, [logs, currentExIdx, split, exerciseDef])
 
   function toggleUnit() {
     setUnitOverrides(prev => ({
