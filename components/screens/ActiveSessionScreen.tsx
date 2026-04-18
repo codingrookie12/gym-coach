@@ -830,7 +830,7 @@ export default function ActiveSessionScreen({
                     </div>
                   </button>
 
-                  {/* Reps — bigger touch target */}
+                  {/* Reps */}
                   <button
                     onClick={() => openRepPad(i)}
                     className="reps-btn"
@@ -838,18 +838,20 @@ export default function ActiveSessionScreen({
                       background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
                       border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
                       borderRadius: '2px',
-                      padding: '10px 16px',
+                      padding: '0 16px',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px',
+                      justifyContent: 'space-between',
+                      gap: 0,
                       minWidth: '72px',
+                      alignSelf: 'stretch',
                       transition: 'all 0.15s',
                     }}
                   >
-                    <span className="section-label">REPS</span>
-                    <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                    <span className="section-label" style={{ paddingTop: '2px' }}>REPS</span>
+                    <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em', paddingBottom: '2px' }}>
                       {set.reps > 0 ? set.reps : '—'}
                     </span>
                   </button>

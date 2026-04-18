@@ -31,7 +31,7 @@ export default function HomeScreen({ onSelectSplit, onSettings }: HomeScreenProp
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v3
+            v3.1
           </span>
         </div>
         <button
