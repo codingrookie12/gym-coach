@@ -184,7 +184,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                             {w !== null && w !== undefined ? `${w}` : '—'}
                           </span>
                           {w !== null && w !== undefined && (
-                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>lbs</span>
+                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{ex.weightUnit === 'pins' ? 'pins' : 'lbs'}</span>
                           )}
                           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--border-2)', marginLeft: '6px' }}>
                             ✎

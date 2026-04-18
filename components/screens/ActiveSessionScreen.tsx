@@ -838,13 +838,13 @@ export default function ActiveSessionScreen({
                       background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
                       border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
                       borderRadius: '2px',
-                      padding: '16px 28px',
+                      padding: '10px 16px',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '4px',
-                      minWidth: '100px',
+                      minWidth: '72px',
                       transition: 'all 0.15s',
                     }}
                   >
