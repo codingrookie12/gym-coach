@@ -293,16 +293,9 @@ function CustomAddForm({ onClose }: { onClose: () => void }) {
         </p>
         <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '2px', padding: '12px 16px', marginBottom: '20px' }}>
           <div className="section-label" style={{ marginBottom: '6px' }}>Format</div>
-          <div className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-mid)', lineHeight: 1.7 }}>
-            {"{"}<br />
-            &nbsp;&nbsp;"id": "custom-[slug]",<br />
-            &nbsp;&nbsp;"name": "[Equipment] [Movement] [Modifier]",<br />
-            &nbsp;&nbsp;"equipment": "Cable | Barbell | ...",<br />
-            &nbsp;&nbsp;"primaryMuscles": ["Biceps"],<br />
-            &nbsp;&nbsp;"split": "Pull | Push | Legs | null",<br />
-            &nbsp;&nbsp;"isCustom": true<br />
-            {"}"}
-          </div>
+          <pre className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-mid)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+            {`{\n  "id": "custom-[slug]",\n  "name": "[Equipment] [Movement] [Modifier]",\n  "equipment": "Cable | Barbell | ...",\n  "primaryMuscles": ["Biceps"],\n  "split": "Pull | Push | Legs | null",\n  "isCustom": true\n}`}
+          </pre>
         </div>
         <button onClick={onClose} className="btn-secondary">CLOSE</button>
       </div>
