@@ -5,7 +5,7 @@ export interface Exercise {
   notionName: string  // Exact name as stored in the Notion DB Exercise select field
   sets: number
   repRange: [number, number]
-  backup: string
+  backup: string | null
   split: Split
   weightConvention?: string
   availableWeights?: number[]
@@ -50,32 +50,32 @@ const HACK_PRESS = [25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145]
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PUSH_ROUTINE: Exercise[] = [
-  { name: 'Bench Press',                              notionName: 'Bench press',           sets: 3, repRange: [6, 8],   backup: 'Dumbbell Chest Press',             split: 'Push', availableWeights: BARBELL },
-  { name: 'Incline Dumbbell Press',                   notionName: 'Dumbbell incline press', sets: 3, repRange: [8, 10],  backup: 'Machine Chest Press Incline',       split: 'Push', availableWeights: DB },
-  { name: 'Seated Cable Fly',                         notionName: 'Chest fly',              sets: 3, repRange: [12, 12], backup: 'Dumbbell Incline Flies',             split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Shoulder Press',                           notionName: 'Shoulder press',         sets: 3, repRange: [8, 10],  backup: 'Machine Shoulder Press',            split: 'Push', availableWeights: DB },
-  { name: 'Lateral Raise',                            notionName: 'Lateral Raise',          sets: 3, repRange: [12, 12], backup: 'Cable Lateral Raise Single Arm',     split: 'Push', availableWeights: DB },
-  { name: 'Facepull',                                 notionName: 'Facepull',               sets: 3, repRange: [12, 15], backup: 'Rear Delt Fly Machine',              split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Tricep Pushdown (rope)',                   notionName: 'Tricep vertical rope',   sets: 3, repRange: [10, 12], backup: 'Tricep Pushdown Bar',                split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Single-Arm Overhead Tricep Extension (cable)', notionName: 'Tricep iso behind head', sets: 3, repRange: [10, 12], backup: 'Dumbbell Overhead Tricep Extension', split: 'Push', availableWeights: CABLE_LIGHT },
+  { name: 'Barbell Bench Press - Medium Grip',             notionName: 'Barbell Bench Press - Medium Grip',    sets: 3, repRange: [6, 8],   backup: 'Dumbbell Bench Press',              split: 'Push', availableWeights: BARBELL },
+  { name: 'Incline Dumbbell Press',                        notionName: 'Incline Dumbbell Press',               sets: 3, repRange: [8, 10],  backup: 'Leverage Incline Chest Press',       split: 'Push', availableWeights: DB },
+  { name: 'Seated Cable Fly',                              notionName: 'Seated Cable Fly',                     sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Flyes',             split: 'Push', availableWeights: CABLE_FULL },
+  { name: 'Dumbbell Shoulder Press',                       notionName: 'Dumbbell Shoulder Press',              sets: 3, repRange: [8, 10],  backup: 'Leverage Shoulder Press',           split: 'Push', availableWeights: DB },
+  { name: 'Side Lateral Raise',                            notionName: 'Side Lateral Raise',                   sets: 3, repRange: [12, 12], backup: null,                                split: 'Push', availableWeights: DB },
+  { name: 'Face Pull',                                     notionName: 'Face Pull',                            sets: 3, repRange: [12, 15], backup: 'Reverse Machine Flyes',              split: 'Push', availableWeights: CABLE_FULL },
+  { name: 'Triceps Pushdown - Rope Attachment',            notionName: 'Triceps Pushdown - Rope Attachment',   sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - V-bar Attachment', split: 'Push', availableWeights: CABLE_FULL },
+  { name: 'Cable Rope Overhead Triceps Extension',         notionName: 'Cable Rope Overhead Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', split: 'Push', availableWeights: CABLE_LIGHT },
 ]
 
 export const PULL_ROUTINE: Exercise[] = [
-  { name: 'Cable Pulldown (bar)',                     notionName: 'Pulldown bar cable',              sets: 3, repRange: [8, 10],  backup: 'Assisted Pull-Up',          split: 'Pull', availableWeights: CABLE_HEAVY },
-  { name: 'Cable Row (wide grip)',                    notionName: 'Row cable wide grip',             sets: 3, repRange: [8, 10],  backup: 'Dumbbell Single-Arm Row',   split: 'Pull', availableWeights: CABLE_HEAVY },
-  { name: 'Cable Curl (EZ bar)',                      notionName: 'Cable Curl (EZ bar)',             sets: 3, repRange: [10, 12], backup: 'EZ Bar Curl',                split: 'Pull', availableWeights: CABLE_FULL },
-  { name: 'Rope Iso Curl From Below (single arm)',    notionName: 'Rope iso curl from below',        sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Curl',      split: 'Pull', availableWeights: CABLE_LIGHT },
-  { name: 'Single-Arm Preacher Hammer Curl',          notionName: 'Single-Arm Preacher Hammer Curl', sets: 3, repRange: [10, 12], backup: 'Cable Hammer Curl',          split: 'Pull', availableWeights: DB },
-  { name: 'Forearm Behind Back',                      notionName: 'Forearm behind back',             sets: 3, repRange: [15, 15], backup: 'Wrist Curl',                 split: 'Pull', availableWeights: CABLE_FULL },
+  { name: 'Cable Lat Pulldown',                                        notionName: 'Cable Lat Pulldown',                                    sets: 3, repRange: [8, 10],  backup: 'Band Assisted Pull-up',                         split: 'Pull', availableWeights: CABLE_HEAVY },
+  { name: 'Cable Seated Row (Wide Grip)',                               notionName: 'Cable Seated Row (Wide Grip)',                           sets: 3, repRange: [8, 10],  backup: 'One-arm Dumbbell Row',                          split: 'Pull', availableWeights: CABLE_HEAVY },
+  { name: 'Standing Biceps Cable Curl',                                 notionName: 'Standing Biceps Cable Curl',                             sets: 3, repRange: [10, 12], backup: 'Ez-bar Curl',                                    split: 'Pull', availableWeights: CABLE_FULL },
+  { name: 'Standing One-arm Cable Curl',                                notionName: 'Standing One-arm Cable Curl',                            sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Curl',                          split: 'Pull', availableWeights: CABLE_LIGHT },
+  { name: 'Preacher Hammer Dumbbell Curl',                              notionName: 'Preacher Hammer Dumbbell Curl',                          sets: 3, repRange: [10, 12], backup: 'Cable Hammer Curls - Rope Attachment',            split: 'Pull', availableWeights: DB },
+  { name: 'Standing Palms-up Barbell Behind the Back Wrist Curl',       notionName: 'Standing Palms-up Barbell Behind the Back Wrist Curl',   sets: 3, repRange: [15, 15], backup: 'Seated Palm-up Barbell Wrist Curl',              split: 'Pull', availableWeights: BARBELL },
 ]
 
 export const LEGS_ROUTINE: Exercise[] = [
-  { name: 'Linear Hack Press or Squat', notionName: 'Linear Hack Press or Squat', sets: 3, repRange: [8, 10],  backup: 'Standing Hack Squat Machine', split: 'Legs', availableWeights: HACK_PRESS },
-  { name: 'Leg Press Pendular',         notionName: 'Leg press pendular',         sets: 3, repRange: [10, 12], backup: 'Linear Hack Press',           split: 'Legs', availableWeights: LEG_PRESS, weightConvention: 'per side' },
-  { name: 'Leg Extension',              notionName: 'Leg extension',              sets: 3, repRange: [12, 12], backup: 'Single-Leg Extension',         split: 'Legs', availableWeights: LEG_EXT },
-  { name: 'Seated Leg Curl',            notionName: 'Seated Leg Curl',            sets: 3, repRange: [10, 12], backup: 'Prone Leg Curl',               split: 'Legs', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
-  { name: 'Romanian Deadlift',          notionName: 'Romanian deadlift',          sets: 3, repRange: [10, 12], backup: 'Good Morning',                 split: 'Legs', availableWeights: RDL },
-  { name: 'Standing Calf Raise',        notionName: 'Standing Calf Raise',        sets: 3, repRange: [15, 20], backup: 'Seated Calf Raise',            split: 'Legs', availableWeights: CALF_RAISE },
+  { name: 'Linear Hack Press',    notionName: 'Linear Hack Press',    sets: 3, repRange: [8, 10],  backup: 'Hack Squat',          split: 'Legs', availableWeights: HACK_PRESS },
+  { name: 'Leg Press',            notionName: 'Leg Press',            sets: 3, repRange: [10, 12], backup: 'Linear Hack Press',   split: 'Legs', availableWeights: LEG_PRESS, weightConvention: 'per side' },
+  { name: 'Leg Extensions',       notionName: 'Leg Extensions',       sets: 3, repRange: [12, 12], backup: 'Single-leg Leg Extension', split: 'Legs', availableWeights: LEG_EXT },
+  { name: 'Seated Leg Curl',      notionName: 'Seated Leg Curl',      sets: 3, repRange: [10, 12], backup: 'Lying Leg Curls',     split: 'Legs', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
+  { name: 'Romanian Deadlift',    notionName: 'Romanian Deadlift',    sets: 3, repRange: [10, 12], backup: 'Stiff-legged Barbell Deadlift', split: 'Legs', availableWeights: RDL },
+  { name: 'Standing Calf Raises', notionName: 'Standing Calf Raises', sets: 3, repRange: [15, 20], backup: 'Seated Calf Raise',   split: 'Legs', availableWeights: CALF_RAISE },
 ]
 
 export function getRoutine(split: Split): Exercise[] {

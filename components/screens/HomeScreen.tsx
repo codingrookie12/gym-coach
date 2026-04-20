@@ -5,6 +5,7 @@ import { Split } from '@/lib/routines'
 interface HomeScreenProps {
   onSelectSplit: (split: Split) => void
   onSettings: () => void
+  onLibrary: () => void
 }
 
 const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
@@ -13,7 +14,7 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-export default function HomeScreen({ onSelectSplit, onSettings }: HomeScreenProps) {
+export default function HomeScreen({ onSelectSplit, onSettings, onLibrary }: HomeScreenProps) {
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
 
@@ -34,30 +35,56 @@ export default function HomeScreen({ onSelectSplit, onSettings }: HomeScreenProp
             v3.1
           </span>
         </div>
-        <button
-          onClick={onSettings}
-          style={{
-            background: 'none',
-            border: '1px solid var(--border-2)',
-            borderRadius: '2px',
-            padding: '7px 12px',
-            color: 'var(--text-mid)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontFamily: 'Bebas Neue, sans-serif',
-            fontSize: '0.95rem',
-            letterSpacing: '0.1em',
-            transition: 'border-color 0.12s, color 0.12s',
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-          WEIGHTS
-        </button>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            onClick={onLibrary}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border-2)',
+              borderRadius: '2px',
+              padding: '7px 12px',
+              color: 'var(--text-mid)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: '0.95rem',
+              letterSpacing: '0.1em',
+              transition: 'border-color 0.12s, color 0.12s',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            LIBRARY
+          </button>
+          <button
+            onClick={onSettings}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border-2)',
+              borderRadius: '2px',
+              padding: '7px 12px',
+              color: 'var(--text-mid)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: '0.95rem',
+              letterSpacing: '0.1em',
+              transition: 'border-color 0.12s, color 0.12s',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            WEIGHTS
+          </button>
+        </div>
       </div>
 
       {/* Split selectors */}

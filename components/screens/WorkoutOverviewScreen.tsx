@@ -124,7 +124,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                 </div>
 
                 {/* Backup row */}
-                {isSwapped && (
+                {isSwapped && item.exercise.backup && (
                   <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className="section-label">BACKUP:</span>
                     <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400 }}>

@@ -13,7 +13,7 @@ export interface SetLog {
 export interface ExerciseLog {
   exerciseName: string
   notionName: string  // Exact name used in Notion DB Exercise select field
-  backupName: string
+  backupName: string | null
   sets: SetLog[]
   notes?: string
 }

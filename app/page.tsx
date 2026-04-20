@@ -9,6 +9,7 @@ import ActiveSessionScreen from '@/components/screens/ActiveSessionScreen'
 import PreSaveSummaryScreen from '@/components/screens/PreSaveSummaryScreen'
 import SessionSummaryScreen from '@/components/screens/SessionSummaryScreen'
 import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
+import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import { Split } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
@@ -21,8 +22,8 @@ import {
 } from '@/lib/sessionStorage'
 
 export type Screen =
-  | 'detecting'        // checking localStorage + Notion on first load
-  | 'resume-prompt'    // found unfinished session → ask resume or fresh
+  | 'detecting'          // checking localStorage + Notion on first load
+  | 'resume-prompt'      // found unfinished session → ask resume or fresh
   | 'home'
   | 'coaching-context'
   | 'workout-overview'
@@ -30,6 +31,7 @@ export type Screen =
   | 'pre-save'
   | 'session-summary'
   | 'manage-weights'
+  | 'exercise-library'
 
 export interface AppState {
   split: Split | null
@@ -231,6 +233,7 @@ export default function App() {
         <HomeScreen
           onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
           onSettings={() => navigate('manage-weights')}
+          onLibrary={() => navigate('exercise-library')}
         />
       )}
 
@@ -290,6 +293,10 @@ export default function App() {
 
       {screen === 'manage-weights' && (
         <ManageWeightsScreen onBack={goHome} />
+      )}
+
+      {screen === 'exercise-library' && (
+        <ExerciseLibraryScreen onBack={goHome} />
       )}
     </div>
   )

@@ -617,6 +617,7 @@ export default function ActiveSessionScreen({
     setLogs(prev => {
       const next = [...prev]
       const ex = { ...next[currentExIdx] }
+      if (!ex.backupName) return prev
       const prevPrimary = ex.exerciseName
       ex.exerciseName = ex.backupName
       ex.backupName = prevPrimary
@@ -739,9 +740,11 @@ export default function ActiveSessionScreen({
           >
             {activeUnit.toUpperCase()}
           </button>
-          <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
-            {swapShown ? 'HIDE' : 'SWAP'}
-          </button>
+          {currentEx.backupName && (
+            <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
+              {swapShown ? 'HIDE' : 'SWAP'}
+            </button>
+          )}
           <button
             onClick={skipExercise}
             style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}

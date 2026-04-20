@@ -1,55 +1,8 @@
 import { Split, Exercise, getRoutine } from './routines'
 import { SessionRecord } from './notion'
 
-// Maps canonical routine names → all known Notion aliases (case-insensitive)
-// Read-only — only affects coaching analysis, never writes
-const EXERCISE_ALIASES: Record<string, string[]> = {
-  'Cable Pulldown (bar)': ['pulldown bar cable', 'cable pulldown', 'pulldown cable', 'lat pulldown', 'mts front pulldown'],
-  'Cable Row (wide grip)': ['row cable wide grip', 'cable row wide', 'wide grip row', 'cable row wide grip'],
-  'Cable Row (close grip)': ['row cable close grip', 'cable row close', 'close grip row', 'cable row close grip'],
-  'Cable Curl (EZ bar)': ['cable curl (ez bar) — wide grip', 'cable curl (ez bar) — close grip', 'bicep ez bar', 'ez bar curl', 'cable curl ez bar', 'bicep curl ez bar'],
-  'Rope Iso Curl From Below (single arm)': ['rope iso curl from below', 'rope iso curl', 'iso curl from below'],
-  'Single-Arm Preacher Hammer Curl': ['single-arm preacher hammer curl', 'preacher hammer curl'],
-  'Forearm Behind Back': ['forearm behind back'],
-  'Bench Press': ['bench press', 'barbell bench press'],
-  'Incline Dumbbell Press': ['incline dumbbell press', 'dumbbell incline press', 'dumbbell incline press'],
-  'Seated Cable Fly': ['seated cable fly', 'cable fly', 'chest fly'],
-  'Shoulder Press': ['shoulder press', 'overhead press', 'barbell shoulder press'],
-  'Lateral Raise': ['lateral raise', 'side lateral raise'],
-  'Facepull': ['facepull', 'face pull'],
-  'Tricep Pushdown (rope)': ['tricep pushdown (rope)', 'tricep rope pushdown', 'rope pushdown', 'tricep vertical rope'],
-  'Single-Arm Overhead Tricep Extension (cable)': ['single-arm overhead tricep extension', 'overhead tricep extension', 'cable overhead tricep', 'tricep iso behind head'],
-  'Linear Hack Press or Squat': ['linear hack press or squat', 'linear hack press', 'hack press', 'hack squat', 'squat'],
-  'Leg Press Pendular': ['leg press', 'pendular leg press', 'leg press pendular'],
-  'Leg Extension': ['leg extension'],
-  'Seated Leg Curl': ['seated leg curl', 'leg curl', 'lying leg curl'],
-  'Romanian Deadlift': ['romanian deadlift', 'rdl', 'dumbbell rdl'],
-  'Standing Calf Raise': ['standing calf raise', 'calf raise'],
-}
-
-function normalizeExerciseName(name: string): string {
-  return name.toLowerCase().trim()
-}
-
 function matchesExercise(notionName: string, routineName: string): boolean {
-  const normalized = normalizeExerciseName(notionName)
-  const routineNorm = normalizeExerciseName(routineName)
-
-  // Exact match
-  if (normalized === routineNorm) return true
-
-  // Check alias map
-  const aliases = EXERCISE_ALIASES[routineName]
-  if (aliases) {
-    for (const alias of aliases) {
-      if (normalized === alias.toLowerCase() || normalized.includes(alias.toLowerCase())) return true
-    }
-  }
-
-  // Fallback: routine name words all present in notion name
-  const routineWords = routineNorm.replace(/[^a-z0-9 ]/g, '').split(' ').filter(w => w.length > 2)
-  const matchCount = routineWords.filter(w => normalized.includes(w)).length
-  return matchCount >= Math.ceil(routineWords.length * 0.7)
+  return notionName === routineName
 }
 
 export interface CoachingFlag {
@@ -104,12 +57,8 @@ export function analyzeCoaching(
   if (split === 'Pull') {
     for (const session of sessions) {
       const keys = Object.keys(session.exercises)
-      const wideFound = keys.find(k =>
-        matchesExercise(k, 'Cable Row (wide grip)') && !matchesExercise(k, 'Cable Row (close grip)')
-      )
-      const closeFound = keys.find(k =>
-        matchesExercise(k, 'Cable Row (close grip)') && !matchesExercise(k, 'Cable Row (wide grip)')
-      )
+      const wideFound = keys.find(k => k === 'Cable Seated Row (Wide Grip)')
+      const closeFound = keys.find(k => k === 'Cable Seated Row (Close Grip)')
       if (wideFound) { cableRowVariant = 'close grip'; break }
       if (closeFound) { cableRowVariant = 'wide grip'; break }
     }
@@ -119,8 +68,8 @@ export function analyzeCoaching(
   const plan: ExercisePlan[] = routine.map(exercise => {
     // Handle Pull day cable row swap
     let exerciseName = exercise.name
-    if (split === 'Pull' && exercise.name === 'Cable Row (wide grip)') {
-      exerciseName = `Cable Row (${cableRowVariant})`
+    if (split === 'Pull' && exercise.name === 'Cable Seated Row (Wide Grip)') {
+      exerciseName = `Cable Seated Row (${cableRowVariant === 'wide grip' ? 'Wide Grip' : 'Close Grip'})`
     }
 
     // Gather per-exercise history across sessions
