@@ -161,13 +161,6 @@ export default function CoachingContextScreen({
             </p>
           </div>
 
-          {/* Cable row variant */}
-          {split === 'Pull' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0' }}>
-              <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Cable Row variant:</span>
-              <span className="tag accent">{ctx.cableRowVariant.toUpperCase()}</span>
-            </div>
-          )}
         </div>
       </div>
 

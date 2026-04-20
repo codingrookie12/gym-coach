@@ -19,7 +19,6 @@ export interface CoachingContext {
   focusCue: string
   recoveryGap: number | null // days since last session
   deloadRecommended: boolean
-  cableRowVariant: 'wide grip' | 'close grip'
 }
 
 export interface ExercisePlan {
@@ -44,7 +43,6 @@ export function analyzeCoaching(
   const flags: CoachingFlag[] = []
   const trending: string[] = []
   let deloadRecommended = false
-  let cableRowVariant: 'wide grip' | 'close grip' = 'wide grip'
 
   // Recovery gap check
   let recoveryGap: number | null = null
@@ -53,24 +51,8 @@ export function analyzeCoaching(
     recoveryGap = daysBetween(today, lastSession.date)
   }
 
-  // Pull day: Cable Row alternation
-  if (split === 'Pull') {
-    for (const session of sessions) {
-      const keys = Object.keys(session.exercises)
-      const wideFound = keys.find(k => k === 'Cable Seated Row (Wide Grip)')
-      const closeFound = keys.find(k => k === 'Cable Seated Row (Close Grip)')
-      if (wideFound) { cableRowVariant = 'close grip'; break }
-      if (closeFound) { cableRowVariant = 'wide grip'; break }
-    }
-  }
-
-
   const plan: ExercisePlan[] = routine.map(exercise => {
-    // Handle Pull day cable row swap
     let exerciseName = exercise.name
-    if (split === 'Pull' && exercise.name === 'Cable Seated Row (Wide Grip)') {
-      exerciseName = `Cable Seated Row (${cableRowVariant === 'wide grip' ? 'Wide Grip' : 'Close Grip'})`
-    }
 
     // Gather per-exercise history across sessions
     const exerciseSessions: { date: string; sets: { weight: number; reps: number }[] }[] = []
@@ -222,7 +204,6 @@ export function analyzeCoaching(
     focusCue,
     recoveryGap,
     deloadRecommended,
-    cableRowVariant,
   }
 
   return { context, plan }

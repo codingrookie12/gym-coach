@@ -57,14 +57,14 @@ export const PUSH_ROUTINE: Exercise[] = [
   { name: 'Side Lateral Raise',                            notionName: 'Side Lateral Raise',                   sets: 3, repRange: [12, 12], backup: null,                                split: 'Push', availableWeights: DB },
   { name: 'Face Pull',                                     notionName: 'Face Pull',                            sets: 3, repRange: [12, 15], backup: 'Reverse Machine Flyes',              split: 'Push', availableWeights: CABLE_FULL },
   { name: 'Triceps Pushdown - Rope Attachment',            notionName: 'Triceps Pushdown - Rope Attachment',   sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - V-bar Attachment', split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Cable Rope Overhead Triceps Extension',         notionName: 'Cable Rope Overhead Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', split: 'Push', availableWeights: CABLE_LIGHT },
+  { name: 'Standing Low-Pulley One-Arm Triceps Extension', notionName: 'Standing Low-Pulley One-Arm Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', split: 'Push', availableWeights: CABLE_LIGHT },
 ]
 
 export const PULL_ROUTINE: Exercise[] = [
-  { name: 'Cable Lat Pulldown',                                        notionName: 'Cable Lat Pulldown',                                    sets: 3, repRange: [8, 10],  backup: 'Band Assisted Pull-up',                         split: 'Pull', availableWeights: CABLE_HEAVY },
-  { name: 'Cable Seated Row (Wide Grip)',                               notionName: 'Cable Seated Row (Wide Grip)',                           sets: 3, repRange: [8, 10],  backup: 'One-arm Dumbbell Row',                          split: 'Pull', availableWeights: CABLE_HEAVY },
+  { name: 'Wide-grip Lat Pulldown',                                     notionName: 'Wide-grip Lat Pulldown',                                sets: 3, repRange: [8, 10],  backup: 'Band Assisted Pull-up',                         split: 'Pull', availableWeights: CABLE_HEAVY },
+  { name: 'Seated Cable Rows',                                          notionName: 'Seated Cable Rows',                                     sets: 3, repRange: [8, 10],  backup: 'One-arm Dumbbell Row',                          split: 'Pull', availableWeights: CABLE_HEAVY },
   { name: 'Standing Biceps Cable Curl',                                 notionName: 'Standing Biceps Cable Curl',                             sets: 3, repRange: [10, 12], backup: 'Ez-bar Curl',                                    split: 'Pull', availableWeights: CABLE_FULL },
-  { name: 'Standing One-arm Cable Curl',                                notionName: 'Standing One-arm Cable Curl',                            sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Curl',                          split: 'Pull', availableWeights: CABLE_LIGHT },
+  { name: 'Cable Curl (Low Pulley)',                                    notionName: 'Cable Curl (Low Pulley)',                                sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Curl',                          split: 'Pull', availableWeights: CABLE_LIGHT },
   { name: 'Preacher Hammer Dumbbell Curl',                              notionName: 'Preacher Hammer Dumbbell Curl',                          sets: 3, repRange: [10, 12], backup: 'Cable Hammer Curls - Rope Attachment',            split: 'Pull', availableWeights: DB },
   { name: 'Standing Palms-up Barbell Behind the Back Wrist Curl',       notionName: 'Standing Palms-up Barbell Behind the Back Wrist Curl',   sets: 3, repRange: [15, 15], backup: 'Seated Palm-up Barbell Wrist Curl',              split: 'Pull', availableWeights: BARBELL },
 ]

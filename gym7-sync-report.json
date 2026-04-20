@@ -1,0 +1,24 @@
+{
+  "runAt": "2026-04-20T01:20:17.847Z",
+  "dryRun": false,
+  "totalRows": 456,
+  "blankRows": 3,
+  "patched": [],
+  "flagged": [
+    {
+      "id": "176669b9-593c-4f09-af11-b039348639c8",
+      "entry": "(empty)",
+      "reason": "No Entry value — cannot resolve"
+    },
+    {
+      "id": "0f2a4025-ab51-4241-95a8-be6ea7c4011e",
+      "entry": "(empty)",
+      "reason": "No Entry value — cannot resolve"
+    },
+    {
+      "id": "167fdeff-ce63-4eb1-b298-a512a2703fe4",
+      "entry": "(empty)",
+      "reason": "No Entry value — cannot resolve"
+    }
+  ]
+}
