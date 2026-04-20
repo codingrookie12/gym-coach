@@ -52,7 +52,7 @@ export function analyzeCoaching(
   }
 
   const plan: ExercisePlan[] = routine.map(exercise => {
-    let exerciseName = exercise.name
+    const exerciseName = exercise.name
 
     // Gather per-exercise history across sessions
     const exerciseSessions: { date: string; sets: { weight: number; reps: number }[] }[] = []
