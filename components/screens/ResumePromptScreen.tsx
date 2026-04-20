@@ -40,7 +40,7 @@ export default function ResumePromptScreen({
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v3.1
+            v3.3
           </span>
         </div>
         <button
