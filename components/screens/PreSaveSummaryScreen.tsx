@@ -22,6 +22,7 @@ export default function PreSaveSummaryScreen({
   const [logs, setLogs] = useState<ExerciseLog[]>(initialLogs)
   const [editTarget, setEditTarget] = useState<EditTarget>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(false)
 
   function openEdit(exIdx: number, setIdx: number, field: 'weight' | 'reps') {
     setEditTarget({ exIdx, setIdx, field })
@@ -42,8 +43,13 @@ export default function PreSaveSummaryScreen({
 
   async function handleSave() {
     setSaving(true)
-    await onSave(logs)
-    setSaving(false)
+    setSaveError(false)
+    try {
+      await onSave(logs)
+    } catch {
+      setSaveError(true)
+      setSaving(false)
+    }
   }
 
   const totalCompleted = logs.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0)
@@ -146,13 +152,18 @@ export default function PreSaveSummaryScreen({
 
       {/* Save CTA */}
       <div className="safe-bottom px-5" style={{ paddingTop: '14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        {saveError && (
+          <p style={{ color: 'var(--rust)', fontFamily: 'Space Mono, monospace', fontSize: '0.75rem', margin: '0 0 10px 0', textAlign: 'center' }}>
+            SAVE FAILED — check your connection and try again
+          </p>
+        )}
         <button
           onClick={handleSave}
           disabled={saving}
           className="btn-primary"
           style={{ opacity: saving ? 0.6 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}
         >
-          {saving ? 'SAVING...' : 'SAVE SESSION →'}
+          {saving ? 'SAVING...' : saveError ? 'RETRY SAVE →' : 'SAVE SESSION →'}
         </button>
       </div>
 

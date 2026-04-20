@@ -170,21 +170,17 @@ export default function App() {
       }
     }
 
-    try {
-      const ops: Promise<any>[] = [...patchPromises]
-      if (newEntries.length > 0) {
-        ops.push(
-          fetch('/api/session/write', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entries: newEntries }),
-          })
-        )
-      }
-      await Promise.all(ops)
-    } catch (e) {
-      console.error('Save failed:', e)
+    const ops: Promise<any>[] = [...patchPromises]
+    if (newEntries.length > 0) {
+      ops.push(
+        fetch('/api/session/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entries: newEntries }),
+        })
+      )
     }
+    await Promise.all(ops)
 
     clearSessionFromStorage()
     updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
