@@ -50,7 +50,7 @@ const HACK_PRESS = [25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145]
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PUSH_ROUTINE: Exercise[] = [
-  { name: 'Barbell Bench Press - Medium Grip',             notionName: 'Barbell Bench Press - Medium Grip',    sets: 3, repRange: [6, 8],   backup: 'Dumbbell Bench Press',              split: 'Push', availableWeights: BARBELL },
+  { name: 'Wide-grip Barbell Bench Press',                  notionName: 'Wide-grip Barbell Bench Press',        sets: 3, repRange: [6, 8],   backup: 'Dumbbell Bench Press',              split: 'Push', availableWeights: BARBELL },
   { name: 'Incline Dumbbell Press',                        notionName: 'Incline Dumbbell Press',               sets: 3, repRange: [8, 10],  backup: 'Leverage Incline Chest Press',       split: 'Push', availableWeights: DB },
   { name: 'Seated Cable Fly',                              notionName: 'Seated Cable Fly',                     sets: 3, repRange: [12, 12], backup: 'Incline Dumbbell Flyes',             split: 'Push', availableWeights: CABLE_FULL },
   { name: 'Dumbbell Shoulder Press',                       notionName: 'Dumbbell Shoulder Press',              sets: 3, repRange: [8, 10],  backup: 'Leverage Shoulder Press',           split: 'Push', availableWeights: DB },
