@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",

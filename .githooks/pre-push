@@ -1,0 +1,13 @@
+#!/bin/sh
+# pre-push: run Next.js lint before every push to catch ESLint errors before Vercel does
+echo "⚡ pre-push: running lint..."
+npm run lint
+status=$?
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "✗ Lint failed. Fix errors above before pushing."
+  echo "  To bypass in an emergency: git push --no-verify"
+  exit 1
+fi
+echo "✓ Lint clean — pushing."
+exit 0
