@@ -1,17 +1,43 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ExerciseNameInput, { ValidationState } from './ExerciseNameInput'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 
 interface AddExerciseSheetProps {
-  onAdd: (name: string, matchedExercise: ExerciseDefinition | null) => void
+  onAdd: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
   onClose: () => void
 }
 
 export default function AddExerciseSheet({ onAdd, onClose }: AddExerciseSheetProps) {
   const [name, setName] = useState('')
   const [validation, setValidation] = useState<ValidationState>({ status: 'empty' })
+  const [prefillWeight, setPrefillWeight] = useState<number | null>(null)
+  const [prefillReps, setPrefillReps] = useState<number | null>(null)
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  useEffect(() => {
+    if (validation.status !== 'exact' || !validation.exercise.split) {
+      setPrefillWeight(null)
+      setPrefillReps(null)
+      return
+    }
+
+    const { name: exName, split } = validation.exercise
+    setLoadingHistory(true)
+    fetch(`/api/weights/exercise?name=${encodeURIComponent(exName)}&split=${encodeURIComponent(split)}`)
+      .then(r => r.json())
+      .then(d => {
+        setPrefillWeight(d.weight ?? null)
+        setPrefillReps(d.reps ?? null)
+      })
+      .catch(() => {
+        setPrefillWeight(null)
+        setPrefillReps(null)
+      })
+      .finally(() => setLoadingHistory(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validation.status === 'exact' ? validation.exercise.name : null])
 
   const canAdd =
     validation.status === 'exact' ||
@@ -22,7 +48,7 @@ export default function AddExerciseSheet({ onAdd, onClose }: AddExerciseSheetPro
   function handleAdd() {
     if (!canAdd) return
     const matched = validation.status === 'exact' ? validation.exercise : null
-    onAdd(name.trim(), matched)
+    onAdd(name.trim(), matched, prefillWeight, prefillReps)
   }
 
   return (
@@ -73,6 +99,17 @@ export default function AddExerciseSheet({ onAdd, onClose }: AddExerciseSheetPro
           onValidationChange={setValidation}
           autoFocus
         />
+
+        {/* History prefill */}
+        {validation.status === 'exact' && (
+          <p className="font-mono" style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', margin: '10px 0 0', letterSpacing: '0.04em' }}>
+            {loadingHistory
+              ? 'Checking history...'
+              : prefillWeight !== null
+                ? `Last used: ${prefillWeight} lbs × ${prefillReps ?? '?'} reps`
+                : 'No history found'}
+          </p>
+        )}
 
         {/* Custom notice */}
         {isCustom && (

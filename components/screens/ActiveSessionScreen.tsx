@@ -678,12 +678,20 @@ export default function ActiveSessionScreen({
   const isLastExercise = currentExIdx === logs.length - 1
   const allExercisesDone = logs.every(ex => ex.sets.every(s => s.completed || s.skipped))
 
-  function addQuickExercise(name: string, matched: ExerciseDefinition | null) {
+  function addQuickExercise(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) {
+    const avgSets = logs.length > 0
+      ? Math.max(1, Math.round(logs.reduce((s, l) => s + l.sets.length, 0) / logs.length))
+      : 3
     const newLog: ExerciseLog = {
       exerciseName: name,
       notionName: name,
       backupName: null,
-      sets: [{ weight: 0, reps: 0, completed: false, skipped: false }],
+      sets: Array.from({ length: avgSets }, () => ({
+        weight: prefillWeight ?? 0,
+        reps: prefillReps ?? 0,
+        completed: false,
+        skipped: false,
+      })),
       notes: '',
       isCustom: matched === null,
     }

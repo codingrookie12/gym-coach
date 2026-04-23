@@ -24,7 +24,8 @@ import {
   getExerciseAvailability,
   getUnavailableExercises,
 } from '@/lib/exerciseAvailability'
-import { getIncompletePendingExercises } from '@/lib/customExercises'
+import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
+import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
 
 export type Screen =
@@ -272,6 +273,26 @@ export default function App() {
           onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
           onResume={() => navigate('active-session')}
           onBack={() => navigate('coaching-context')}
+          onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
+            const currentPlan = appState.plan!
+            const avgSets = currentPlan.length > 0
+              ? Math.max(1, Math.round(currentPlan.reduce((s, p) => s + p.exercise.sets, 0) / currentPlan.length))
+              : 3
+            const newEntry: ExercisePlan = {
+              exercise: {
+                name,
+                notionName: name,
+                sets: avgSets,
+                repRange: [8, 12],
+                backup: null,
+                split: appState.split!,
+              },
+              targetWeight: prefillWeight,
+              coachingNote: null,
+            }
+            updateState({ plan: [...currentPlan, newEntry] })
+            if (!matched) savePendingExercise(name)
+          }}
         />
       )}
 
