@@ -2,7 +2,7 @@ import { Split, Exercise, getRoutine } from './routines'
 import { SessionRecord } from './notion'
 
 function matchesExercise(notionName: string, routineName: string): boolean {
-  return notionName === routineName
+  return notionName.toLowerCase() === routineName.toLowerCase()
 }
 
 export interface CoachingFlag {
