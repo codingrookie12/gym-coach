@@ -3,7 +3,7 @@ import { SessionRecord } from './notion'
 import { findExerciseByName, getAlternatives, getUniqueEquipment } from './exerciseLibrary'
 
 function matchesExercise(notionName: string, routineName: string): boolean {
-  return notionName === routineName
+  return notionName.toLowerCase() === routineName.toLowerCase()
 }
 
 // Resolves the best substitute for an unavailable exercise.
