@@ -24,6 +24,8 @@ import {
   getExerciseAvailability,
   getUnavailableExercises,
 } from '@/lib/exerciseAvailability'
+import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
+import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
 
 export type Screen =
@@ -56,6 +58,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('detecting')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
+  const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [appState, setAppState] = useState<AppState>({
     split: null,
     coachingContext: null,
@@ -82,12 +85,14 @@ export default function App() {
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       detectedSession: null, detectedSplit: null,
     }))
+    setPendingCustomCount(getIncompletePendingExercises().length)
     setScreen('home')
   }, [])
 
-  // On mount: load equipment availability + check for unfinished session
+  // On mount: load equipment availability + pending custom exercise count
   useEffect(() => {
     setExerciseAvailability(getExerciseAvailability())
+    setPendingCustomCount(getIncompletePendingExercises().length)
   }, [])
 
   // On mount: check localStorage → then Notion fallback
@@ -244,6 +249,7 @@ export default function App() {
           onLibrary={() => navigate('exercise-library')}
           onEquipment={() => setShowEquipmentPanel(true)}
           unavailableCount={getUnavailableExercises(exerciseAvailability).length}
+          pendingCustomCount={pendingCustomCount}
         />
       )}
 
@@ -267,6 +273,26 @@ export default function App() {
           onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
           onResume={() => navigate('active-session')}
           onBack={() => navigate('coaching-context')}
+          onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
+            const currentPlan = appState.plan!
+            const avgSets = currentPlan.length > 0
+              ? Math.max(1, Math.round(currentPlan.reduce((s, p) => s + p.exercise.sets, 0) / currentPlan.length))
+              : 3
+            const newEntry: ExercisePlan = {
+              exercise: {
+                name,
+                notionName: name,
+                sets: avgSets,
+                repRange: [8, 12],
+                backup: null,
+                split: appState.split!,
+              },
+              targetWeight: prefillWeight,
+              coachingNote: null,
+            }
+            updateState({ plan: [...currentPlan, newEntry] })
+            if (!matched) savePendingExercise(name)
+          }}
         />
       )}
 

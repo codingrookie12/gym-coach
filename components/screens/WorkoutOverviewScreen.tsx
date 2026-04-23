@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
+import AddExerciseSheet from '@/components/AddExerciseSheet'
+import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 
 interface WorkoutOverviewScreenProps {
   split: Split
@@ -11,10 +13,12 @@ interface WorkoutOverviewScreenProps {
   onBegin: () => void
   onResume?: () => void
   onBack: () => void
+  onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
 }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack }: WorkoutOverviewScreenProps) {
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
+  const [showAddSheet, setShowAddSheet] = useState(false)
   const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
@@ -142,6 +146,37 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
           <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>CARDIO</span>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-mid)' }}>{cardio}</span>
         </div>
+
+        {/* Add exercise */}
+        {onAddExercise && (
+          <button
+            onClick={() => setShowAddSheet(true)}
+            style={{
+              marginTop: '4px',
+              width: '100%',
+              background: 'transparent',
+              border: '1px dashed var(--border-2)',
+              borderRadius: '2px',
+              padding: '12px',
+              color: 'var(--text-secondary)',
+              fontFamily: 'Space Mono, monospace',
+              fontSize: '0.65rem',
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent-border)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+            }}
+          >
+            + ADD EXERCISE
+          </button>
+        )}
       </div>
 
       {/* CTA */}
@@ -161,6 +196,16 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
           {hasResumable ? 'START FRESH' : 'BEGIN WORKOUT →'}
         </button>
       </div>
+
+      {showAddSheet && onAddExercise && (
+        <AddExerciseSheet
+          onAdd={(name, matched, prefillWeight, prefillReps) => {
+            onAddExercise(name, matched, prefillWeight, prefillReps)
+            setShowAddSheet(false)
+          }}
+          onClose={() => setShowAddSheet(false)}
+        />
+      )}
     </div>
   )
 }
