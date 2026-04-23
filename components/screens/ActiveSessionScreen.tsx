@@ -6,6 +6,9 @@ import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/NumberPad'
+import AddExerciseSheet from '@/components/AddExerciseSheet'
+import { savePendingExercise } from '@/lib/customExercises'
+import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 
 interface ActiveSessionScreenProps {
   split: Split
@@ -171,7 +174,7 @@ function timerActionBtn(bg: string, color: string, isAccent: boolean): React.CSS
 
 // ── Workout Overview Modal ────────────────────────────────────────────────────
 function WorkoutOverviewModal({
-  plan, logs, currentExIdx, split, onNavigate, onClose,
+  plan, logs, currentExIdx, split, onNavigate, onClose, onAddExercise,
 }: {
   plan: ExercisePlan[]
   logs: ExerciseLog[]
@@ -179,6 +182,7 @@ function WorkoutOverviewModal({
   split: Split
   onNavigate: (idx: number) => void
   onClose: () => void
+  onAddExercise: () => void
 }) {
   const cardio = CARDIO_RECOMMENDATION[split]
 
@@ -188,7 +192,7 @@ function WorkoutOverviewModal({
         <div>
           <p className="section-label" style={{ margin: '0 0 2px 0' }}>SESSION OVERVIEW</p>
           <h2 className="font-display" style={{ fontSize: '1.6rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em' }}>
-            {plan.length} Exercises
+            {logs.length} Exercises
           </h2>
         </div>
         <button
@@ -200,8 +204,7 @@ function WorkoutOverviewModal({
       </div>
 
       <div style={{ overflow: 'auto', flex: 1, padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        {plan.map((item, i) => {
-          const log = logs[i]
+        {logs.map((log, i) => {
           const completedSets = log.sets.filter(s => s.completed).length
           const skipped = log.sets.every(s => s.skipped)
           const totalSets = log.sets.length
@@ -241,6 +244,29 @@ function WorkoutOverviewModal({
           <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>CARDIO</span>
           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)' }}>{cardio}</span>
         </div>
+
+        <button
+          onClick={() => { onClose(); onAddExercise() }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            padding: '11px 14px',
+            marginTop: '4px',
+            background: 'none',
+            border: '1px dashed var(--border-2)',
+            borderRadius: '2px',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontFamily: 'Bebas Neue, sans-serif',
+            fontSize: '0.9rem',
+            letterSpacing: '0.1em',
+            width: '100%',
+          }}
+        >
+          + ADD EXERCISE
+        </button>
       </div>
     </div>
   )
@@ -451,6 +477,7 @@ export default function ActiveSessionScreen({
   const [overviewVisible, setOverviewVisible] = useState(false)
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
+  const [showAddSheet, setShowAddSheet] = useState(false)
   // Snapshot: maps "notionName:setNum" -> { pageId, weight, reps, notes }
   const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
   // Track which exercise indices have been auto-saved (to avoid double-fire)
@@ -465,7 +492,20 @@ export default function ActiveSessionScreen({
   ))
 
   const currentEx = logs[currentExIdx]
-  const currentPlan = plan[currentExIdx]
+  const currentPlan = currentExIdx < plan.length ? plan[currentExIdx] : {
+    exercise: {
+      name: currentEx.exerciseName,
+      notionName: currentEx.exerciseName,
+      sets: 1,
+      repRange: [1, 20] as [number, number],
+      backup: null,
+      split,
+      availableWeights: [] as number[],
+      weightUnit: 'lbs' as const,
+    },
+    coachingNote: null,
+    targetWeight: null,
+  }
   const exerciseDef = currentPlan.exercise
   const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
   const activeUnit = unitOverrides[currentExIdx] ?? defaultUnit
@@ -635,8 +675,22 @@ export default function ActiveSessionScreen({
   }
 
   const allCurrentSetsDone = currentEx.sets.every(s => s.completed || s.skipped)
-  const isLastExercise = currentExIdx === plan.length - 1
+  const isLastExercise = currentExIdx === logs.length - 1
   const allExercisesDone = logs.every(ex => ex.sets.every(s => s.completed || s.skipped))
+
+  function addQuickExercise(name: string, matched: ExerciseDefinition | null) {
+    const newLog: ExerciseLog = {
+      exerciseName: name,
+      notionName: name,
+      backupName: null,
+      sets: [{ weight: 0, reps: 0, completed: false, skipped: false }],
+      notes: '',
+      isCustom: matched === null,
+    }
+    if (matched === null) savePendingExercise(name)
+    setLogs(prev => [...prev, newLog])
+    setShowAddSheet(false)
+  }
 
   const totalSets = logs.reduce((acc, ex) => acc + ex.sets.length, 0)
   const completedSets = logs.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed || s.skipped).length, 0)
@@ -683,6 +737,13 @@ export default function ActiveSessionScreen({
         <WorkoutOverviewModal
           plan={plan} logs={logs} currentExIdx={currentExIdx} split={split}
           onNavigate={navigateToExercise} onClose={() => setOverviewVisible(false)}
+          onAddExercise={() => setShowAddSheet(true)}
+        />
+      )}
+      {showAddSheet && (
+        <AddExerciseSheet
+          onAdd={addQuickExercise}
+          onClose={() => setShowAddSheet(false)}
         />
       )}
 
@@ -900,7 +961,7 @@ export default function ActiveSessionScreen({
           <div style={{ marginTop: '6px', padding: '16px 14px', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '2px' }}>
             <p className="section-label" style={{ color: 'var(--accent)', margin: '0 0 4px 0' }}>NEXT UP</p>
             <p className="font-sans" style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0' }}>
-              {plan[currentExIdx + 1].exercise.name}
+              {logs[currentExIdx + 1]?.exerciseName ?? ''}
             </p>
             <button
               onClick={() => { setCurrentExIdx(i => i + 1); setSwapShown(false) }}

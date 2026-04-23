@@ -8,6 +8,7 @@ interface HomeScreenProps {
   onLibrary: () => void
   onEquipment: () => void
   unavailableCount: number
+  pendingCustomCount?: number
 }
 
 const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
@@ -16,7 +17,7 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, unavailableCount }: HomeScreenProps) {
+export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, unavailableCount, pendingCustomCount = 0 }: HomeScreenProps) {
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
 
@@ -68,10 +69,10 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
             onClick={onLibrary}
             style={{
               background: 'none',
-              border: '1px solid var(--border-2)',
+              border: `1px solid ${pendingCustomCount > 0 ? 'var(--accent-border)' : 'var(--border-2)'}`,
               borderRadius: '2px',
               padding: '7px 12px',
-              color: 'var(--text-mid)',
+              color: pendingCustomCount > 0 ? 'var(--accent)' : 'var(--text-mid)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -80,13 +81,14 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
               fontSize: '0.95rem',
               letterSpacing: '0.1em',
               transition: 'border-color 0.12s, color 0.12s',
+              position: 'relative',
             }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             </svg>
-            LIBRARY
+            LIBRARY{pendingCustomCount > 0 && <span style={{ marginLeft: '2px' }}>({pendingCustomCount})</span>}
           </button>
           <button
             onClick={onSettings}

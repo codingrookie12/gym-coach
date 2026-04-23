@@ -24,6 +24,7 @@ import {
   getExerciseAvailability,
   getUnavailableExercises,
 } from '@/lib/exerciseAvailability'
+import { getIncompletePendingExercises } from '@/lib/customExercises'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
 
 export type Screen =
@@ -56,6 +57,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('detecting')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
+  const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [appState, setAppState] = useState<AppState>({
     split: null,
     coachingContext: null,
@@ -82,12 +84,14 @@ export default function App() {
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       detectedSession: null, detectedSplit: null,
     }))
+    setPendingCustomCount(getIncompletePendingExercises().length)
     setScreen('home')
   }, [])
 
-  // On mount: load equipment availability + check for unfinished session
+  // On mount: load equipment availability + pending custom exercise count
   useEffect(() => {
     setExerciseAvailability(getExerciseAvailability())
+    setPendingCustomCount(getIncompletePendingExercises().length)
   }, [])
 
   // On mount: check localStorage → then Notion fallback
@@ -244,6 +248,7 @@ export default function App() {
           onLibrary={() => navigate('exercise-library')}
           onEquipment={() => setShowEquipmentPanel(true)}
           unavailableCount={getUnavailableExercises(exerciseAvailability).length}
+          pendingCustomCount={pendingCustomCount}
         />
       )}
 

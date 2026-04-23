@@ -16,6 +16,7 @@ export interface ExerciseLog {
   backupName: string | null
   sets: SetLog[]
   notes?: string
+  isCustom?: boolean  // true for mid-workout quick-adds not in exercises.json
 }
 
 // Keyed by `notionName:setNumber` (1-indexed), e.g. "Bench press:1"
