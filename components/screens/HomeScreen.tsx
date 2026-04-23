@@ -6,6 +6,8 @@ interface HomeScreenProps {
   onSelectSplit: (split: Split) => void
   onSettings: () => void
   onLibrary: () => void
+  onEquipment: () => void
+  unavailableCount: number
 }
 
 const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
@@ -14,7 +16,7 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-export default function HomeScreen({ onSelectSplit, onSettings, onLibrary }: HomeScreenProps) {
+export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, unavailableCount }: HomeScreenProps) {
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
 
@@ -36,6 +38,32 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary }: Hom
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            onClick={onEquipment}
+            style={{
+              background: 'none',
+              border: `1px solid ${unavailableCount > 0 ? 'var(--rust)' : 'var(--border-2)'}`,
+              borderRadius: '2px',
+              padding: '7px 12px',
+              color: unavailableCount > 0 ? 'var(--rust)' : 'var(--text-mid)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Bebas Neue, sans-serif',
+              fontSize: '0.95rem',
+              letterSpacing: '0.1em',
+              transition: 'border-color 0.12s, color 0.12s',
+              position: 'relative',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <rect x="2" y="7" width="3" height="10" rx="1" />
+              <rect x="19" y="7" width="3" height="10" rx="1" />
+              <rect x="6" y="10" width="12" height="4" rx="1" />
+            </svg>
+            EQUIP{unavailableCount > 0 && <span style={{ marginLeft: '2px' }}>({unavailableCount})</span>}
+          </button>
           <button
             onClick={onLibrary}
             style={{

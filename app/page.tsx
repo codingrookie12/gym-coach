@@ -20,6 +20,11 @@ import {
   clearSessionFromStorage,
   PersistedSession,
 } from '@/lib/sessionStorage'
+import {
+  getExerciseAvailability,
+  getUnavailableExercises,
+} from '@/lib/exerciseAvailability'
+import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
 
 export type Screen =
   | 'detecting'          // checking localStorage + Notion on first load
@@ -49,6 +54,8 @@ export interface AppState {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('detecting')
+  const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
+  const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [appState, setAppState] = useState<AppState>({
     split: null,
     coachingContext: null,
@@ -76,6 +83,11 @@ export default function App() {
       detectedSession: null, detectedSplit: null,
     }))
     setScreen('home')
+  }, [])
+
+  // On mount: load equipment availability + check for unfinished session
+  useEffect(() => {
+    setExerciseAvailability(getExerciseAvailability())
   }, [])
 
   // On mount: check localStorage → then Notion fallback
@@ -230,12 +242,15 @@ export default function App() {
           onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
           onSettings={() => navigate('manage-weights')}
           onLibrary={() => navigate('exercise-library')}
+          onEquipment={() => setShowEquipmentPanel(true)}
+          unavailableCount={getUnavailableExercises(exerciseAvailability).length}
         />
       )}
 
       {screen === 'coaching-context' && appState.split && (
         <CoachingContextScreen
           split={appState.split}
+          unavailableExercises={getUnavailableExercises(exerciseAvailability)}
           onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
           coachingContext={appState.coachingContext}
           plan={appState.plan}
@@ -293,6 +308,27 @@ export default function App() {
 
       {screen === 'exercise-library' && (
         <ExerciseLibraryScreen onBack={goHome} />
+      )}
+
+      {showEquipmentPanel && (
+        <ExerciseAvailabilityPanel
+          availability={exerciseAvailability}
+          onToggle={(name, available) => {
+            setExerciseAvailability(prev => {
+              const next = { ...prev }
+              if (available) delete next[name]
+              else next[name] = false
+              return next
+            })
+            // Clear cached plan so it rebuilds with updated availability on next navigation
+            updateState({ coachingContext: null, plan: null })
+          }}
+          onReset={() => {
+            setExerciseAvailability({})
+            updateState({ coachingContext: null, plan: null })
+          }}
+          onClose={() => setShowEquipmentPanel(false)}
+        />
       )}
     </div>
   )
