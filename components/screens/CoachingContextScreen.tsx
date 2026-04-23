@@ -10,13 +10,14 @@ interface CoachingContextScreenProps {
   split: Split
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
+  unavailableExercises: string[]
   onDataLoaded: (context: CoachingContext, plan: ExercisePlan[], sessions: SessionRecord[]) => void
   onViewPlan: () => void
   onBack: () => void
 }
 
 export default function CoachingContextScreen({
-  split, coachingContext, plan, onDataLoaded, onViewPlan, onBack,
+  split, coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +25,10 @@ export default function CoachingContextScreen({
   useEffect(() => {
     if (coachingContext) return
     setLoading(true)
-    fetch(`/api/notion?split=${split}`)
+    const unavailableParam = unavailableExercises.length > 0
+      ? `&unavailable=${encodeURIComponent(unavailableExercises.join(','))}`
+      : ''
+    fetch(`/api/notion?split=${split}${unavailableParam}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error)
@@ -35,7 +39,7 @@ export default function CoachingContextScreen({
         setError(err.message)
         setLoading(false)
       })
-  }, [split, coachingContext, onDataLoaded])
+  }, [split, coachingContext, unavailableExercises, onDataLoaded])
 
   if (loading) return <LoadingScreen message={`Analyzing ${split} history...`} />
   if (error) return (

@@ -167,7 +167,7 @@ export async function fetchAllLatestWeights(exercises: Exercise[]): Promise<Reco
         let maxWeightOnDate: number | null = null
         for (const page of dateRows) {
           const notionName: string = page.properties['Exercise']?.select?.name ?? ''
-          if (notionName !== ex.notionName) continue
+          if (notionName.toLowerCase() !== ex.notionName.toLowerCase()) continue
           const weight: number | null = page.properties['Weight (Lbs)']?.number ?? null
           if (weight !== null && weight > 0) {
             maxWeightOnDate = maxWeightOnDate === null ? weight : Math.max(maxWeightOnDate, weight)

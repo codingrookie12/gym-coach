@@ -1,8 +1,36 @@
-import { Split, Exercise, getRoutine } from './routines'
+import { Split, Exercise, getRoutine, getAllExercises } from './routines'
 import { SessionRecord } from './notion'
+import { findExerciseByName, getAlternatives, getUniqueEquipment } from './exerciseLibrary'
 
 function matchesExercise(notionName: string, routineName: string): boolean {
-  return notionName === routineName
+  return notionName.toLowerCase() === routineName.toLowerCase()
+}
+
+// Resolves the best substitute for an unavailable exercise.
+// Filters: same primary muscles, not unavailable, not the original.
+// Falls back to null if no substitute found.
+function resolveSubstitute(exercise: Exercise, unavailableExercises: string[]): Exercise | null {
+  const def = findExerciseByName(exercise.name)
+  if (!def) return null
+
+  const alternatives = getAlternatives(def, {
+    availableEquipment: getUniqueEquipment(),
+    excludeNames: [exercise.name, ...unavailableExercises],
+    limit: 1,
+  })
+
+  if (alternatives.length === 0) return null
+
+  const altName = alternatives[0].name
+  const altInRoutine = getAllExercises().find(e => e.name === altName)
+  if (altInRoutine) return altInRoutine
+
+  return {
+    ...exercise,
+    name: altName,
+    notionName: altName,
+    backup: null,
+  }
 }
 
 export interface CoachingFlag {
@@ -37,7 +65,8 @@ function daysBetween(dateA: string, dateB: string): number {
 export function analyzeCoaching(
   split: Split,
   sessions: SessionRecord[],
-  today: string
+  today: string,
+  unavailableExercises: string[] = []
 ): { context: CoachingContext; plan: ExercisePlan[] } {
   const routine = getRoutine(split)
   const flags: CoachingFlag[] = []
@@ -51,7 +80,20 @@ export function analyzeCoaching(
     recoveryGap = daysBetween(today, lastSession.date)
   }
 
-  const plan: ExercisePlan[] = routine.map(exercise => {
+  const plan: ExercisePlan[] = routine.map(originalExercise => {
+    let exercise = originalExercise
+    let substitutionNote: string | null = null
+
+    if (unavailableExercises.includes(exercise.name)) {
+      const substitute = resolveSubstitute(exercise, unavailableExercises)
+      if (substitute) {
+        substitutionNote = `${exercise.name} unavailable — substituting ${substitute.name}`
+        exercise = substitute
+      } else {
+        substitutionNote = 'No available substitute found — using original exercise'
+      }
+    }
+
     const exerciseName = exercise.name
 
     // Gather per-exercise history across sessions
@@ -71,7 +113,7 @@ export function analyzeCoaching(
       return {
         exercise: { ...exercise, name: exerciseName },
         targetWeight: null,
-        coachingNote: 'No weight logged — set your working weight today',
+        coachingNote: substitutionNote ?? 'No weight logged — set your working weight today',
       }
     }
 
@@ -170,7 +212,7 @@ export function analyzeCoaching(
     return {
       exercise: { ...exercise, name: exerciseName },
       targetWeight,
-      coachingNote,
+      coachingNote: substitutionNote ?? coachingNote,
     }
   })
 

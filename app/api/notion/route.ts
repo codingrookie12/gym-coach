@@ -12,9 +12,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const unavailableParam = searchParams.get('unavailable') ?? ''
+    const unavailableExercises = unavailableParam
+      ? unavailableParam.split(',').map(s => s.trim()).filter(Boolean)
+      : []
+
     const sessions = await fetchLastSessions(split, 5)
     const today = new Date().toISOString().split('T')[0]
-    const { context, plan } = analyzeCoaching(split, sessions, today)
+    const { context, plan } = analyzeCoaching(split, sessions, today, unavailableExercises)
     return NextResponse.json({ context, plan, sessions })
   } catch (error) {
     console.error('Notion fetch error:', error)
