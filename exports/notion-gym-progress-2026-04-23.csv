@@ -1,0 +1,511 @@
+page_id,entry,exercise,date,split,weight,set,reps,unit,notes,created,last_edited
+34a91176-d459-8159-aba8-f41c6d10fb44,Romanian Deadlift — Set 1,Romanian deadlift,2026-04-22,Legs,50,1,12,Lbs,,2026-04-22T16:51:00.000Z,2026-04-22T16:51:00.000Z
+34a91176-d459-81f7-8778-ee171697eabb,Romanian Deadlift — Set 2,Romanian deadlift,2026-04-22,Legs,50,2,12,Lbs,,2026-04-22T16:51:00.000Z,2026-04-22T16:51:00.000Z
+34a91176-d459-817f-a476-e89ba415fa27,Romanian Deadlift — Set 3,Romanian deadlift,2026-04-22,Legs,50,3,12,Lbs,,2026-04-22T16:51:00.000Z,2026-04-22T16:51:00.000Z
+34a91176-d459-817f-88ae-fd4a564808df,Standing Calf Raises — Set 2,Standing Calf Raises,2026-04-22,Legs,135,2,12,Lbs,,2026-04-22T16:30:00.000Z,2026-04-22T16:30:00.000Z
+34a91176-d459-811d-a9b2-f000f430af72,Standing Calf Raises — Set 1,Standing Calf Raises,2026-04-22,Legs,120,1,15,Lbs,,2026-04-22T16:30:00.000Z,2026-04-22T16:30:00.000Z
+34a91176-d459-8186-983b-cdb469ee9421,Standing Calf Raises — Set 3,Standing Calf Raises,2026-04-22,Legs,135,3,12,Lbs,,2026-04-22T16:30:00.000Z,2026-04-22T16:30:00.000Z
+34a91176-d459-8117-9c9e-d79b8f5b7bd0,Prone Leg Curl — Set 1,Prone Leg Curl,2026-04-22,Legs,45,1,12,Pins,,2026-04-22T16:18:00.000Z,2026-04-22T22:07:00.000Z
+34a91176-d459-81ad-b4ff-ea9f8dff5021,Prone Leg Curl — Set 3,Prone Leg Curl,2026-04-22,Legs,45,3,12,Pins,,2026-04-22T16:18:00.000Z,2026-04-22T22:08:00.000Z
+34a91176-d459-815a-89e3-e13412f80357,Prone Leg Curl — Set 2,Prone Leg Curl,2026-04-22,Legs,45,2,12,Pins,,2026-04-22T16:18:00.000Z,2026-04-22T22:08:00.000Z
+34a91176-d459-8100-a702-f2777663f0db,Leg Extensions — Set 2,Leg Extensions,2026-04-22,Legs,55,2,11,Lbs,,2026-04-22T16:01:00.000Z,2026-04-22T16:01:00.000Z
+34a91176-d459-81d3-bd12-f960c21913c8,Leg Extensions — Set 1,Leg Extensions,2026-04-22,Legs,55,1,12,Lbs,,2026-04-22T16:01:00.000Z,2026-04-22T16:01:00.000Z
+34a91176-d459-8173-bf3e-d57bce3c49bd,Leg Extensions — Set 3,Leg Extensions,2026-04-22,Legs,55,3,12,Lbs,,2026-04-22T16:01:00.000Z,2026-04-22T16:01:00.000Z
+34a91176-d459-811c-89c0-c4d366f51016,Leg Press — Set 3,Leg Press,2026-04-22,Legs,125,3,12,Lbs,,2026-04-22T15:46:00.000Z,2026-04-22T15:46:00.000Z
+34a91176-d459-8145-b675-eb016e80a472,Leg Press — Set 1,Leg Press,2026-04-22,Legs,125,1,12,Lbs,,2026-04-22T15:46:00.000Z,2026-04-22T15:46:00.000Z
+34a91176-d459-814c-8356-ea55a9dc3390,Leg Press — Set 2,Leg Press,2026-04-22,Legs,125,2,12,Lbs,,2026-04-22T15:46:00.000Z,2026-04-22T15:46:00.000Z
+34a91176-d459-8155-a579-c05078788c5f,Linear Hack Press — Set 2,Linear hack press,2026-04-22,Legs,70,2,10,Lbs,,2026-04-22T15:31:00.000Z,2026-04-22T15:31:00.000Z
+34a91176-d459-8164-bc37-dd4c70ed63bc,Linear Hack Press — Set 1,Linear hack press,2026-04-22,Legs,70,1,10,Lbs,,2026-04-22T15:31:00.000Z,2026-04-22T15:31:00.000Z
+34a91176-d459-81ef-8953-f6279de33877,Linear Hack Press — Set 3,Linear hack press,2026-04-22,Legs,70,3,10,Lbs,,2026-04-22T15:31:00.000Z,2026-04-22T15:31:00.000Z
+34991176-d459-81cf-9bdc-f441eb8d9b71,Standing Palms-up Barbell Behind the Back Wrist Curl — Set 3,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-21,Pull,60,3,12,Lbs,,2026-04-21T19:31:00.000Z,2026-04-21T19:31:00.000Z
+34991176-d459-8122-8269-d60ab9cc9a91,Standing Palms-up Barbell Behind the Back Wrist Curl — Set 1,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-21,Pull,60,1,15,Lbs,,2026-04-21T19:31:00.000Z,2026-04-21T19:31:00.000Z
+34991176-d459-81d7-9883-cc6a1e24c4f4,Standing Palms-up Barbell Behind the Back Wrist Curl — Set 2,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-21,Pull,60,2,15,Lbs,,2026-04-21T19:31:00.000Z,2026-04-21T19:31:00.000Z
+34991176-d459-81e9-9665-ee8d994baf96,Preacher Hammer Dumbbell Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-04-21,Pull,15,2,12,Lbs,,2026-04-21T19:17:00.000Z,2026-04-21T19:17:00.000Z
+34991176-d459-816f-89a7-e558822b3a1c,Preacher Hammer Dumbbell Curl — Set 3,Preacher Hammer Dumbbell Curl,2026-04-21,Pull,15,3,12,Lbs,,2026-04-21T19:17:00.000Z,2026-04-21T19:17:00.000Z
+34991176-d459-8101-be16-ddd22c93ec91,Preacher Hammer Dumbbell Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-04-21,Pull,15,1,12,Lbs,,2026-04-21T19:17:00.000Z,2026-04-21T19:17:00.000Z
+34991176-d459-8199-9bea-dd886f7cda4a,Cable Curl (Low Pulley) — Set 3,Cable Curl (Low Pulley),2026-04-21,Pull,15,3,12,Lbs,,2026-04-21T19:00:00.000Z,2026-04-21T19:00:00.000Z
+34991176-d459-81c5-80a7-cc585abc77b8,Cable Curl (Low Pulley) — Set 2,Cable Curl (Low Pulley),2026-04-21,Pull,15,2,12,Lbs,,2026-04-21T19:00:00.000Z,2026-04-21T19:00:00.000Z
+34991176-d459-819c-a643-d57d4673628d,Cable Curl (Low Pulley) — Set 1,Cable Curl (Low Pulley),2026-04-21,Pull,15,1,12,Lbs,,2026-04-21T19:00:00.000Z,2026-04-21T19:00:00.000Z
+34991176-d459-818e-bd58-ce791893e801,Standing Biceps Cable Curl — Set 2,Standing Biceps Cable Curl,2026-04-21,Pull,42.5,2,11,Lbs,,2026-04-21T18:45:00.000Z,2026-04-21T18:45:00.000Z
+34991176-d459-8131-89df-c00cdb319a91,Standing Biceps Cable Curl — Set 3,Standing Biceps Cable Curl,2026-04-21,Pull,42.5,3,10,Lbs,,2026-04-21T18:45:00.000Z,2026-04-21T18:45:00.000Z
+34991176-d459-8170-a8f0-ea86af82b308,Standing Biceps Cable Curl — Set 1,Standing Biceps Cable Curl,2026-04-21,Pull,42.5,1,12,Lbs,,2026-04-21T18:45:00.000Z,2026-04-21T18:45:00.000Z
+34991176-d459-817f-9eff-dfa246350a28,Wide-grip Lat Pulldown — Set 2,Wide-grip Lat Pulldown,2026-04-21,Pull,140,2,9,Lbs,,2026-04-21T18:18:00.000Z,2026-04-21T18:18:00.000Z
+34991176-d459-817d-87f2-dd9ddc4d46e4,Wide-grip Lat Pulldown — Set 1,Wide-grip Lat Pulldown,2026-04-21,Pull,140,1,10,Lbs,,2026-04-21T18:18:00.000Z,2026-04-21T18:18:00.000Z
+34991176-d459-81a7-a1de-c74401c8fcb4,Wide-grip Lat Pulldown — Set 3,Wide-grip Lat Pulldown,2026-04-21,Pull,140,3,8,Lbs,,2026-04-21T18:18:00.000Z,2026-04-21T18:18:00.000Z
+34891176-d459-812f-b334-f323bf03c570,Standing Low-Pulley One-Arm Triceps Extension — Set 3,Standing Low-Pulley One-Arm Triceps Extension,2026-04-20,Push,10,3,8,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81c6-b177-dc29b95e252f,Standing Low-Pulley One-Arm Triceps Extension — Set 1,Standing Low-Pulley One-Arm Triceps Extension,2026-04-20,Push,10,1,8,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-816e-8417-d11ca57278e6,Standing Low-Pulley One-Arm Triceps Extension — Set 2,Standing Low-Pulley One-Arm Triceps Extension,2026-04-20,Push,10,2,8,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-8149-bfaf-e4d9d0e2f8e9,Triceps Pushdown - Rope Attachment — Set 3,Triceps Pushdown - Rope Attachment,2026-04-20,Push,57.5,3,10,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81c5-9fcc-c7bbf1aa4fbb,Triceps Pushdown - Rope Attachment — Set 2,Triceps Pushdown - Rope Attachment,2026-04-20,Push,57.5,2,12,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-812b-a154-de95f4df3de0,Triceps Pushdown - Rope Attachment — Set 1,Triceps Pushdown - Rope Attachment,2026-04-20,Push,57.5,1,12,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-819a-826b-e31f8505a680,Face Pull — Set 2,Face Pull,2026-04-20,Push,50,2,15,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81f8-b7f7-f8284190bfb5,Face Pull — Set 1,Face Pull,2026-04-20,Push,50,1,15,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81df-8e9c-c6a9233f1fba,Face Pull — Set 3,Face Pull,2026-04-20,Push,50,3,15,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-817b-95dc-c92bcfbcb36f,Side Lateral Raise — Set 3,Side Lateral Raise,2026-04-20,Push,25,3,10,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-8191-b17b-c8c48a30c067,Side Lateral Raise — Set 1,Side Lateral Raise,2026-04-20,Push,25,1,12,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81a6-8b1c-fe9a5e8fe581,Side Lateral Raise — Set 2,Side Lateral Raise,2026-04-20,Push,25,2,12,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-814f-8431-cc25e45c452f,Dumbbell Shoulder Press — Set 3,Dumbbell Shoulder Press,2026-04-20,Push,25,3,10,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-81e7-a7fa-cd2ff86adcdd,Dumbbell Shoulder Press — Set 2,Dumbbell Shoulder Press,2026-04-20,Push,25,2,10,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-812f-8b9c-c4a15b97c82e,Dumbbell Shoulder Press — Set 1,Dumbbell Shoulder Press,2026-04-20,Push,25,1,10,Lbs,,2026-04-20T13:40:00.000Z,2026-04-20T13:40:00.000Z
+34891176-d459-811a-baaa-e54549217688,Seated Cable Fly — Set 3,Seated Cable Fly,2026-04-20,Push,15,3,12,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-81f9-9832-c16415e254f4,Seated Cable Fly — Set 2,Seated Cable Fly,2026-04-20,Push,15,2,12,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-812c-96cc-d33598f22c9c,Seated Cable Fly — Set 1,Seated Cable Fly,2026-04-20,Push,15,1,12,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-8115-adba-cd87e3309e90,Incline Dumbbell Press — Set 3,Incline Dumbbell Press,2026-04-20,Push,40,3,8,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-813e-859d-ffd76f64dfcf,Incline Dumbbell Press — Set 2,Incline Dumbbell Press,2026-04-20,Push,40,2,8,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-8138-a426-d3a308bf9b4e,Incline Dumbbell Press — Set 1,Incline Dumbbell Press,2026-04-20,Push,40,1,12,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-810a-baf1-d69602e70079,Wide-grip Barbell Bench Press — Set 1,Wide-grip Barbell Bench Press,2026-04-20,Push,35,1,8,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-8181-ad25-c101db830212,Wide-grip Barbell Bench Press — Set 3,Wide-grip Barbell Bench Press,2026-04-20,Push,35,3,8,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34891176-d459-812a-9ec5-d3ac8d8a89a9,Wide-grip Barbell Bench Press — Set 2,Wide-grip Barbell Bench Press,2026-04-20,Push,35,2,8,Lbs,,2026-04-20T13:39:00.000Z,2026-04-20T13:39:00.000Z
+34591176-d459-8153-9e6b-d79a2554f561,Shoulder press — Set 3,Dumbbell Shoulder Press,2026-04-17,Push,25,3,8,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8139-9424-c63057c002cf,Lateral Raise — Set 2,Side Lateral Raise,2026-04-17,Push,20,2,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8176-a447-f8bc46d44870,Bench press — Set 3,Wide-grip Barbell Bench Press,2026-04-17,Push,35,3,7,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8157-abe9-ed5943c45529,Facepull — Set 1,Face Pull,2026-04-17,Push,50,1,15,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81a7-a60a-fb98c340a602,Tricep iso behind head — Set 1,Standing Low-Pulley One-Arm Triceps Extension,2026-04-17,Push,10,1,10,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81bc-86cb-d33a54cf2866,Lateral Raise — Set 3,Side Lateral Raise,2026-04-17,Push,20,3,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-812c-bb1a-e70284032ce8,Tricep vertical rope — Set 1,Triceps Pushdown - Rope Attachment,2026-04-17,Push,57.5,1,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8106-82ba-c71a376d0a7d,Lateral Raise — Set 1,Side Lateral Raise,2026-04-17,Push,20,1,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8115-bd54-e2ba07591524,Chest fly — Set 1,Seated Cable Fly,2026-04-17,Push,15,1,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8110-8300-e7aac868012b,Bench press — Set 2,Wide-grip Barbell Bench Press,2026-04-17,Push,35,2,8,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81f2-94ac-ddc66d38f99c,Dumbbell incline press — Set 3,Incline Dumbbell Press,2026-04-17,Push,40,3,8,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81e2-abe8-c336328d6b7e,Facepull — Set 2,Face Pull,2026-04-17,Push,50,2,15,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81a2-ac55-ddecb7ff7ea6,Facepull — Set 3,Face Pull,2026-04-17,Push,50,3,14,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8199-acf9-e9f67942844f,Tricep iso behind head — Set 2,Standing Low-Pulley One-Arm Triceps Extension,2026-04-17,Push,10,2,7,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8186-85f7-fc5ebb318655,Shoulder press — Set 2,Dumbbell Shoulder Press,2026-04-17,Push,25,2,9,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81ab-82a8-d765427b1138,Shoulder press — Set 1,Dumbbell Shoulder Press,2026-04-17,Push,25,1,10,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8190-bbd6-e5318c0ba009,Chest fly — Set 3,Seated Cable Fly,2026-04-17,Push,15,3,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8192-90ed-e19992af2568,Dumbbell incline press — Set 1,Incline Dumbbell Press,2026-04-17,Push,40,1,10,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81d1-a693-f47c8efc9c08,Tricep vertical rope — Set 3,Triceps Pushdown - Rope Attachment,2026-04-17,Push,57.5,3,11,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8100-935b-cabda7b4dc69,Chest fly — Set 2,Seated Cable Fly,2026-04-17,Push,15,2,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-819c-9265-c87f64d75172,Bench press — Set 1,Wide-grip Barbell Bench Press,2026-04-17,Push,35,1,10,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-8189-8f4a-c513a2fc0460,Tricep iso behind head — Set 3,Standing Low-Pulley One-Arm Triceps Extension,2026-04-17,Push,10,3,6,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-818e-ae62-fa71d7b85839,Dumbbell incline press — Set 2,Incline Dumbbell Press,2026-04-17,Push,40,2,8,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34591176-d459-81b2-aece-e7adedcaa82c,Tricep vertical rope — Set 2,Triceps Pushdown - Rope Attachment,2026-04-17,Push,57.5,2,12,Lbs,,2026-04-17T17:50:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81ac-914b-fe20976b2b77,Seated Leg Curl — Set 2,Seated Leg Curl,2026-04-16,Legs,10,2,12,Pins,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-8141-a67f-cc2b9e0c18a3,Romanian Deadlift — Set 3,Romanian deadlift,2026-04-16,Legs,45,3,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-81f0-bddb-fd35388ed272,Romanian Deadlift — Set 2,Romanian deadlift,2026-04-16,Legs,45,2,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81f5-a197-cf167e572edd,Seated Leg Curl — Set 3,Seated Leg Curl,2026-04-16,Legs,10,3,8,Pins,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-8184-94a5-e02d556d9a72,Leg Press Pendular — Set 3,Leg Press,2026-04-16,Legs,125,3,10,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81f3-b446-e9f42f3b9fe7,Linear Hack Press or Squat — Set 1,Linear hack press,2026-04-16,Legs,65,1,10,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-8137-a461-fffa8ba8b736,Leg Extension — Set 1,Leg Extensions,2026-04-16,Legs,55,1,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-8182-9784-c36c10d069f4,Seated Leg Curl — Set 1,Seated Leg Curl,2026-04-16,Legs,10,1,12,Pins,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-8186-a69c-c4f2d27a72c8,Romanian Deadlift — Set 1,Romanian deadlift,2026-04-16,Legs,45,1,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81cd-b204-e4db24e149fc,Linear Hack Press or Squat — Set 2,Linear hack press,2026-04-16,Legs,65,2,10,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81f2-aee1-daccba81be09,Leg Press Pendular — Set 2,Leg Press,2026-04-16,Legs,125,2,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-81ae-ac07-c4ee99871e1f,Leg Extension — Set 2,Leg Extensions,2026-04-16,Legs,55,2,10,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-811c-8602-e0bb1775c334,Leg Extension — Set 3,Leg Extensions,2026-04-16,Legs,55,3,9,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:47:00.000Z
+34491176-d459-8173-96d1-e39432302482,Leg Press Pendular — Set 1,Leg Press,2026-04-16,Legs,125,1,12,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+34491176-d459-8193-9e24-f4437f1de340,Linear Hack Press or Squat — Set 3,Linear hack press,2026-04-16,Legs,65,3,10,Lbs,,2026-04-16T18:58:00.000Z,2026-04-20T13:48:00.000Z
+0b5c7cf7-307b-41a4-9bb9-ec9210036c66,Cable Pulldown (bar) — Set 2,Wide-grip Lat Pulldown,2026-04-15,Pull,140,2,10,Lbs,,2026-04-15T21:26:00.000Z,2026-04-20T13:49:00.000Z
+2b4b319a-f822-424c-a8a8-e4f006350d53,Forearm Behind Back — Set 3,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-15,Pull,50,3,15,Lbs,,2026-04-15T21:26:00.000Z,2026-04-20T13:52:00.000Z
+36bdf6cc-f731-4c09-8261-c730bfafbc25,Cable Curl (EZ bar) — wide grip — Set 2,Cable Curl (EZ bar) — wide grip,2026-04-15,Pull,35,2,12,Lbs,,2026-04-15T21:26:00.000Z,2026-04-20T13:52:00.000Z
+4da66b3f-6159-4918-85ec-21559f00a959,Single-Arm Preacher Hammer Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-04-15,Pull,15,1,10,Lbs,,2026-04-15T21:26:00.000Z,2026-04-20T13:53:00.000Z
+711dfb35-6596-4c73-b65d-b7bb538780b8,Cable Row (wide grip) — Set 2,Seated Cable Rows,2026-04-15,Pull,120,2,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+7c1af078-4333-48ef-86f0-5580eee9e463,Forearm Behind Back — Set 1,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-15,Pull,50,1,15,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+8440c422-0656-4d6a-ba24-afc7a0536816,Cable Pulldown (bar) — Set 3,Wide-grip Lat Pulldown,2026-04-15,Pull,140,3,9,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+8726a0dd-4f8a-4e04-9839-a166631412dd,Cable Curl (EZ bar) — wide grip — Set 3,Cable Curl (EZ bar) — wide grip,2026-04-15,Pull,35,3,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:48:00.000Z
+8830cb23-a3e8-4233-b09a-0b18318d5139,Cable Pulldown (bar) — Set 1,Wide-grip Lat Pulldown,2026-04-15,Pull,140,1,8,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+98dfcffb-bd52-48fc-9fb8-c59213f4942b,Single-Arm Preacher Hammer Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-04-15,Pull,15,2,8,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+a9c4ce4d-d40f-48d3-a508-cfee834dcb17,Single-Arm Preacher Hammer Curl — Set 3,Preacher Hammer Dumbbell Curl,2026-04-15,Pull,15,3,8,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+b2a759e7-b743-4d48-8f34-0d439d45fc1f,Cable Curl (EZ bar) — wide grip — Set 1,Cable Curl (EZ bar) — wide grip,2026-04-15,Pull,35,1,12,,,2026-04-15T21:26:00.000Z,2026-04-15T21:48:00.000Z
+d0623e53-57b1-4970-a461-363f63bcae54,Rope iso curl from below — Set 3,Cable Curl (Low Pulley),2026-04-15,Pull,15,3,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+d14d5bd6-9e79-441d-96de-f890f79d3203,Cable Row (wide grip) — Set 3,Seated Cable Rows,2026-04-15,Pull,120,3,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+d1a91108-879c-4e48-a777-25245c81fa38,Rope iso curl from below — Set 2,Cable Curl (Low Pulley),2026-04-15,Pull,15,2,12,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+dd655775-e28e-4e55-b1e7-c0a028f3cfc4,Cable Row (wide grip) — Set 1,Seated Cable Rows,2026-04-15,Pull,120,1,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+e65ac9d7-53b1-474e-9538-d188214bc7b2,Forearm Behind Back — Set 2,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-15,Pull,50,2,15,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+ea802fe2-b9ff-4d15-9b37-895c70a56ec0,Rope iso curl from below — Set 4,Cable Curl (Low Pulley),2026-04-15,Pull,15,4,10,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+f1b65af4-31a6-4b3d-9269-3564c3336c4c,Rope iso curl from below — Set 1,Cable Curl (Low Pulley),2026-04-15,Pull,15,1,12,,,2026-04-15T21:26:00.000Z,2026-04-15T21:26:00.000Z
+1e3b7e46-04ed-4173-a9fc-5d9df669b55c,Forearm Behind Back — Set 3,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-08,Pull,50,3,15,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:49:00.000Z
+0a82e9f3-43db-47d2-83cb-6f03b44c76e5,Forearm Behind Back — Set 2,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-08,Pull,50,2,15,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:49:00.000Z
+e267d5df-b410-44cc-90e8-b1483010d536,Forearm Behind Back — Set 1,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-04-08,Pull,50,1,15,,,2026-04-08T20:03:00.000Z,2026-04-08T20:03:00.000Z
+d4acd476-12cf-464e-b2d6-42a4e9fbddb6,Single-Arm Preacher Hammer Curl — Set 3,Preacher Hammer Dumbbell Curl,2026-04-08,Pull,20,3,6,,,2026-04-08T20:03:00.000Z,2026-04-08T20:03:00.000Z
+b7ad54f1-616f-434a-b0d6-c8dfd7e940d4,Single-Arm Preacher Hammer Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-04-08,Pull,20,2,6,,,2026-04-08T20:03:00.000Z,2026-04-08T20:03:00.000Z
+3c9fa0c6-e4d8-4e57-b4cb-9b6af294ded7,Single-Arm Preacher Hammer Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-04-08,Pull,20,1,6,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:53:00.000Z
+f4d702ef-9241-4be9-86c1-50514ba14a6a,Rope iso curl from below — Set 3,Cable Curl (Low Pulley),2026-04-08,Pull,15,3,12,,,2026-04-08T20:03:00.000Z,2026-04-08T20:03:00.000Z
+2cfc8691-609d-4787-b5bd-d394d68790df,Rope iso curl from below — Set 4,Cable Curl (Low Pulley),2026-04-08,Pull,15,4,11,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:52:00.000Z
+1d377fca-193b-4144-bfff-923d15cc4483,Rope iso curl from below — Set 2,Cable Curl (Low Pulley),2026-04-08,Pull,15,2,12,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:49:00.000Z
+84fa795b-2b6f-4e48-9b5a-62e7a01bbb19,Rope iso curl from below — Set 1,Cable Curl (Low Pulley),2026-04-08,Pull,15,1,10,,,2026-04-08T20:03:00.000Z,2026-04-08T20:03:00.000Z
+a51bc089-8808-4440-a17a-c2ab14a6786d,Cable Curl (EZ bar) — close grip — Set 3,Cable Curl (EZ bar) — close grip,2026-04-08,Pull,35,3,10,,,2026-04-08T20:03:00.000Z,2026-04-15T21:48:00.000Z
+3032cde5-b843-4500-9122-98c8176e6e20,Cable Curl (EZ bar) — close grip — Set 2,Cable Curl (EZ bar) — close grip,2026-04-08,Pull,35,2,10,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:52:00.000Z
+e20e11ab-2b56-482c-baea-32c150bd5c38,Cable Curl (EZ bar) — close grip — Set 1,Cable Curl (EZ bar) — close grip,2026-04-08,Pull,30,1,12,,,2026-04-08T20:03:00.000Z,2026-04-15T21:48:00.000Z
+9e4b7771-93b0-4daf-a3fb-dadcb2837d8c,Cable Row Close Grip — Set 3,Seated Cable Rows,2026-04-08,Pull,120,3,10,,,2026-04-08T20:03:00.000Z,2026-04-20T02:14:00.000Z
+32f3a0c6-9417-4f9e-aeaf-323a15191b6b,Cable Pulldown (bar) — Set 1,Wide-grip Lat Pulldown,2026-04-08,Pull,120,1,12,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:52:00.000Z
+b65be555-b9c4-4b90-bbc3-1f4bfa99024d,Cable Row Close Grip — Set 1,Seated Cable Rows,2026-04-08,Pull,120,1,12,,,2026-04-08T20:03:00.000Z,2026-04-20T02:14:00.000Z
+3d383d83-4917-42fd-bbab-f3ff55ebf016,Cable Pulldown (bar) — Set 2,Wide-grip Lat Pulldown,2026-04-08,Pull,120,2,12,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:53:00.000Z
+8e98ef82-face-4bc7-bf49-0dd1f4cd717b,Cable Row Close Grip — Set 2,Seated Cable Rows,2026-04-08,Pull,120,2,10,,,2026-04-08T20:03:00.000Z,2026-04-20T02:14:00.000Z
+2d061c59-f855-40d1-b9ed-1612ca8c6699,Cable Pulldown (bar) — Set 3,Wide-grip Lat Pulldown,2026-04-08,Pull,120,3,12,Lbs,,2026-04-08T20:03:00.000Z,2026-04-20T13:52:00.000Z
+83a99316-1275-44bc-8dc9-3b649e0d6b24,Tricep Pushdown — Set 3,Triceps Pushdown - Rope Attachment,2026-04-06,Push,57.5,3,8,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+e346533a-4d14-434b-a9e7-cdd7d1a553fd,Tricep Pushdown — Set 2,Triceps Pushdown - Rope Attachment,2026-04-06,Push,57.5,2,8,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+d6e1bb98-45c4-4cb2-b78e-d3a75234f5fe,Tricep Pushdown — Set 1,Triceps Pushdown - Rope Attachment,2026-04-06,Push,57.5,1,10,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+cd4ee132-37a7-4782-aabc-31b60b21820e,Tricep Rope Horizontal — Set 3,Tricep rope horizontal,2026-04-06,Push,15,3,9,,,2026-04-06T20:25:00.000Z,2026-04-20T01:08:00.000Z
+5f483013-8fcf-49d3-891c-215dadfaee57,Tricep Rope Horizontal — Set 2,Tricep rope horizontal,2026-04-06,Push,15,2,10,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:54:00.000Z
+a914f4ba-2a17-4d0f-b4d1-99053ef281be,Tricep Rope Horizontal — Set 1,Tricep rope horizontal,2026-04-06,Push,15,1,10,,,2026-04-06T20:25:00.000Z,2026-04-20T01:08:00.000Z
+8c89ce43-40f8-4903-ac05-196eb0beca77,Facepull — Set 3,Face Pull,2026-04-06,Push,50,3,12,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+e31f360e-e405-411f-9cb5-577797683fcd,Facepull — Set 2,Face Pull,2026-04-06,Push,50,2,15,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+6fde0776-d182-4e94-9f06-778a70b51e3f,Facepull — Set 1,Face Pull,2026-04-06,Push,50,1,15,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+5e831a32-e35f-4b3f-baae-687ebee1c235,Lateral Raise — Set 3,Side Lateral Raise,2026-04-06,Push,15,3,12,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:54:00.000Z
+1d83dc1e-93ad-4f5c-ba2d-ab78f49cd030,Lateral Raise — Set 2,Side Lateral Raise,2026-04-06,Push,15,2,12,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:49:00.000Z
+c2dcc0c1-87f3-4992-81b6-50cc3a61986f,Lateral Raise — Set 1,Side Lateral Raise,2026-04-06,Push,15,1,12,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+94dec919-1322-44dd-854d-b29f24dc8604,Shoulder Press — Set 3,Dumbbell Shoulder Press,2026-04-06,Push,25,3,7,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+66277e27-827d-4aaa-bc87-826f1d97639b,Shoulder Press — Set 2,Dumbbell Shoulder Press,2026-04-06,Push,25,2,7,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+f23c2715-bbd4-45d4-a7a7-02a77e930f2a,Shoulder Press — Set 1,Dumbbell Shoulder Press,2026-04-06,Push,25,1,8,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+032cb0fa-4ab7-4d5d-8a07-ce5d8d230c09,Dumbbell Incline Flies — Set 3,Seated Cable Fly,2026-04-06,Push,30,3,7,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:48:00.000Z
+91064ee7-77ec-433c-bfbf-873091b9bea7,Dumbbell Incline Flies — Set 2,Seated Cable Fly,2026-04-06,Push,30,2,9,,,2026-04-06T20:25:00.000Z,2026-04-20T01:08:00.000Z
+5ab5312a-008a-4cb6-b761-c8998d172721,Dumbbell Incline Flies — Set 1,Seated Cable Fly,2026-04-06,Push,30,1,9,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:54:00.000Z
+ace35533-1e87-433f-868e-a6fd53e80321,Incline Dumbbell Press — Set 3,Incline Dumbbell Press,2026-04-06,Push,45,3,5,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+cfb0c2f1-a626-483d-aea9-11c9fecc1408,Incline Dumbbell Press — Set 2,Incline Dumbbell Press,2026-04-06,Push,45,2,6,,,2026-04-06T20:25:00.000Z,2026-04-06T20:25:00.000Z
+604173e7-f2fb-49d4-9c5a-82da303e99c5,Incline Dumbbell Press — Set 1,Incline Dumbbell Press,2026-04-06,Push,45,1,7,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:54:00.000Z
+8cbe83cb-48e8-4061-ae3e-872f48040644,Bench Press — Set 4,Wide-grip Barbell Bench Press,2026-04-06,Push,35,4,6,,,2026-04-06T20:25:00.000Z,2026-04-20T01:25:00.000Z
+d548b92c-ed2a-45b6-9264-c5f513af7527,Bench Press — Set 3,Wide-grip Barbell Bench Press,2026-04-06,Push,35,3,7,,,2026-04-06T20:25:00.000Z,2026-04-20T01:25:00.000Z
+5a171206-351d-4e81-933e-6be4f483aff0,Bench Press — Set 2,Wide-grip Barbell Bench Press,2026-04-06,Push,35,2,8,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:54:00.000Z
+00bd3db4-5994-4c63-a212-3426b36c4dbe,Bench Press — Set 1,Wide-grip Barbell Bench Press,2026-04-06,Push,35,1,8,Lbs,,2026-04-06T20:25:00.000Z,2026-04-20T13:48:00.000Z
+13ba63b8-9b01-4470-bd70-7b1e95f8b047,Seated Calf Raise — Set 3,Seated Calf Raise,2026-04-01,Legs,120,3,20,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:49:00.000Z
+30c7bb66-5012-4c77-bc09-74aa5a8375f6,Seated Calf Raise — Set 2,Seated Calf Raise,2026-04-01,Legs,120,2,20,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:52:00.000Z
+778a6db6-003c-439d-b1e3-10871d81648e,Seated Calf Raise — Set 1,Seated Calf Raise,2026-04-01,Legs,120,1,20,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+1a6976df-fd37-42ab-a593-463fce043e0a,Prone Leg Curl — Set 3,Prone Leg Curl (Machine),2026-04-01,Legs,45,3,11,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:49:00.000Z
+5ab4eece-fc63-4eb5-9473-55c32f7a4653,Prone Leg Curl — Set 2,Prone Leg Curl (Machine),2026-04-01,Legs,45,2,12,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:54:00.000Z
+614693c0-6b4b-4dcd-856b-7f70d4c08758,Prone Leg Curl — Set 1,Prone Leg Curl (Machine),2026-04-01,Legs,45,1,12,,,2026-04-01T14:00:00.000Z,2026-04-20T01:09:00.000Z
+1765ebb2-db3f-4e44-af4a-57aab325f740,Dumbbell Romanian Deadlift — Set 3,Romanian deadlift,2026-04-01,Legs,45,3,12,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:49:00.000Z
+6c42d006-b4ae-422f-89fa-0121fd50d76b,Dumbbell Romanian Deadlift — Set 2,Romanian deadlift,2026-04-01,Legs,45,2,12,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+afde38c7-8dd9-4002-8ad0-92992d3babbd,Dumbbell Romanian Deadlift — Set 1,Romanian deadlift,2026-04-01,Legs,45,1,12,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+85dd2d56-3746-42dc-b533-f99775d6db8e,Leg Extension — Set 3,Leg Extensions,2026-04-01,Legs,55,3,12,,,2026-04-01T14:00:00.000Z,2026-04-16T02:35:00.000Z
+b90e3126-db16-43d4-9635-6df59ac777f5,Leg Extension — Set 2,Leg Extensions,2026-04-01,Legs,55,2,12,,,2026-04-01T14:00:00.000Z,2026-04-16T02:35:00.000Z
+a50c47f6-40b4-4bf5-abc2-9d9ab69da04e,Leg Extension — Set 1,Leg Extensions,2026-04-01,Legs,55,1,12,,,2026-04-01T14:00:00.000Z,2026-04-16T02:35:00.000Z
+8b03ff56-660a-4f4b-8181-ab3d8aecfb10,Leg Press Pendular — Set 3,Leg Press,2026-04-01,Legs,120,3,12,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+ec19e819-9574-491e-a8fa-1fd6c3797dd8,Linear Hack Press — Set 1,Linear hack press,2026-04-01,Legs,55,1,10,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+db4b8830-c909-42a6-870f-e7f610b4885b,Linear Hack Press — Set 2,Linear hack press,2026-04-01,Legs,55,2,10,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+d64cc847-5a12-4eea-8c8b-068dec8f5c48,Leg Press Pendular — Set 1,Leg Press,2026-04-01,Legs,120,1,12,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+dbafe3dc-ef32-44d5-aff9-011dd196d93a,Linear Hack Press — Set 3,Linear hack press,2026-04-01,Legs,55,3,10,,,2026-04-01T14:00:00.000Z,2026-04-01T14:00:00.000Z
+2472a647-7115-4206-b9eb-501e87014f27,Leg Press Pendular — Set 2,Leg Press,2026-04-01,Legs,120,2,12,Lbs,,2026-04-01T14:00:00.000Z,2026-04-20T13:49:00.000Z
+10976357-5f1f-465d-b429-b1312208b504,Forearm Behind Back — Set 2,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-03-31,Pull,50,2,15,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+0bbe71f6-e13a-4bd9-b233-ac4d49aa21fe,Forearm Behind Back — Set 1,Standing Palms-up Barbell Behind the Back Wrist Curl,2026-03-31,Pull,40,1,15,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+eee2e586-7c64-4dbf-8d34-5edce16a893a,Rotating Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-03-31,Pull,20,2,10,,,2026-03-31T20:13:00.000Z,2026-03-31T20:13:00.000Z
+309cf9ef-c9b9-42fb-b9c4-817fbbf5050a,Rotating Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-03-31,Pull,20,1,10,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:52:00.000Z
+0b194606-2345-4ada-b929-52887ea8002c,Cross-Body Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-03-31,Pull,25,2,9,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+7c53e905-37ff-4304-8402-fc221111409c,Cross-Body Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-03-31,Pull,25,1,12,,,2026-03-31T20:13:00.000Z,2026-03-31T20:13:00.000Z
+e0ac846a-8a1c-4b0b-8421-2859fef63fd2,Hammer Curl — Set 2,Hammer curl,2026-03-31,Pull,30,2,10,,,2026-03-31T20:13:00.000Z,2026-04-20T01:09:00.000Z
+12153f95-3226-4d94-82b3-edc213ab7feb,Hammer Curl — Set 1,Hammer curl,2026-03-31,Pull,30,1,12,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+1ade52c6-5d87-434b-a2a4-5d8fd779c219,Incline Dumbbell Curl — Set 3,Incline Dumbbell Curl,2026-03-31,Pull,20,3,9,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+0dec5337-90f8-4513-9cef-1cb271cdf374,Incline Dumbbell Curl — Set 2,Incline Dumbbell Curl,2026-03-31,Pull,20,2,10,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+697bb4d5-5bf3-41fd-8aab-b86814f82384,Incline Dumbbell Curl — Set 1,Incline Dumbbell Curl,2026-03-31,Pull,20,1,12,,,2026-03-31T20:13:00.000Z,2026-03-31T20:13:00.000Z
+0a19f30c-c69a-4a60-adce-f44155d4102c,Bicep EZ Bar — Set 3,Standing Biceps Cable Curl,2026-03-31,Pull,40,3,12,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:49:00.000Z
+6a6168e1-006a-48de-80f4-af42d3f6d2fb,Bicep EZ Bar — Set 2,Standing Biceps Cable Curl,2026-03-31,Pull,40,2,12,,,2026-03-31T20:13:00.000Z,2026-04-20T01:09:00.000Z
+935a6418-d69e-4b6a-a307-93936d3a0d2f,Bicep EZ Bar — Set 1,Standing Biceps Cable Curl,2026-03-31,Pull,40,1,12,,,2026-03-31T20:13:00.000Z,2026-04-20T01:09:00.000Z
+a40e1a96-07c8-417d-b074-5a762c1abf3b,Dumbbell Single-Arm Row — Set 3,Dumbbell Single-Arm Row,2026-03-31,Pull,40,3,12,,,2026-03-31T20:13:00.000Z,2026-03-31T20:13:00.000Z
+0481a657-5fe1-4433-83a3-b2b8b37e6c5c,Dumbbell Single-Arm Row — Set 2,Dumbbell Single-Arm Row,2026-03-31,Pull,35,2,12,Lbs,,2026-03-31T20:13:00.000Z,2026-04-20T13:48:00.000Z
+c10c199f-f128-49a6-af17-bd83a7999a85,Dumbbell Single-Arm Row — Set 1,Dumbbell Single-Arm Row,2026-03-31,Pull,30,1,12,,,2026-03-31T20:13:00.000Z,2026-03-31T20:13:00.000Z
+d1cb4add-be7c-4dea-9391-58e9064c03b8,Cable Row Wide Grip — Set 3,Seated Cable Rows,2026-03-31,Pull,120,3,12,,,2026-03-31T20:13:00.000Z,2026-03-31T20:18:00.000Z
+d98bf478-7e16-4ed2-8df5-8a8cc8ed31ba,Cable Pulldown (bar) — Set 3,Wide-grip Lat Pulldown,2026-03-31,Pull,120,3,12,,,2026-03-31T20:12:00.000Z,2026-03-31T20:12:00.000Z
+39f60a6f-63b6-4fde-b082-2457d0402ddd,Cable Row Wide Grip — Set 2,Seated Cable Rows,2026-03-31,Pull,120,2,12,Lbs,,2026-03-31T20:12:00.000Z,2026-04-20T13:53:00.000Z
+15aa90b2-82e4-4ba2-a23c-2c5348e055c1,Cable Row Wide Grip — Set 1,Seated Cable Rows,2026-03-31,Pull,100,1,12,Lbs,,2026-03-31T20:12:00.000Z,2026-04-20T13:49:00.000Z
+a3de7474-bb68-427c-bb6e-724e9b5fd3d3,Cable Pulldown (bar) — Set 2,Wide-grip Lat Pulldown,2026-03-31,Pull,120,2,12,,,2026-03-31T20:12:00.000Z,2026-03-31T20:12:00.000Z
+b422f6f1-8cdc-48a8-a2fa-3372cb6b5602,Cable Pulldown (bar) — Set 1,Wide-grip Lat Pulldown,2026-03-31,Pull,120,1,12,,,2026-03-31T20:12:00.000Z,2026-03-31T20:12:00.000Z
+75b9356e-7798-4e93-95e5-263f73b1c1af,Single-Arm Tricep Pushdown — Set 3,Single-Arm Tricep Pushdown,2026-03-30,Push,20,3,8,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+bd828ffb-c681-4722-b6cf-f74930baf7e5,Single-Arm Tricep Pushdown — Set 2,Single-Arm Tricep Pushdown,2026-03-30,Push,20,2,8,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+2d22b738-e305-4cea-b84e-eca2160d2c3f,Single-Arm Tricep Pushdown — Set 1,Single-Arm Tricep Pushdown,2026-03-30,Push,20,1,10,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:52:00.000Z
+88c06516-d61e-4827-8cd0-605988aba964,Tricep Rope Horizontal — Set 3,Tricep rope horizontal,2026-03-30,Push,15,3,10,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+7da13c7b-b8b4-4b54-b0a5-4d36f7af6109,Tricep Rope Horizontal — Set 2,Tricep rope horizontal,2026-03-30,Push,15,2,10,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+dc4a5420-d62c-4aea-b56f-10dc0babd2e7,Tricep Rope Horizontal — Set 1,Tricep rope horizontal,2026-03-30,Push,15,1,12,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+fae3383b-3b80-4130-972e-a715fa9ac598,Facepull — Set 3,Face Pull,2026-03-30,Push,42.5,3,15,,,2026-03-31T17:08:00.000Z,2026-03-31T17:08:00.000Z
+4e83decf-27c5-45c9-b6a4-710738341a0f,Facepull — Set 2,Face Pull,2026-03-30,Push,42.5,2,15,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:53:00.000Z
+535920c1-1107-4962-983d-140554aefcae,Facepull — Set 1,Face Pull,2026-03-30,Push,42.5,1,15,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:53:00.000Z
+4eb63c7d-94e2-4757-81f6-963caf052ddd,Lateral Raise — Set 3,Side Lateral Raise,2026-03-30,Push,20,3,12,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:53:00.000Z
+942b8d34-a023-4a2c-808f-b74bea200b17,Lateral Raise — Set 2,Side Lateral Raise,2026-03-30,Push,20,2,12,,,2026-03-31T17:08:00.000Z,2026-03-31T17:14:00.000Z
+e212d147-89fc-46cb-bba8-4906e8fc960d,Lateral Raise — Set 1,Side Lateral Raise,2026-03-30,Push,20,1,12,,,2026-03-31T17:08:00.000Z,2026-03-31T17:14:00.000Z
+25929a72-dbaa-4fde-a510-bf6d8ec528ec,Shoulder Press — Set 3,Dumbbell Shoulder Press,2026-03-30,Push,25,3,7,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:52:00.000Z
+befc56d8-8cf4-4fe6-a441-765cade0fbe3,Shoulder Press — Set 2,Dumbbell Shoulder Press,2026-03-30,Push,25,2,7,,,2026-03-31T17:08:00.000Z,2026-03-31T17:08:00.000Z
+f73f253d-cab7-4b01-97f7-bb53e9da9b75,Shoulder Press — Set 1,Dumbbell Shoulder Press,2026-03-30,Push,25,1,8,,,2026-03-31T17:08:00.000Z,2026-03-31T17:08:00.000Z
+9b5a9239-4e5b-4e1c-84cf-dfe885e155f7,Dumbbell Incline Flies — Set 3,Seated Cable Fly,2026-03-30,Push,35,3,6,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+4dd3b991-846f-4c13-9eea-03e459764f7d,Dumbbell Incline Flies — Set 2,Seated Cable Fly,2026-03-30,Push,35,2,7,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:53:00.000Z
+64583221-3408-4da4-8e30-a43ce81f6c0c,Dumbbell Incline Flies — Set 1,Seated Cable Fly,2026-03-30,Push,30,1,12,,,2026-03-31T17:08:00.000Z,2026-04-20T01:09:00.000Z
+c87cd7e2-85be-47e7-a16c-7bcd561cf1c0,Dumbbell Chest Press — Set 3,Dumbbell chest press,2026-03-30,Push,45,3,6,,,2026-03-31T17:08:00.000Z,2026-03-31T17:08:00.000Z
+eb962ceb-1fcf-4687-95a1-fee0c6459836,Dumbbell Chest Press — Set 2,Dumbbell chest press,2026-03-30,Push,45,2,7,,,2026-03-31T17:08:00.000Z,2026-03-31T17:08:00.000Z
+bf888f87-88ac-4fee-bfd8-8795cbab3256,Bench Press — Set 4,Wide-grip Barbell Bench Press,2026-03-30,Push,35,4,6,,,2026-03-31T17:08:00.000Z,2026-04-20T01:25:00.000Z
+410c38f3-7b5d-45b1-b2a5-a9986b0df97a,Dumbbell Chest Press — Set 1,Dumbbell chest press,2026-03-30,Push,45,1,8,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:53:00.000Z
+f6f69e15-8312-4ff0-887c-1a1e7ae54ed0,Bench Press — Set 3,Wide-grip Barbell Bench Press,2026-03-30,Push,35,3,7,,,2026-03-31T17:08:00.000Z,2026-04-20T01:25:00.000Z
+b2bd3bf9-1fdf-4817-809d-2eb396817b15,Bench Press — Set 1,Wide-grip Barbell Bench Press,2026-03-30,Push,30,1,8,,,2026-03-31T17:08:00.000Z,2026-04-20T01:25:00.000Z
+2e8151bc-736c-4477-95bf-354e5a477093,Bench Press — Set 2,Wide-grip Barbell Bench Press,2026-03-30,Push,35,2,8,Lbs,,2026-03-31T17:08:00.000Z,2026-04-20T13:52:00.000Z
+73bc2aa2-84ac-467e-abe8-2f20a04e4bfc,Tricep Pushdown — Set 3,Triceps Pushdown - Rope Attachment,2026-03-27,Push,50,3,12,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+3c32cc85-4079-4fba-af73-997a6cae34e2,Tricep Pushdown — Set 2,Triceps Pushdown - Rope Attachment,2026-03-27,Push,50,2,12,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+ab0d8a85-ba6f-43e4-9872-ad83e4d9c407,Tricep Pushdown — Set 1,Triceps Pushdown - Rope Attachment,2026-03-27,Push,50,1,12,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+76313f43-9302-4e34-8109-498496672d6b,Tricep Rope Horizontal — Set 3,Tricep rope horizontal,2026-03-27,Push,15,3,11,,,2026-03-27T21:43:00.000Z,2026-04-20T01:09:00.000Z
+721c9360-b8f5-4fcf-a47c-99e24f3151f2,Tricep Rope Horizontal — Set 2,Tricep rope horizontal,2026-03-27,Push,15,2,12,,,2026-03-27T21:43:00.000Z,2026-04-20T01:09:00.000Z
+ce6748e0-2e85-4c59-a01d-0bb76f2cde7e,Tricep Rope Horizontal — Set 1,Tricep rope horizontal,2026-03-27,Push,15,1,12,,,2026-03-27T21:43:00.000Z,2026-04-20T01:09:00.000Z
+ba8cb50d-4d62-41b6-b316-ba2a9fff4420,Facepull — Set 3,Face Pull,2026-03-27,Push,42.5,3,15,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+701538a2-b033-4abd-af4b-1fdeddd12235,Facepull — Set 2,Face Pull,2026-03-27,Push,42.5,2,15,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+b5e91388-045b-47d6-83cc-bbb59d5558ea,Facepull — Set 1,Face Pull,2026-03-27,Push,42.5,1,15,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+ac52c285-c57d-4322-ae5d-ca05d380bba2,Lateral Raise — Set 3,Side Lateral Raise,2026-03-27,Push,20,3,12,,,2026-03-27T21:43:00.000Z,2026-03-31T17:17:00.000Z
+3d09ace6-ab93-490e-b40f-8d8ba593da98,Lateral Raise — Set 2,Side Lateral Raise,2026-03-27,Push,20,2,10,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+1f5030ec-d986-45eb-abaa-5c346396fb91,Lateral Raise — Set 1,Side Lateral Raise,2026-03-27,Push,20,1,12,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:49:00.000Z
+42046da2-17cf-4a96-8ee1-fc771a9021ea,Shoulder Press — Set 3,Dumbbell Shoulder Press,2026-03-27,Push,25,3,8,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+4e6b9e9c-e7fd-40eb-b999-b46b1c746b69,Shoulder Press — Set 2,Dumbbell Shoulder Press,2026-03-27,Push,25,2,9,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+4c28e889-65bc-40e0-87b1-920d52dc3f75,Shoulder Press — Set 1,Dumbbell Shoulder Press,2026-03-27,Push,25,1,9,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+3671131d-2cd8-49d7-96a3-a0b98db3f903,Dumbbell Incline Flies — Set 3,Seated Cable Fly,2026-03-27,Push,35,3,6,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:52:00.000Z
+09e56c8a-0406-475e-b73d-d50706546e18,Dumbbell Incline Flies — Set 2,Seated Cable Fly,2026-03-27,Push,35,2,7,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:49:00.000Z
+44091fbe-ff47-4311-8774-bc6464d7a77a,Dumbbell Incline Flies — Set 1,Seated Cable Fly,2026-03-27,Push,35,1,8,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:53:00.000Z
+23827f85-8bd2-4abf-9557-402f76fbc316,Dumbbell Chest Press — Set 3,Dumbbell chest press,2026-03-27,Push,45,3,6,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:49:00.000Z
+8542f8d2-5c9a-493c-a12f-6d2a2111ad5c,Dumbbell Chest Press — Set 2,Dumbbell chest press,2026-03-27,Push,45,2,7,,,2026-03-27T21:43:00.000Z,2026-03-27T21:43:00.000Z
+8731b018-24e1-4936-946d-9b333aaa6d6c,Bench Press — Set 3,Wide-grip Barbell Bench Press,2026-03-27,Push,30,3,8,,,2026-03-27T21:43:00.000Z,2026-04-20T01:25:00.000Z
+5b40cb2b-92b7-4c20-b2a2-5af573fe5e38,Dumbbell Chest Press — Set 1,Dumbbell chest press,2026-03-27,Push,45,1,7,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:54:00.000Z
+e5283c8c-464e-4fc8-a05e-40428233f413,Bench Press — Set 2,Wide-grip Barbell Bench Press,2026-03-27,Push,30,2,8,,,2026-03-27T21:43:00.000Z,2026-04-20T01:25:00.000Z
+0a75875e-db3f-4e8d-8fe6-3a515cd971f3,Bench Press — Set 1,Wide-grip Barbell Bench Press,2026-03-27,Push,30,1,8,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:49:00.000Z
+0332d648-8151-4166-8b23-a28ab51a3e91,Bench Press — Set 4,Wide-grip Barbell Bench Press,2026-03-27,Push,30,4,8,Lbs,,2026-03-27T21:43:00.000Z,2026-04-20T13:48:00.000Z
+3ed155a1-8fe2-4c7a-9697-125f2725860c,Calves — Set 3,Standing Calf Raises,2026-03-26,Legs,120,3,14,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:53:00.000Z
+bdf581bd-aadd-4970-91a7-9b993bbda97c,Calves — Set 2,Standing Calf Raises,2026-03-26,Legs,120,2,15,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+2a3b0876-72ac-46b8-9d1d-9b7b08302592,Calves — Set 1,Standing Calf Raises,2026-03-26,Legs,120,1,16,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:52:00.000Z
+c5b42853-cdc2-4293-ae12-dcc3b7d5042e,Dumbbell Romanian deadlift — Set 3,Romanian deadlift,2026-03-26,Legs,50,3,8,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+194cc598-9ec7-4de4-9edf-4553e45a4308,Dumbbell Romanian deadlift — Set 2,Romanian deadlift,2026-03-26,Legs,50,2,8,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:49:00.000Z
+b3d728b4-fd40-4c88-8f09-093fa149a46f,Dumbbell Romanian deadlift — Set 1,Romanian deadlift,2026-03-26,Legs,50,1,8,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+b0bd4b65-a5c8-450a-ab7c-e4be8cc65f61,Leg curl — Set 3,Seated Leg Curl,2026-03-26,Legs,10,3,11,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+5b1eecb5-ee93-49d8-838c-1e49fbadeb81,Leg curl — Set 1,Seated Leg Curl,2026-03-26,Legs,10,1,12,Pins,,2026-03-26T17:10:00.000Z,2026-04-20T13:52:00.000Z
+754855aa-b68d-4dae-a027-c76d877a268d,Leg ext — Set 2,Leg Extensions,2026-03-26,Legs,55,2,11,,,2026-03-26T17:10:00.000Z,2026-04-16T02:35:00.000Z
+da657e22-86a5-4855-994a-f25c65e52ebf,Leg curl — Set 2,Seated Leg Curl,2026-03-26,Legs,10,2,12,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+fbd16f6c-c52a-40f4-a7bb-8e90d105963a,Leg ext — Set 3,Leg Extensions,2026-03-26,Legs,55,3,12,,,2026-03-26T17:10:00.000Z,2026-04-16T02:35:00.000Z
+f80dd77a-cfdc-4890-ab47-9aca6ff389a8,Leg ext — Set 1,Leg Extensions,2026-03-26,Legs,55,1,12,,,2026-03-26T17:10:00.000Z,2026-04-16T02:35:00.000Z
+a82db31e-d5f6-4e6d-8420-259ce13722ca,Leg press pendular — Set 3,Leg Press,2026-03-26,Legs,115,3,12,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+99758a15-b615-4e64-b263-fce46f6b4857,Leg press pendular — Set 1,Leg Press,2026-03-26,Legs,115,1,12,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+428a5c98-d34f-47ee-b590-d1b2d25f00d1,Linear hack press — Set 3,Linear hack press,2026-03-26,Legs,50,3,10,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:53:00.000Z
+2b7950d8-8c5f-4ebb-a51b-5ff6f247ce7a,Linear hack press — Set 1,Linear hack press,2026-03-26,Legs,50,1,10,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:52:00.000Z
+eecaab60-d263-40a6-961b-46f5d4df0897,Linear hack press — Set 2,Linear hack press,2026-03-26,Legs,50,2,10,,,2026-03-26T17:10:00.000Z,2026-03-26T17:10:00.000Z
+13395d07-34ff-4b2d-a16f-a4eddc143cd9,Leg press pendular — Set 2,Leg Press,2026-03-26,Legs,115,2,12,Lbs,,2026-03-26T17:10:00.000Z,2026-04-20T13:49:00.000Z
+24c27156-b300-4182-a46a-90d7d24090b0,Bicep EZ Bar — Set 2,Standing Biceps Cable Curl,2026-03-24,Pull,50,2,10,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:52:00.000Z
+29df45b1-3c70-4e51-98d4-453d7df818e5,Hammer Curl — Set 2,Hammer curl,2026-03-24,Pull,30,2,10,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:52:00.000Z
+478aa264-3034-4f46-b89f-ab67c923843a,Incline Dumbbell Curl — Set 2,Incline Dumbbell Curl,2026-03-24,Pull,15,2,12,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:53:00.000Z
+72de906b-082a-40bc-9213-707102a900af,Cross-Body Curl — Set 2,Preacher Hammer Dumbbell Curl,2026-03-24,Pull,25,2,10,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+7db10c79-259f-4ff3-9f7c-b2c11eb6f993,Incline Dumbbell Curl — Set 1,Incline Dumbbell Curl,2026-03-24,Pull,15,1,12,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+8500c345-9e25-4270-8d2c-d3b7258c462e,Cross-Body Curl — Set 1,Preacher Hammer Dumbbell Curl,2026-03-24,Pull,25,1,10,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+99e03ae4-c570-441d-a682-d89da34516dc,Hammer Curl — Set 3,Hammer curl,2026-03-24,Pull,30,3,8,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+b92aff3e-f850-46da-9a68-780492c02dde,Hammer Curl — Set 1,Hammer curl,2026-03-24,Pull,30,1,10,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+bd1f449e-6fad-4c57-92e7-3fdb60138078,Bicep EZ Bar — Set 3,Standing Biceps Cable Curl,2026-03-24,Pull,50,3,9,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+fbc0dd66-12e7-4dc6-a1d2-b40c74fc6e0d,Cross-Body Curl — Set 3,Preacher Hammer Dumbbell Curl,2026-03-24,Pull,25,3,9,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+fdaa5732-2143-466b-a82d-fab44cec11a2,Incline Dumbbell Curl — Set 3,Incline Dumbbell Curl,2026-03-24,Pull,15,3,12,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+0b4102cc-7b32-435d-81a6-8586d81e4552,Dumbbell Single-Arm Row — Set 3,Dumbbell Single-Arm Row,2026-03-24,Pull,30,3,13,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:49:00.000Z
+299089cd-cf88-464c-8f7b-611ba4ba6b5f,MTS Front Pulldown — Set 2,Wide-grip Lat Pulldown,2026-03-24,Pull,60,2,10,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:52:00.000Z
+520eb754-fb02-4714-8bb8-1c1df464ecf3,MTS Row — Set 3,Seated Cable Rows,2026-03-24,Pull,60,3,10,Lbs,,2026-03-24T19:36:00.000Z,2026-04-20T13:53:00.000Z
+8d1f3291-207f-4815-96b2-aba112434b08,Dumbbell Single-Arm Row — Set 1,Dumbbell Single-Arm Row,2026-03-24,Pull,30,1,12,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+b4b7ac8a-43ee-4b0b-a850-b1d055eb97f7,MTS Front Pulldown — Set 1,Wide-grip Lat Pulldown,2026-03-24,Pull,60,1,10,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+b8a49252-fb53-4a0b-bd70-0bae5731a5f1,Bicep EZ Bar — Set 1,Standing Biceps Cable Curl,2026-03-24,Pull,50,1,12,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+c94ef971-6a78-4d7b-97a4-48620150c582,MTS Row — Set 1,Seated Cable Rows,2026-03-24,Pull,60,1,12,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+d22f488f-e924-4023-af2b-23281a190007,MTS Front Pulldown — Set 3,Wide-grip Lat Pulldown,2026-03-24,Pull,60,3,10,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+e9710f87-fda4-4f70-bcff-a6032cff6ea2,MTS Row — Set 2,Seated Cable Rows,2026-03-24,Pull,60,2,10,,,2026-03-24T19:36:00.000Z,2026-04-20T01:09:00.000Z
+edf49590-0ad5-475a-a30d-fda12e464a2b,Dumbbell Single-Arm Row — Set 2,Dumbbell Single-Arm Row,2026-03-24,Pull,30,2,12,,,2026-03-24T19:36:00.000Z,2026-03-24T19:36:00.000Z
+3092c115-ff52-4dcf-a4c4-a842272a4e62,Tricep Rope Horizontal — 3x10,Tricep rope horizontal,2026-03-23,Push,15,,10,Lbs,,2026-03-23T22:16:00.000Z,2026-04-20T13:52:00.000Z
+6b35ced2-2ef1-481b-8692-e89366c5d4f4,Facepull — 3x12,Face Pull,2026-03-23,Push,35,,12,,,2026-03-23T22:16:00.000Z,2026-04-20T01:09:00.000Z
+8b2e0031-0f3e-49cc-a449-08c0c21206c7,Bench press — 4x8,Wide-grip Barbell Bench Press,2026-03-23,Push,30,,8,,,2026-03-23T22:16:00.000Z,2026-04-20T01:25:00.000Z
+983736e5-e3b0-4967-bbcd-8c6b035e6dda,Lateral Raise — 3x12,Side Lateral Raise,2026-03-23,Push,20,,12,,,2026-03-23T22:16:00.000Z,2026-04-20T01:09:00.000Z
+bb020a84-ae0e-4e23-824f-13231710ff1d,Single-Arm Tricep Pushdown — 3x8–10,Single-Arm Tricep Pushdown,2026-03-23,Push,20,,9,,,2026-03-23T22:16:00.000Z,2026-04-20T01:09:00.000Z
+c643e02d-607c-42af-ab79-025406b3b1a4,Shoulder Press — 3x8,Shoulder press,2026-03-23,Push,25,,8,,,2026-03-23T22:16:00.000Z,2026-03-23T22:16:00.000Z
+d7bbd721-f209-4f3d-b9fa-501a4b435fad,Incline Dumbbell Press — 3x4,Dumbbell incline press,2026-03-23,Push,50,,4,,,2026-03-23T22:16:00.000Z,2026-03-23T22:16:00.000Z
+e3a4930c-1cdd-42ed-b282-7b2e3a244b02,Dumbbell Incline Flies — 3x5,Seated Cable Fly,2026-03-23,Push,40,,5,,,2026-03-23T22:16:00.000Z,2026-04-20T01:09:00.000Z
+32991176-d459-813a-8f8a-d2da8cd43262,"Leg ext, 55x10",Leg Extensions,2026-03-20,Legs,55,,10,Lbs,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+32991176-d459-8153-aff9-d9d3d7bea953,"Linear hack press, 50x12",Linear hack press,2026-03-20,Legs,50,,12,Lbs,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+32991176-d459-8164-82af-ef3b1d150ed3,"Leg curl, 10x11",Seated Leg Curl,2026-03-20,Legs,10,,11,Pins,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+32991176-d459-818b-a567-e7f9d92b202d,"Calves, 120x15",Standing Calf Raise,2026-03-20,Legs,120,,15,Lbs,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+32991176-d459-819f-96b4-e169fe4dbf6b,"Leg press pendular, 115x12",Leg press pendular,2026-03-20,Legs,115,,12,Lbs,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+32991176-d459-81e8-8dae-e74060ceed41,"Romanian Deadlift, 60x12",Romanian deadlift,2026-03-20,Legs,60,,12,Lbs,,2026-03-20T18:28:00.000Z,2026-04-20T13:52:00.000Z
+23664754-dbbb-4494-906f-61baa60ada43,"Bicep EZ bar, 50x12",Standing Biceps Cable Curl,2026-03-18,Pull,50,,12,Lbs,,2026-03-18T22:10:00.000Z,2026-04-20T13:49:00.000Z
+a936a436-b79c-4142-b22f-61e0b3cd973c,"Pulldown bar cable, 140x5",Wide-grip Lat Pulldown,2026-03-18,Pull,140,,5,,,2026-03-18T22:10:00.000Z,2026-03-18T22:10:00.000Z
+b35e86a2-7579-46b6-8496-0c85202d4a72,"Row cable close grip, 140x6",Seated Cable Rows,2026-03-18,Pull,140,,6,,,2026-03-18T22:10:00.000Z,2026-04-20T02:14:00.000Z
+bf0294cd-875a-4905-904d-55d5335d4c7f,"Hammer curl, 30x8",Hammer curl,2026-03-18,Pull,30,,8,,,2026-03-18T22:10:00.000Z,2026-03-18T22:10:00.000Z
+dcfcd9f6-3ee1-42f0-8bd2-bb8c897df621,"Incline Dumbbell Curl, 15x12",Incline Dumbbell Curl,2026-03-18,Pull,15,,12,,,2026-03-18T22:10:00.000Z,2026-03-19T22:11:00.000Z
+f63c8090-25dd-436f-b6ba-f355265fc1a5,"Hammer crossed, 25x12",Cross-Body Curl,2026-03-18,Pull,25,,12,,,2026-03-18T22:10:00.000Z,2026-03-23T22:56:00.000Z
+214a7673-d69d-4c33-961c-5a19eb474fa8,"Dumbbell Chest Press, 50x5",Iso wide chest,2026-03-16,Push,50,,5,Lbs,,2026-03-17T00:01:00.000Z,2026-04-20T13:49:00.000Z
+94361004-92b0-4dfc-bd6d-a9ea3faa8899,"Dumbbell incline flies, 35x12",Seated Cable Fly,2026-03-16,Push,35,,12,,,2026-03-17T00:01:00.000Z,2026-04-20T01:09:00.000Z
+9e3c36cf-c308-4635-a3b1-738f59c52bda,"Facepull, 42.5x12",Face Pull,2026-03-16,Push,42.5,,12,,,2026-03-17T00:01:00.000Z,2026-04-20T01:09:00.000Z
+bebd9656-5e27-44fa-a862-d61c68ec7512,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-03-16,Push,15,,6,,,2026-03-17T00:01:00.000Z,2026-04-20T01:09:00.000Z
+ceecc58f-324c-44d7-af0b-cd0cde3d94f1,"Single-Arm Tricep Pushdown, 25x4",Single-Arm Tricep Pushdown,2026-03-16,Push,25,,4,,,2026-03-17T00:01:00.000Z,2026-04-20T01:09:00.000Z
+d97faba8-d721-4939-b2a8-9963c584c566,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-03-16,Push,25,,8,,,2026-03-17T00:01:00.000Z,2026-03-17T00:01:00.000Z
+e2d29eb6-d761-4c66-bb5d-9e9ec3284e9f,"Lateral Raise, 20x12",Side Lateral Raise,2026-03-16,Push,20,,12,,,2026-03-17T00:01:00.000Z,2026-04-20T01:10:00.000Z
+0ec371aa-defb-41cb-89a2-8d3531583036,"Row cable close grip, 120x12",Seated Cable Rows,2026-03-10,Pull,120,,12,Lbs,,2026-03-10T21:38:00.000Z,2026-04-20T13:49:00.000Z
+39d1defe-1744-4123-8bd8-4892e2fb45db,"Hammer curl, 30x7",Hammer curl,2026-03-10,Pull,30,,7,Lbs,,2026-03-10T21:38:00.000Z,2026-04-20T13:52:00.000Z
+6a047392-2283-4cf1-bbf2-6e1922c5b1a3,"Forearm behind back, 40x15",Standing Palms-up Barbell Behind the Back Wrist Curl,2026-03-10,Pull,40,,15,,,2026-03-10T21:38:00.000Z,2026-03-10T21:39:00.000Z
+7ed8250d-0083-48a6-b149-72de2dee5d76,"Forearm twists, 15x12",Forearm twists,2026-03-10,Pull,15,,12,,,2026-03-10T21:38:00.000Z,2026-03-10T21:39:00.000Z
+9dcd5673-c2c9-4086-a735-bd97d3446cf4,"Bicep EZ bar, 50x10",Standing Biceps Cable Curl,2026-03-10,Pull,50,,10,,,2026-03-10T21:38:00.000Z,2026-04-20T01:10:00.000Z
+bf20b9e1-0c3c-44e1-8022-53d7444f4005,"Hammer w twist, 20x12",Rotating Curl,2026-03-10,Pull,20,,12,,,2026-03-10T21:38:00.000Z,2026-03-23T22:56:00.000Z
+dc43fd7d-fae4-4ef9-86b4-15ba8229832a,"Pulldown bar cable, 120x12",Wide-grip Lat Pulldown,2026-03-10,Pull,120,,12,,,2026-03-10T21:38:00.000Z,2026-03-10T21:39:00.000Z
+141ca4fc-2536-468f-83a2-1db24347d861,"Shoulder front, 25x6",Shoulder front,2026-03-06,Push,25,,6,Lbs,,2026-03-10T16:06:00.000Z,2026-04-20T13:49:00.000Z
+18f763d9-c829-4379-835b-3f33357b32c4,"Facepull, 35x12",Face Pull,2026-03-06,Push,35,,12,Lbs,,2026-03-10T16:06:00.000Z,2026-04-20T13:49:00.000Z
+1b76e038-db79-420e-9079-f744ba63767f,"Tricep Pushdown, 50x12",Triceps Pushdown - Rope Attachment,2026-03-06,Push,50,,12,Lbs,,2026-03-10T16:06:00.000Z,2026-04-20T13:49:00.000Z
+4c1c3eac-abf9-4f7c-8f47-f98519277955,"Dumbbell incline flies, 35x12",Seated Cable Fly,2026-03-06,Push,35,,12,Lbs,,2026-03-10T16:06:00.000Z,2026-04-20T13:53:00.000Z
+811156d0-f0e2-4961-8b91-8ccdaa153a9e,"Dumbbell Chest Press, 45x12",Iso wide chest,2026-03-06,Push,45,,12,,,2026-03-10T16:06:00.000Z,2026-03-19T22:11:00.000Z
+97dd4898-37e3-432d-a51c-c0ba2a6410d7,"Lateral Raise, 25x6",Side Lateral Raise,2026-03-06,Push,25,,6,,,2026-03-10T16:06:00.000Z,2026-04-20T01:10:00.000Z
+c95ae9d0-a7f4-4e02-82d7-f0ba0f2a8a3c,"Single-Arm Tricep Pushdown, 25x4",Single-Arm Tricep Pushdown,2026-03-06,Push,25,,4,,,2026-03-10T16:06:00.000Z,2026-04-20T01:10:00.000Z
+16c4fbe0-7ef1-48fe-87ce-8af2c6e72e27,"Hammer w twist, 20x12",Rotating Curl,2026-03-03,Pull,20,,12,Lbs,,2026-03-06T11:07:00.000Z,2026-04-20T13:49:00.000Z
+1f9b3c52-e829-46e6-aa67-5b6d864d0e5d,"Leg curl, 10x8",Seated Leg Curl,2026-03-04,Legs,10,,8,Pins,,2026-03-06T11:07:00.000Z,2026-04-20T13:47:00.000Z
+20c9fcd3-8e10-48ef-9773-2493ed96bb6f,"Hammer curl, 30x6",Hammer curl,2026-03-03,Pull,30,,6,Lbs,,2026-03-06T11:07:00.000Z,2026-04-20T13:49:00.000Z
+23aeb72e-9a79-46db-96a4-fa24d57cfcd9,"Bicep EZ bar, 50x8",Standing Biceps Cable Curl,2026-03-03,Pull,50,,8,Lbs,,2026-03-06T11:07:00.000Z,2026-04-20T13:49:00.000Z
+527f8c86-6b36-4c7d-8f4d-da034806e328,"Linear hack press, 50x8",Linear hack press,2026-03-04,Legs,50,,8,Lbs,,2026-03-06T11:07:00.000Z,2026-04-20T13:53:00.000Z
+611cc86d-748b-454b-bf4b-d5db4d56a552,"Pulldown bar cable, 120x6",Wide-grip Lat Pulldown,2026-03-03,Pull,120,,6,,,2026-03-06T11:07:00.000Z,2026-03-06T11:08:00.000Z
+64ce71a3-9b29-49dc-a992-a18f10f47450,"Inner thighs, 8x8",Inner thighs,2026-03-04,Legs,8,,8,,,2026-03-06T11:07:00.000Z,2026-03-06T11:08:00.000Z
+926240da-8eb0-475c-b8c0-7f8ddafb6dde,"Leg ext, 55x12",Leg Extensions,2026-03-04,Legs,55,,12,,,2026-03-06T11:07:00.000Z,2026-04-16T02:35:00.000Z
+bbf4338d-6a88-47b7-a60b-df005101ba2c,"Row cable close grip, 120x8",Seated Cable Rows,2026-03-03,Pull,120,,8,,,2026-03-06T11:07:00.000Z,2026-04-20T02:14:00.000Z
+f8fc4c43-acf0-40e3-8ba7-bfbff9a009fd,"Calves, 120x8",Standing Calf Raise,2026-03-04,Legs,120,,8,,,2026-03-06T11:07:00.000Z,2026-03-06T11:08:00.000Z
+7bebdc21-8142-4f3b-9fde-9b0c030a54d2,"Dumbbell Chest Press, 45x8",Iso wide chest,2026-02-27,Push,45,,8,,,2026-02-27T21:19:00.000Z,2026-03-19T22:11:00.000Z
+8ad6eb38-2a9c-4cd1-b848-201c6a6af354,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-02-27,Push,15,,6,,,2026-02-27T21:19:00.000Z,2026-04-20T01:10:00.000Z
+d2ceec79-3e63-4c33-a9f9-593915fc9bc0,"Tricep Pushdown, 57.5x7",Triceps Pushdown - Rope Attachment,2026-02-27,Push,57.5,,7,,,2026-02-27T21:19:00.000Z,2026-03-19T22:33:00.000Z
+d492bec2-b64c-4e59-9a17-11ba112908d1,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-02-27,Push,25,,8,,,2026-02-27T21:19:00.000Z,2026-02-27T21:19:00.000Z
+d9312121-5047-4204-bf2b-6825f0c44c75,"Lateral Raise, 20x8",Side Lateral Raise,2026-02-27,Push,20,,8,,,2026-02-27T21:19:00.000Z,2026-04-20T01:10:00.000Z
+e61e513f-d9c1-46b1-841c-d074ffc45b81,"Dumbbell incline flies, 35x8",Seated Cable Fly,2026-02-27,Push,35,,8,,,2026-02-27T21:19:00.000Z,2026-04-20T01:10:00.000Z
+8cde811c-3878-4a52-ab12-dec6cad0dd0f,"Bicep EZ bar, 50x6",Standing Biceps Cable Curl,2026-02-23,Pull,50,,6,,,2026-02-27T17:08:00.000Z,2026-04-20T01:10:00.000Z
+fb981256-eb07-4c51-bfd9-7fbf28179dce,"Cable Curl (rope), 15x6",Cable Curl (Low Pulley),2026-02-23,Pull,15,,6,,,2026-02-27T17:08:00.000Z,2026-03-19T22:11:00.000Z
+0941c617-fb26-4e78-a74a-c974a3866f46,"Linear hack press, 45x12",Linear hack press,2026-02-25,Legs,45,,12,Lbs,,2026-02-27T17:07:00.000Z,2026-04-20T13:49:00.000Z
+23b4bc47-ddb8-45bb-be32-9a56196446b0,"Pulldown bar cable, 110x6",Wide-grip Lat Pulldown,2026-02-23,Pull,110,,6,Lbs,,2026-02-27T17:07:00.000Z,2026-04-20T13:49:00.000Z
+59f5cb5d-368b-41e0-9d26-696cadba69ce,"Leg ext, 55x10",Leg Extensions,2026-02-25,Legs,55,,10,Lbs,,2026-02-27T17:07:00.000Z,2026-04-20T13:54:00.000Z
+5f123836-47e6-4299-b0a5-db8a924fca5c,"Outer thigh, 9x8",Outer thigh,2026-02-25,Legs,9,,8,Lbs,,2026-02-27T17:07:00.000Z,2026-04-20T13:54:00.000Z
+64921df8-66b7-4d23-b997-b6a747243a3b,"Dumbbell Chest Press, 45x7",Iso wide chest,2026-02-22,Push,45,,7,,,2026-02-27T17:07:00.000Z,2026-03-19T22:11:00.000Z
+6cf78997-2945-43e2-81a6-385fb0bc82c4,"Leg curl, 9x10",Seated Leg Curl,2026-02-25,Legs,9,,10,,,2026-02-27T17:07:00.000Z,2026-02-27T17:07:00.000Z
+81247310-a813-4c48-b9f5-cc3fff2687ef,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-02-22,Push,15,,6,,,2026-02-27T17:07:00.000Z,2026-04-20T01:10:00.000Z
+85f0a741-d0a6-4ac0-a95b-0375f473aff6,"Hammer crossed, 25x8",Cross-Body Curl,2026-02-23,Pull,25,,8,,,2026-02-27T17:07:00.000Z,2026-03-23T22:56:00.000Z
+949c772a-bc38-4701-906c-fd7b768d4b01,"Row cable close grip, 120x6",Seated Cable Rows,2026-02-23,Pull,120,,6,,,2026-02-27T17:07:00.000Z,2026-04-20T02:14:00.000Z
+a075c8ef-6d66-48fd-848c-9dac583622e8,"Dumbbell incline flies, 35x7",Seated Cable Fly,2026-02-22,Push,35,,7,,,2026-02-27T17:07:00.000Z,2026-04-20T01:10:00.000Z
+add42ab5-1d8d-490c-848a-598e8d17722e,"Inner thighs, 8x8",Inner thighs,2026-02-25,Legs,8,,8,,,2026-02-27T17:07:00.000Z,2026-02-27T17:07:00.000Z
+e024f213-fcdc-4867-8562-64cb5bc04e3f,"Lateral Raise, 20x6",Side Lateral Raise,2026-02-22,Push,20,,6,,,2026-02-27T17:07:00.000Z,2026-04-20T01:10:00.000Z
+f632dfe1-3776-45e3-ba3f-aacde4f31daa,"Tricep Pushdown, 57.5x7",Triceps Pushdown - Rope Attachment,2026-02-22,Push,57.5,,7,,,2026-02-27T17:07:00.000Z,2026-03-19T22:33:00.000Z
+f6d602ca-fea0-437c-800c-2eb1cac3ac65,"Shoulder press, 25x7",Dumbbell Shoulder Press,2026-02-22,Push,25,,7,,,2026-02-27T17:07:00.000Z,2026-02-27T17:07:00.000Z
+8b4d81fb-3850-45c8-9b2c-2acb92178562,"Cable Curl (rope), 10x15",Cable Curl (Low Pulley),2026-02-20,Pull,10,,15,,,2026-02-23T09:51:00.000Z,2026-03-19T22:11:00.000Z
+088dbbec-3d47-4b60-8eb2-f06e5ffd8034,"Row cable close grip, 100x12",Seated Cable Rows,2026-02-20,Pull,100,,12,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:49:00.000Z
+14e614bc-9403-484b-9b4d-bdb453c8e3f2,"Hammer curl, 25x10",Hammer curl,2026-02-20,Pull,25,,10,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:49:00.000Z
+26c1a156-2364-4c0a-aacd-232662df85c0,"Dumbbell incline flies, 35x6",Seated Cable Fly,2026-02-16,Push,35,,6,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:52:00.000Z
+2bc99ceb-8e11-469e-82fa-e259430e33c7,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-02-16,Push,15,,6,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:52:00.000Z
+3107a3c7-0011-4105-877f-d5f5110ae856,"Dumbbell Chest Press, 45x8",Iso wide chest,2026-02-16,Push,45,,8,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:52:00.000Z
+3411bbe4-64a5-46f7-a32d-a2c3bd6a867b,"Shoulder front, 20x8",Shoulder front,2026-02-16,Push,20,,8,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:52:00.000Z
+51698133-fbe4-4141-97a6-c5d36c32c26e,"Pulldown bar cable, 100x11",Wide-grip Lat Pulldown,2026-02-20,Pull,100,,11,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:53:00.000Z
+5a27c1e3-a7ba-4892-b09c-a7c2cdb2b001,"Tricep Pushdown, 57.5x8",Triceps Pushdown - Rope Attachment,2026-02-16,Push,57.5,,8,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:54:00.000Z
+5da4656f-f431-49f8-9852-c4a8a7459b2f,"Bicep EZ bar, 50x8",Standing Biceps Cable Curl,2026-02-20,Pull,50,,8,Lbs,,2026-02-23T09:51:00.000Z,2026-04-20T13:54:00.000Z
+c4f878f8-64b3-4d7f-a0e9-d648828b9a23,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-02-16,Push,25,,8,,,2026-02-23T09:51:00.000Z,2026-02-23T09:51:00.000Z
+3ce92978-dd60-4b49-891a-9ef4140dd981,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-02-10,Push,25,,8,Lbs,,2026-02-10T19:42:00.000Z,2026-04-20T13:53:00.000Z
+8741846e-4745-4aed-a55e-30f849e926f0,"Tricep Pushdown, 57.5x7",Triceps Pushdown - Rope Attachment,2026-02-10,Push,57.5,,7,,,2026-02-10T19:42:00.000Z,2026-03-19T22:33:00.000Z
+99f459fc-7e50-41b5-b2ef-6c395a202a21,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-02-10,Push,15,,6,,,2026-02-10T19:42:00.000Z,2026-04-20T01:10:00.000Z
+ace04cb8-4521-4868-b372-835036e700db,"Dumbbell Chest Press, 45x10",Iso wide chest,2026-02-10,Push,45,,10,,,2026-02-10T19:42:00.000Z,2026-03-19T22:11:00.000Z
+fde19995-939c-4439-b9bd-33bd74f43448,"Dumbbell incline flies, 35x8",Seated Cable Fly,2026-02-10,Push,35,,8,,,2026-02-10T19:42:00.000Z,2026-04-20T01:10:00.000Z
+4c7a08df-82ea-421e-a1e5-7e7f042479dd,"Hammer curl, 25x8",Hammer curl,2026-02-03,Pull,25,,8,Lbs,,2026-02-04T14:17:00.000Z,2026-04-20T13:53:00.000Z
+7f719d64-efd1-4010-b3df-8c6e897bbc89,"Bicep EZ bar, 50x6",Standing Biceps Cable Curl,2026-02-03,Pull,50,,6,,,2026-02-04T14:17:00.000Z,2026-04-20T01:10:00.000Z
+eb5b4bd9-42ee-4b40-8fde-8cf9ffc70108,"Row cable close grip, 100x11",Seated Cable Rows,2026-02-03,Pull,100,,11,,,2026-02-04T14:17:00.000Z,2026-04-20T02:14:00.000Z
+fe0e090f-193f-43ae-8a78-e0376bf10352,"Pulldown bar cable, 100x10",Wide-grip Lat Pulldown,2026-02-03,Pull,100,,10,,,2026-02-04T14:17:00.000Z,2026-02-04T14:17:00.000Z
+2925bff7-816e-4796-8109-efa458325bfa,"Tricep Pushdown, 50x10",Triceps Pushdown - Rope Attachment,2026-02-02,Push,50,,10,Lbs,,2026-02-03T16:19:00.000Z,2026-04-20T13:52:00.000Z
+4cef711c-794a-45ae-b32a-617ee30178c6,"Dumbbell incline press, 40x9",Dumbbell incline press,2026-02-02,Push,40,,9,Lbs,,2026-02-03T16:19:00.000Z,2026-04-20T13:53:00.000Z
+5254599f-2ab9-42fd-bd75-8e39f763d2d5,"Shoulder front, 20x12",Shoulder front,2026-02-02,Push,20,,12,Lbs,,2026-02-03T16:19:00.000Z,2026-04-20T13:53:00.000Z
+72931e98-de3c-475d-938a-45391eebd4c5,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-02-02,Push,15,,6,,,2026-02-03T16:19:00.000Z,2026-04-20T01:10:00.000Z
+da6fe5ce-02dd-49a0-a7f9-593787509bcf,"Dumbbell incline flies, 35x7",Seated Cable Fly,2026-02-02,Push,35,,7,,,2026-02-03T16:19:00.000Z,2026-04-20T01:10:00.000Z
+0d2bd6db-a953-4bd7-a9be-baba65f18882,"Linear hack press, 40x12",Linear hack press,2026-01-28,Legs,40,,12,Lbs,,2026-02-02T15:55:00.000Z,2026-04-20T13:49:00.000Z
+10135c7f-fc5c-4b99-908f-d91487c1dd97,"Leg curl, 9x10",Seated Leg Curl,2026-01-28,Legs,9,,10,Pins,,2026-02-02T15:55:00.000Z,2026-04-20T13:47:00.000Z
+a177f58b-4272-4b5d-a025-a2138a02d48b,"Leg ext, 55x11",Leg Extensions,2026-01-28,Legs,55,,11,,,2026-02-02T15:55:00.000Z,2026-04-16T02:35:00.000Z
+f66fe1d4-8190-4dd0-a7b0-db49d7742612,"Outer thigh, 9x8",Outer thigh,2026-01-28,Legs,9,,8,,,2026-02-02T15:55:00.000Z,2026-02-02T15:56:00.000Z
+059946a9-77b9-40ad-a05b-116222d412b8,"Forearm behind back, 25x11",Standing Palms-up Barbell Behind the Back Wrist Curl,2026-01-27,Pull,25,,11,Lbs,,2026-01-27T20:53:00.000Z,2026-04-20T13:49:00.000Z
+451e04bc-7326-4f04-b128-c4bf4a06c1d8,"Bicep EZ bar, 20x10",Standing Biceps Cable Curl,2026-01-27,Pull,20,,10,Lbs,,2026-01-27T20:53:00.000Z,2026-04-20T13:53:00.000Z
+d3bd2e3e-9020-4ab0-b55f-6c13db9d689d,"Hammer curl, 22x10",Hammer curl,2026-01-27,Pull,22,,10,,,2026-01-27T20:53:00.000Z,2026-01-27T20:53:00.000Z
+d7e80441-eac7-4c0e-88b7-5031bd907302,"Pulldown bar cable, 100x10",Wide-grip Lat Pulldown,2026-01-27,Pull,100,,10,,,2026-01-27T20:53:00.000Z,2026-01-27T20:53:00.000Z
+ffba1f02-1291-4663-8df4-8c3ac27313cb,"Row cable close grip, 100x10",Seated Cable Rows,2026-01-27,Pull,100,,10,,,2026-01-27T20:53:00.000Z,2026-04-20T02:14:00.000Z
+1019f464-162f-45e7-a7e7-1f5c98a01cd1,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-01-26,Push,15,,6,Lbs,,2026-01-27T16:06:00.000Z,2026-04-20T13:49:00.000Z
+5ad80a92-d626-4c09-bcf4-9863b9b60e9f,"Shoulder front, 22.5x7",Shoulder front,2026-01-26,Push,22.5,,7,Lbs,,2026-01-27T16:06:00.000Z,2026-04-20T13:54:00.000Z
+5cd459b0-ddb4-4062-a2a6-0695ab87678b,"Tricep Pushdown, 50x8",Triceps Pushdown - Rope Attachment,2026-01-26,Push,50,,8,Lbs,,2026-01-27T16:06:00.000Z,2026-04-20T13:54:00.000Z
+b3a5680b-77a0-466f-bd3d-f01d85edc991,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-01-26,Push,25,,8,,,2026-01-27T16:06:00.000Z,2026-01-27T16:06:00.000Z
+c45a67fb-8042-4c93-9d9e-d08ef91062ba,"Dumbbell Chest Press, 40x10",Iso wide chest,2026-01-26,Push,40,,10,,,2026-01-27T16:06:00.000Z,2026-03-19T22:11:00.000Z
+c7b9345c-3363-4c26-a551-d8f367dbcfeb,"Dumbbell incline flies, 30x10",Seated Cable Fly,2026-01-26,Push,30,,10,,,2026-01-27T16:06:00.000Z,2026-04-20T01:10:00.000Z
+0335acba-6265-4ddf-9099-2dd1967bf535,"Leg press pendular, 115x10",Leg press pendular,2026-01-23,Legs,115,,10,Lbs,,2026-01-26T16:13:00.000Z,2026-04-20T13:48:00.000Z
+748d395e-a385-4aa0-8082-ef3183655b06,"Leg outer, 9x8",Outer thigh,2026-01-23,Legs,9,,8,,,2026-01-26T16:13:00.000Z,2026-01-26T16:13:00.000Z
+bfdf4025-1841-47d0-89ae-ba390c126cc1,"Inner thighs, 8x8",Inner thighs,2026-01-23,Legs,8,,8,,,2026-01-26T16:13:00.000Z,2026-01-26T16:13:00.000Z
+c2571b3f-2710-4f45-b951-2f1af7284b3b,"Leg curl, 9x10",Seated Leg Curl,2026-01-23,Legs,9,,10,,,2026-01-26T16:13:00.000Z,2026-01-26T16:13:00.000Z
+04ed31f7-d7a7-4b36-a8d4-aa3f033e3b04,"Lat pulldown red machine, 8x8",Wide-grip Lat Pulldown,2026-01-22,Pull,8,,8,Lbs,,2026-01-23T14:38:00.000Z,2026-04-20T13:48:00.000Z
+03f29646-be1f-41f0-9718-744855bebd95,"Row cable close grip, 100x8",Seated Cable Rows,2026-01-22,Pull,100,,8,Lbs,,2026-01-23T14:37:00.000Z,2026-04-20T13:48:00.000Z
+eebe3974-dbee-4f62-b213-05589a19662f,"Bicep EZ bar, 20x10",Standing Biceps Cable Curl,2026-01-22,Pull,20,,10,,,2026-01-23T14:37:00.000Z,2026-04-20T01:10:00.000Z
+fcb5d5d6-e98a-4af9-8ba4-85924b2c6fda,"Hammer curl, 22x10",Hammer curl,2026-01-22,Pull,22,,10,,,2026-01-23T14:37:00.000Z,2026-01-23T14:37:00.000Z
+4afb8cd3-9a14-451c-b3f2-821afbf544ad,"Shoulder front, 22.5x7",Shoulder front,2026-01-21,Push,22.5,,7,Lbs,,2026-01-22T22:42:00.000Z,2026-04-20T13:53:00.000Z
+7fe7fc32-e79a-4bef-8866-16668665fdc7,"Tricep Pushdown, 42.5x10",Triceps Pushdown - Rope Attachment,2026-01-21,Push,42.5,,10,,,2026-01-22T22:42:00.000Z,2026-03-19T22:33:00.000Z
+f64f7c90-e63c-41fc-bda7-c57678e0f424,"Bench press, 30x7",Wide-grip Barbell Bench Press,2026-01-21,Push,30,,7,,,2026-01-22T22:42:00.000Z,2026-04-20T01:25:00.000Z
+3990b50f-f6d5-4a01-8e2b-c3d290af8713,"Shoulder front, 22.5x6",Shoulder front,2026-01-13,Push,22.5,,6,Lbs,,2026-01-21T12:45:00.000Z,2026-04-20T13:52:00.000Z
+8044040d-39d2-4852-b4ed-9b64b3c35ed6,"Chest fly, 27.5x10",Seated Cable Fly,2026-01-13,Push,27.5,,10,,,2026-01-21T12:45:00.000Z,2026-01-21T12:45:00.000Z
+838f9a28-da8f-4a25-9942-99602fa66b86,"Shoulder press, 25x8",Dumbbell Shoulder Press,2026-01-13,Push,25,,8,,,2026-01-21T12:45:00.000Z,2026-01-21T12:45:00.000Z
+da5236f8-e8e4-468e-8d4c-adb694893d7b,"Dumbbell Chest Press, 40x10",Iso wide chest,2026-01-13,Push,40,,10,,,2026-01-21T12:45:00.000Z,2026-03-19T22:11:00.000Z
+7efd1a09-bd3d-41eb-a6bb-daab9a4f367c,"Linear hack press, 30x12",Linear hack press,2026-01-08,Legs,30,,12,,,2026-01-13T14:14:00.000Z,2026-03-20T18:10:00.000Z
+deb279ec-b55e-45dc-81bd-dfeca90cffaf,"Leg outer, 135x12",Outer thigh,2026-01-08,Legs,135,,12,,,2026-01-13T14:14:00.000Z,2026-01-13T14:14:00.000Z
+22a7b674-3a3d-4883-9cb1-c2d4ac14f8c5,"Leg curl, 8x8",Seated Leg Curl,2026-01-08,Legs,8,,8,Pins,,2026-01-13T14:13:00.000Z,2026-04-20T13:47:00.000Z
+9315a2e8-efc6-43f3-a3f8-a06e88ffe77f,"Incline Dumbbell Curl, 15x6",Incline Dumbbell Curl,2026-01-07,Pull,15,,6,,,2026-01-13T14:13:00.000Z,2026-03-19T22:11:00.000Z
+a34b2cd5-9d56-4c9b-87c2-b65feb292378,"Hammer curl, 22.5x8",Hammer curl,2026-01-07,Pull,22.5,,8,,,2026-01-13T14:13:00.000Z,2026-01-13T14:13:00.000Z
+aac0932c-560b-4158-80cb-2d871c3c4140,"Leg ext, 45x12",Leg Extensions,2026-01-08,Legs,45,,12,,,2026-01-13T14:13:00.000Z,2026-04-16T02:35:00.000Z
+ab4ab50a-e9c5-45a9-a77b-fb7223aa64af,"Bicep EZ bar, 20x7",Standing Biceps Cable Curl,2026-01-07,Pull,20,,7,,,2026-01-13T14:13:00.000Z,2026-04-20T01:10:00.000Z
+d20cf3de-b0af-4bdb-9e9a-fcc0e8295c33,"Row cable close grip, 120x6",Seated Cable Rows,2026-01-07,Pull,120,,6,,,2026-01-13T14:13:00.000Z,2026-04-20T02:14:00.000Z
+d7784113-79ad-449a-ae2e-9b35171c2a68,"Pulldown bar cable, 100x8",Wide-grip Lat Pulldown,2026-01-07,Pull,100,,8,,,2026-01-13T14:13:00.000Z,2026-01-13T14:13:00.000Z
+4e5b8159-8b65-42c1-99b0-a203629605dc,"Dumbbell Chest Press, 40x5",Iso wide chest,2026-01-06,Push,40,,5,Lbs,,2026-01-07T13:03:00.000Z,2026-04-20T13:53:00.000Z
+2857ea4b-6603-4efb-8968-b453cbefd689,"Tricep Pushdown, 42.5x8",Triceps Pushdown - Rope Attachment,2026-01-06,Push,42.5,,8,Lbs,,2026-01-07T13:03:00.000Z,2026-04-20T13:52:00.000Z
+423708d2-ce95-4b41-ab90-0d014744aa18,"Dumbbell incline flies, 30x6",Seated Cable Fly,2026-01-06,Push,30,,6,Lbs,,2026-01-07T13:03:00.000Z,2026-04-20T13:53:00.000Z
+4821d34f-ac2d-4fcc-a244-1c76b60c6e14,"Shoulder front, 20x12",Shoulder front,2026-01-06,Push,20,,12,Lbs,,2026-01-07T13:03:00.000Z,2026-04-20T13:53:00.000Z
+7552a7ff-02d9-4945-bce9-c7a813ad2ca2,"Tricep rope horizontal, 15x6",Tricep rope horizontal,2026-01-06,Push,15,,6,,,2026-01-07T13:03:00.000Z,2026-04-20T01:10:00.000Z
+15ea630f-674b-4388-8bc9-9da79c8969ee,"Hammer crossed, 22.5x10",Cross-Body Curl,2025-12-18,Pull,22.5,,10,Lbs,,2026-01-06T15:56:00.000Z,2026-04-20T13:49:00.000Z
+1a0a3d11-b5a3-42a7-bdb5-ac30f006938c,"Bicep EZ bar, 20x10",Standing Biceps Cable Curl,2025-12-18,Pull,20,,10,Lbs,,2026-01-06T15:56:00.000Z,2026-04-20T13:49:00.000Z
+57490e4b-9bd1-4ce6-b46e-d6f5c928bd9c,"Pulldown bar cable, 100x12",Wide-grip Lat Pulldown,2025-12-18,Pull,100,,12,Lbs,,2026-01-06T15:56:00.000Z,2026-04-20T13:54:00.000Z
+7234f0a8-ddb6-453d-8c5b-4398c5536364,"Row cable close grip, 120x6",Seated Cable Rows,2025-12-18,Pull,120,,6,,,2026-01-06T15:56:00.000Z,2026-04-20T02:14:00.000Z
+748f56bc-07fc-4ccc-a34e-c7b0d4026622,"Hammer curl, 22.5x11",Hammer curl,2025-12-18,Pull,22.5,,11,,,2026-01-06T15:56:00.000Z,2026-01-06T15:56:00.000Z
+b37e2b41-a920-4671-a178-e28a51e7aa2d,"Incline Dumbbell Curl, 15x12",Incline Dumbbell Curl,2025-12-18,Pull,15,,12,,,2026-01-06T15:56:00.000Z,2026-03-19T22:11:00.000Z
+03ab7c43-0aa3-41bd-bc9a-d9594594bc80,"Tricep Pushdown, 50x12",Triceps Pushdown - Rope Attachment,2025-12-15,Push,50,,12,Lbs,,2025-12-17T14:34:00.000Z,2026-04-20T13:48:00.000Z
+09ead81a-e29f-4b03-a1d0-0cea47325a66,"Shoulder press, 25x8",Dumbbell Shoulder Press,2025-12-15,Push,25,,8,Lbs,,2025-12-17T14:34:00.000Z,2026-04-20T13:49:00.000Z
+2fbee3ec-315f-4ad2-86a2-a4166a5f9bf4,"Tricep rope horizontal, 15x8",Tricep rope horizontal,2025-12-15,Push,15,,8,Lbs,,2025-12-17T14:34:00.000Z,2026-04-20T13:52:00.000Z
+e9a663bf-00c9-429f-8ccb-8a8c03a5860a,"Bench press, 30x5",Wide-grip Barbell Bench Press,2025-12-15,Push,30,,5,,,2025-12-17T14:34:00.000Z,2026-04-20T01:25:00.000Z
+f489ba8f-9519-40a1-a143-896639524721,"Shoulder front, 22.5x8",Shoulder front,2025-12-15,Push,22.5,,8,,,2025-12-17T14:34:00.000Z,2026-04-20T01:10:00.000Z
+f7985bde-6ffd-410b-94ec-9654ab3560a1,"Dumbbell incline flies, 40x8",Seated Cable Fly,2025-12-15,Push,40,,8,,,2025-12-17T14:34:00.000Z,2026-04-20T01:10:00.000Z
+2ad5458d-8cb7-4dbb-9dca-bcf77e71305d,"Bicep EZ bar, 15x12",Standing Biceps Cable Curl,2025-12-11,Pull,15,,12,Lbs,,2025-12-16T16:41:00.000Z,2026-04-20T13:52:00.000Z
+45b5ae5b-f62c-489b-aacd-b06c38a09c56,"Hammer crossed, 20x8",Cross-Body Curl,2025-12-11,Pull,20,,8,Lbs,,2025-12-16T16:41:00.000Z,2026-04-20T13:53:00.000Z
+4d292bd6-0601-4d1a-9630-b2ef6744784b,"Hammer curl, 20x8",Hammer curl,2025-12-11,Pull,20,,8,Lbs,,2025-12-16T16:41:00.000Z,2026-04-20T13:53:00.000Z
+ace6531b-59a8-4822-8353-d464e07d1b46,"Incline Dumbbell Curl, 15x12",Incline Dumbbell Curl,2025-12-11,Pull,15,,12,,,2025-12-16T16:41:00.000Z,2026-03-19T22:11:00.000Z
+ae73f865-3acf-4ced-9f70-3bfa96c5da0e,"Forearm plate back and forth, 25x12",Forearm plate back and forth,2025-12-11,Pull,25,,12,,,2025-12-16T16:41:00.000Z,2025-12-16T16:41:00.000Z
+c96db532-5436-47b6-8446-e5da94f1e81d,"Row cable close grip, 100x10",Seated Cable Rows,2025-12-11,Pull,100,,10,,,2025-12-16T16:41:00.000Z,2026-04-20T02:14:00.000Z
+d0ff773b-d224-4aa8-a679-8a6441936ec7,"Pulldown bar cable, 100x11",Wide-grip Lat Pulldown,2025-12-11,Pull,100,,11,,,2025-12-16T16:41:00.000Z,2025-12-16T16:41:00.000Z
+04caa4d0-d754-4988-949a-cb2663a0fde6,,Incline Dumbbell Flyes,2025-12-09,Push,30,,7,Lbs,,2025-12-11T02:51:00.000Z,2026-04-20T13:48:00.000Z
+2b46ff0f-b745-4fe1-a0bd-f0e9f3957663,,Shoulder front,2025-12-09,Push,22,,10,Lbs,,2025-12-11T02:51:00.000Z,2026-04-20T13:52:00.000Z
+2bd5d18b-3945-42a7-8f1c-99d395936f4e,,Tricep rope horizontal,2025-12-09,Push,15,,7,Lbs,,2025-12-11T02:51:00.000Z,2026-04-20T13:52:00.000Z
+37fe561a-be7b-45a7-a00a-94b6e53d57c9,,Tricep vertical rope,2025-12-09,Push,50,,7,Lbs,,2025-12-11T02:51:00.000Z,2026-04-20T13:52:00.000Z
+a2086949-a07f-4211-9f1f-182d94e9f184,,Iso wide chest,2025-12-09,Push,40,,5,,,2025-12-11T02:51:00.000Z,2025-12-11T02:51:00.000Z
+af6a5fd0-bfd7-4073-a190-a9ab4ff15e22,,Bench press,2025-12-09,Push,30,,5,,,2025-12-11T02:51:00.000Z,2025-12-11T02:51:00.000Z
+eaba715f-f7cb-4a63-b7a2-25bce7314786,,Shoulder press,2025-12-09,Push,25,,7,,,2025-12-11T02:51:00.000Z,2025-12-11T02:51:00.000Z
+55ae3078-8210-4302-9495-a52aca641c4c,,Bicep EZ bar,2025-12-06,Pull,20,,9,Lbs,,2025-12-09T15:45:00.000Z,2026-04-20T13:53:00.000Z
+31f1b2a8-a5cb-4baa-b735-a2bdccc60abe,,Hammer curl,2025-12-06,Pull,20,,12,Lbs,,2025-12-09T15:43:00.000Z,2026-04-20T13:52:00.000Z
+527e929f-9299-4b82-b388-5d6ece531ac2,,Rope single forearm facing down,2025-12-06,Pull,30,,10,Lbs,,2025-12-09T15:43:00.000Z,2026-04-20T13:53:00.000Z
+6475bd18-d181-496d-9508-078ef456a754,,Bicep curl inclined,2025-12-06,Pull,15,,12,,,2025-12-09T15:43:00.000Z,2025-12-09T15:43:00.000Z
+96239fa3-ab58-45b9-8846-cd51860f0978,,Pulldown bar cable,2025-12-06,Pull,100,,6,,,2025-12-09T15:43:00.000Z,2025-12-09T15:43:00.000Z
+bcbd7461-190e-4587-a958-09b6e4e5fd2d,,Row cable close grip,2025-12-06,Pull,85,,10,,,2025-12-09T15:43:00.000Z,2025-12-09T15:43:00.000Z
+eb80dc47-4e46-4118-9c74-476355aa30e8,,Forearm plate back and forth,2025-12-06,Pull,25,,12,,,2025-12-09T15:43:00.000Z,2025-12-09T15:43:00.000Z
+272257ec-66fe-4924-9113-e52d89234bdf,"Shoulder front, 22.5x8",Shoulder front,2025-12-04,Push,22.5,,8,Lbs,,2025-12-05T14:27:00.000Z,2026-04-20T13:52:00.000Z
+9a5181b3-dc68-4dd4-8b70-39185702a5ae,"Tricep rope horizontal, 15x7",Tricep rope horizontal,2025-12-04,Push,15,,7,,,2025-12-05T14:27:00.000Z,2026-04-20T01:10:00.000Z
+a1361614-9132-4f5a-ab7e-7293cae259f5,"Bench press, 30x4",Wide-grip Barbell Bench Press,2025-12-04,Push,30,,4,,,2025-12-05T14:27:00.000Z,2026-04-20T01:25:00.000Z
+b70df986-2956-482c-a6e8-e5fc6d3a9151,"Tricep Pushdown, 50x6",Triceps Pushdown - Rope Attachment,2025-12-04,Push,50,,6,,,2025-12-05T14:27:00.000Z,2026-03-19T22:33:00.000Z
+c92eee90-2a09-4a1f-b172-823067c340da,"Tricep iso behind head, 12.5x7",Standing Low-Pulley One-Arm Triceps Extension,2025-12-04,Push,12.5,,7,,,2025-12-05T14:27:00.000Z,2026-04-20T02:02:00.000Z
+f4760a39-ecbc-4ece-bf83-6976addc92b8,"Shoulder press, 25x8",Dumbbell Shoulder Press,2025-12-04,Push,25,,8,,,2025-12-05T14:27:00.000Z,2025-12-05T14:27:00.000Z
+fb562a1b-e6bd-473e-acf2-914c20b09604,"Dumbbell incline flies, 30x7",Seated Cable Fly,2025-12-04,Push,30,,7,,,2025-12-05T14:27:00.000Z,2026-04-20T01:10:00.000Z
+2b488ca6-0314-4c66-8f9c-7cf33958671a,Bicep curl seated 15x12,Bicep curl inclined,2025-12-02,Pull,15,,12,Lbs,,2025-12-02T20:31:00.000Z,2026-04-20T13:52:00.000Z
+4d9dafe1-55bd-4735-a850-6a4260db63d8,Row close grip 42.5x10,Row cable close grip,2025-12-02,Pull,42.5,,10,Lbs,,2025-12-02T20:31:00.000Z,2026-04-20T13:53:00.000Z
+72d766a5-e628-4642-8941-50df40a12468,Hammer crossed 20x10,Cross-Body Curl,2025-12-02,Pull,20,,10,,,2025-12-02T20:31:00.000Z,2026-03-23T22:56:00.000Z
+8fd18d2e-c0bd-4845-a517-3f0c312a313b,Hammer curl 20x10,Hammer curl,2025-12-02,Pull,20,,10,,,2025-12-02T20:31:00.000Z,2025-12-02T20:31:00.000Z
+a330b050-7906-4a8e-abca-8e9d5240b58a,Rope single forearm facing down 25x12,Rope single forearm facing down,2025-12-02,Pull,25,,12,,,2025-12-02T20:31:00.000Z,2025-12-02T20:34:00.000Z
+a9720927-5ee6-4627-9706-d5660bc95e1c,Forearm plate back and forth 25x8,Forearm plate back and forth,2025-12-02,Pull,25,,8,,,2025-12-02T20:31:00.000Z,2025-12-02T20:32:00.000Z
+dc678c80-a7b9-4625-bea9-ec16c7b8b4f9,Pulldown bar 85x12,Wide-grip Lat Pulldown,2025-12-02,Pull,85,,12,,,2025-12-02T20:31:00.000Z,2025-12-02T20:31:00.000Z
+e3185353-7b5f-4a35-ad05-e3355b9ddc22,Forearm twist 10x12,Forearm twists,2025-12-02,Pull,10,,12,,,2025-12-02T20:31:00.000Z,2025-12-02T20:34:00.000Z
+12e704b6-7cfb-4d11-bf1e-9d03d57c14e7,,Bench press,2025-12-01,Push,30,,6,Lbs,,2025-12-01T18:59:00.000Z,2026-04-20T13:49:00.000Z
+1f790421-1c18-4675-ae62-4852a377ca64,,Shoulder front,2025-12-01,Push,22.5,,8,Lbs,,2025-12-01T18:59:00.000Z,2026-04-20T13:49:00.000Z
+2ff09af8-7658-40ba-8d83-eb4a6cf72500,,Shoulder press,2025-12-01,Push,25,,9,Lbs,,2025-12-01T18:59:00.000Z,2026-04-20T13:52:00.000Z
+5100bb52-f38d-4b63-9718-eb49f30cabbb,,Tricep rope horizontal,2025-12-01,Push,10,,10,Lbs,,2025-12-01T18:59:00.000Z,2026-04-20T13:53:00.000Z
+5a5974e3-d835-4fb6-9e2e-ccc96d5cdb31,,Incline Dumbbell Flyes,2025-12-01,Push,30,,8,Lbs,,2025-12-01T18:59:00.000Z,2026-04-20T13:54:00.000Z
+685bca7d-530a-44c8-a6e1-c88456167a92,,Tricep iso behind head,2025-12-01,Push,12.5,,8,,,2025-12-01T18:59:00.000Z,2025-12-01T19:00:00.000Z
+da7cd270-a648-4cdb-b765-4ac225598a40,,Tricep vertical rope,2025-12-01,Push,50,,6,,,2025-12-01T18:59:00.000Z,2025-12-01T18:59:00.000Z
+0506a3fb-657e-4238-9077-fe2188ec9c38,,Tricep vertical rope,2025-11-27,Push,42.5,,10,Lbs,,2025-12-01T15:39:00.000Z,2026-04-20T13:49:00.000Z
+43e734ad-b6e0-4ff3-bc6a-c61076ad2738,,Chest fly,2025-11-27,Push,25,,8,Lbs,,2025-12-01T15:39:00.000Z,2026-04-20T13:53:00.000Z
+4b34e942-cc0b-4650-afbb-0c74e1b61f22,,Bench press,2025-11-27,Push,25,,8,Lbs,,2025-12-01T15:39:00.000Z,2026-04-20T13:53:00.000Z
+5660bc44-30fe-45a6-822d-b4c03c1d30c7,,Shoulder front,2025-11-27,Push,20,,10,Lbs,,2025-12-01T15:39:00.000Z,2026-04-20T13:53:00.000Z
+ac0355fb-73a9-4547-a094-56cc8aef991e,,Shoulder press,2025-11-27,Push,25,,10,,,2025-12-01T15:39:00.000Z,2025-12-01T21:23:00.000Z
+f9e4219b-deba-4628-930b-7ae1a78a86c8,,Iso wide chest,2025-11-27,Push,70,,8,,,2025-12-01T15:39:00.000Z,2025-12-01T21:23:00.000Z
+04299112-7061-4d97-9cca-56ba42b0d836,,Incline Dumbbell Flyes,2025-11-24,Push,27.5,,8,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:48:00.000Z
+04fc6460-c441-4883-b1fc-82f90ae65fdf,,Shoulder front,2025-11-24,Push,10,,8,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:49:00.000Z
+0fb69bec-65e5-40d0-bddc-ef1c12ef2a1b,,Tricep rope horizontal,2025-11-24,Push,15,,6,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:49:00.000Z
+3283f395-a8b3-4f42-aeeb-7f497dbc93fe,,Bicep curl inclined,2025-11-25,Pull,17.5,,10,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:52:00.000Z
+517eb126-5aa1-4510-8e50-94cd844bf14a,,Abduc,2025-11-26,Legs,135,,10,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:53:00.000Z
+5ea44ac9-0153-4318-92e5-a68c5fb6b047,,Shoulder press,2025-11-24,Push,25,,8,Lbs,,2025-11-26T21:12:00.000Z,2026-04-20T13:54:00.000Z
+624e136f-3c45-438e-b915-e3c33e1770fc,,Leg press pendular,2025-11-26,Legs,115,,8,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+6a5b270e-a895-41f4-8934-a9498fda0ab7,,Forearm palm up,2025-11-25,Pull,17.5,,15,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+74e60197-f838-447d-87ab-787312eaaa8e,,Calves,2025-11-26,Legs,105,,8,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+799aca69-966f-4875-9b0d-1c575f2e1063,,Inner thighs,2025-11-26,Legs,8,,8,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+7bb4530a-4e0e-49e5-a017-afd551bed7d1,,Row cable close grip,2025-11-25,Pull,100,,7,,,2025-11-26T21:12:00.000Z,2025-12-02T20:33:00.000Z
+825bf0a0-9bdc-41e7-98d9-69670567d6f6,,Tricep vertical rope,2025-11-24,Push,42.5,,8,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+9c960775-e01a-47f2-845d-febda5cf72cd,,Leg extension,2025-11-26,Legs,45,,8,,,2025-11-26T21:12:00.000Z,2026-04-16T02:35:00.000Z
+b5847e21-e6cc-433c-b541-66e9134bdb59,,Leg curl,2025-11-26,Legs,7,,12,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+bafb54ca-35c7-48e1-b33b-91bba5325d31,,Hammer curl,2025-11-25,Pull,20,,10,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+cdaf67e1-2be7-4d4b-bf2e-5896b056e94d,,Bench press,2025-11-24,Push,30,,7,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+e02e9e9c-853a-4300-8b6c-8b766a1ad2bf,,Forearm behind back,2025-11-25,Pull,17.5,,15,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
+e7c786a0-552d-48ef-9a8c-f8522748aa97,,Pulldown bar cable,2025-11-25,Pull,85,,8,,,2025-11-26T21:12:00.000Z,2025-12-01T21:23:00.000Z
