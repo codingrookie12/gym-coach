@@ -28,16 +28,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // On Vercel, x-forwarded-host carries the real public hostname so the
-      // redirect lands on the same deployment the user started on.
-      const host = request.headers.get('x-forwarded-host') ?? new URL(request.url).host
-      const proto = request.headers.get('x-forwarded-proto') ?? 'https'
-      const redirectTo =
-        process.env.NODE_ENV === 'development'
-          ? `${origin}/`
-          : `${proto}://${host}/`
-
-      const response = NextResponse.redirect(redirectTo)
+      const response = NextResponse.redirect(new URL('/', request.url))
       captured.forEach(({ name, value, options }) =>
         response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
       )
