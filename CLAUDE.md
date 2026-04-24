@@ -1,124 +1,57 @@
 # Gym Coach — Claude Operating Rules
 
-This file is loaded at the start of every conversation. Follow all rules below without being asked.
+## Orientation (every session, in order)
+
+1. Verify file access — read `lib/routines.ts`. If inaccessible: *"Please select the **Gym App** folder at `~/Documents/Claude/Projects/Gym App`."*
+2. Fetch the Notion hub: [Gym Coaching App](https://www.notion.so/34891176d45980aa830bd3743bfd4b73)
+   - Then fetch the page relevant to the session type (see Session Types below)
+3. Check Linear for the active cycle and open issues: [linear.app/gym-coaching-app](https://linear.app/gym-coaching-app) — Team key: `GYM`
+4. Ask what Johnatan wants to work on if not already stated.
 
 ---
 
-## 1. How to orient at the start of every conversation
+## Session Types
 
-1. Read this file fully before doing anything else.
-2. **Verify file access** — try reading `lib/exercises.json` or `lib/routines.ts`. If not accessible, the workspace folder isn't mounted. Ask Johnatan specifically:
-   > "Please select the **Gym App** folder at `~/Documents/Claude/Projects/Gym App` as your workspace folder so I can access the codebase."
-   Never ask generically — always name the exact folder.
-3. Check Linear for the current sprint and open issues, then ask Johnatan what he wants to work on if not already stated.
-
----
-
-## 2. Linear — task tracker
-
-**Workspace:** [linear.app/gym-coaching-app](https://linear.app/gym-coaching-app)
-**Team:** Gym coaching app | **Key:** `GYM`
-
-### Project structure
-
-| Project | Purpose |
-|---|---|
-| Sprint 1 — Data Foundation | exercises.json, DB cleanup, Notion alignment |
-| Sprint 2 — Exercise Library & Availability | Library screen, equipment toggles, naming enforcement |
-| Sprint 3 — Swap & Change Exercise | Swap vs Change UX, smart alternatives engine |
-| Backlog | Future features, not yet scheduled |
-
-### Rules
-- Before starting any dev work, check Linear to confirm the active issue.
-- Reference the issue number (e.g., GYM-9) in all commit messages.
-- Never start work that isn't tracked — create the issue first.
-- Sprint 1 must complete before Sprint 2 resumes (DB must be clean and aligned).
+| Johnatan says | Claude does | Fetch |
+|---|---|---|
+| `"Starting Phase N"` or `"Working on GYM-XX"` | Engineering session — implement, commit, PR | Engineering + Architecture & Data pages |
+| `"Product session — [topic]"` | Strategy/planning — no code, output is a brief or decision | Product page |
+| `"QA review — GYM-XX"` | Review output against acceptance criteria | Engineering page |
+| `"Design session — [topic]"` | UX critique, copy review, design decisions | Design page |
+| `"Marketing session — [topic]"` | Content, positioning, Linear marketing issue | Marketing page |
+| `"Research session — GYM-XX"` | Run research per protocol, log findings to Notion | Product page (research protocol) + relevant section |
 
 ---
 
-## 3. New ideas — route to Linear, deduplicate first
+## Protocols
 
-When Johnatan proposes a new feature or improvement:
+**Decision log** — append to the relevant Notion page's decisions log when: a schema changes, a naming convention is set, or a phase closes. Format: `Date | Decision | Rationale`. Never log routine code changes.
 
-1. Search Linear for semantically similar issues before creating anything new.
-2. If a close match exists, surface it and ask whether to update or create separately.
-3. If no match, create a new issue in the **Backlog** project using the template below.
-4. Never create duplicates — "exercise instructions", "show instructions", "how-to for exercises" are the same idea.
+**Session log** — at the end of any session where a phase closes, a major architectural decision is made, or a significant feature is designed: ask *"This session produced [X]. Should I log it?"* If yes, append one row to the [Session Log](https://www.notion.so/34991176d45981318fe8f4889641b974) inline database. Format: `Date | Type | Topic | Decisions Made | Output | Next Action`. After any PR merge, check if the closed issue is on the roadmap — if so, ask: *"Should I mark GYM-XX done on the roadmap?"*
 
-### Backlog issue template
-
+**Idea capture** — when a new feature or improvement is proposed: search Linear for semantic duplicates first, then create a Backlog issue if none found. Linear only — no separate Notion entry.
 ```
-**What:** One-line description of the feature or improvement.
-**Why:** The problem it solves or value it adds.
-**Scope hints:** What's in, what's explicitly out (if known).
-**Depends on:** Any issue that must complete first (or "None").
+What: [one line]
+Why: [problem or value]
+Scope: [in / out]
+Depends on: [issue or None]
+Source: [conversation / user / Canny / research]
 ```
 
----
-
-## 4. Notion — knowledge base
-
-**Page:** [Gym Coach — Context](https://www.notion.so/34691176d45981d58a49d1b3876a36c3)
-**Purpose:** Schema, conventions, decisions. Not a task tracker.
-
-Update at the end of every working session. Add a decisions log entry when: a DB schema changes, a naming/convention decision is made, or an architectural call would be confusing without context. Routine code changes do not need an entry.
-
-### Decisions log entry format
-```
-- **YYYY-MM-DD:** [What was decided and why in one sentence.]
-```
-
-### Gym Progress DB
-- **Collection ID:** `collection://c98d2ccd-3b85-4732-be5a-60e9d3d289e6`
-- **Key properties:** `Exercise` (Select — fixed list from exercises.json), `Entry` (Title, format: `[Exercise Name] — Set N`), `Date`, `Split`, `Weight`, `Set`, `Reps`, `Notes`
-- **Exercise field type:** Select with fixed list — options must match exact names from `exercises.json`
+**Research** — follow the protocol in the [Product page](https://www.notion.so/34891176d45981328f07fa60ee4374eb). Every research session starts as a Linear issue with label `research`.
 
 ---
 
-## 5. Ambiguous exercise names — always confirm
+## Non-Negotiable Rules
 
-When mapping any exercise name to a canonical name in exercises.json, if a clean 1:1 match does not exist:
+**Exercise names** — source of truth is `lib/exercises.json`. Format: `[Equipment] [Muscle/Movement] [Modifier]`. UI never allows freehand name entry — exercise picker only. Mid-workout quick-add: name only (convention enforced), metadata deferred post-workout. Ambiguous mapping: stop, show candidates, wait for confirmation. Never guess — one wrong mapping corrupts all historical data for that exercise.
 
-1. Stop — do not guess or pick the closest match
-2. Show Johnatan the ambiguous name + closest candidates from exercises.json
-3. Wait for explicit confirmation before proceeding
+**Linear** — every issue referenced in commit messages (`GYM-XX`). Never start untracked work — create the issue first. Deduplicate before creating.
 
-Applies to GYM-6, GYM-7, GYM-14, and all future exercise naming work. One wrong mapping corrupts all historical data for that exercise.
+**Git** — feature branch per issue (`GYM-XX-short-description`). Squash merge to `main`. Open a PR per branch. Commit format: `type(vX.X-GYM-XX): description`. Types: `feat` / `fix` / `chore` / `refactor` / `docs`. Ask before every push: *"New version or small tweak?"* — major digit = new feature, decimal = tweak. Pre-push lint gate active — never bypass with `--no-verify`.
 
----
+**Code** — TypeScript strict. `Array.from()` not spread on Set/Map. CSS custom properties only, no hardcoded colors. All UI strings in translation files — no hardcoded copy in components.
 
-## 6. Exercise naming convention
+**Notion** — update decisions log at end of every working session when schema, naming, or architecture changes. Never update mid-session.
 
-**Source of truth:** `lib/exercises.json` → `lib/exerciseLibrary.ts`
-**Format:** `[Equipment] [Muscle/Movement] [Modifier]`
-**Examples:** `Barbell Bench Press`, `Cable Seated Row (Wide Grip)`
-**Reference:** NSCA / ExRx.net nomenclature
-
-No aliases. No shorthand remapping. One name, everywhere. If exercises.json doesn't have it, it doesn't exist yet — add it to the JSON first.
-
----
-
-## 7. Code conventions
-
-- **TypeScript:** strict mode on. Use `Array.from()` instead of spread on Set/Map. No implicit `any`.
-- **Navigation:** Screen-based via `Screen` type union in `app/page.tsx`. No react-router.
-- **Styling:** CSS custom properties (`--bg`, `--accent`, `--surface`, etc.) + utility classes in `globals.css`. No hardcoded color values.
-- **Notion property names:** match the DB exactly. Source of truth is the schema in the Notion context doc.
-
----
-
-## 8. Before pushing to git
-
-Ask Johnatan: "New version or small tweak?" — then version automatically:
-- **New version** → next major digit. v3 → v4, v4 → v5.
-- **Small tweak** → next decimal. v3.1 → v3.2, v3.2 → v3.3.
-
-Use the version in the commit message (e.g., `feat(v3.2): ...`). Do not push without version confirmation.
-
-Pre-push lint gate is active (`.githooks/pre-push`) — runs `next lint` on every push automatically. If it fails, fix locally. Do not bypass with `--no-verify`.
-
----
-
-## 9. Vercel
-
-**Project:** `gym-coach` (team: `sanchez92j-1216s-projects`) — auto-deploys on push to `main`.
+**Vercel** — project `gym-coach`, team `sanchez92j-1216s-projects` — auto-deploys on push to `main`. All env vars marked sensitive.
