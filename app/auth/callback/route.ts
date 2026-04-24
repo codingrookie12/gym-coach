@@ -27,6 +27,10 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
+    console.log('[auth/callback] request.url:', request.url)
+    console.log('[auth/callback] exchangeCodeForSession error:', error?.message ?? 'none')
+    console.log('[auth/callback] redirect target:', new URL('/', request.url).toString())
+
     if (!error) {
       const response = NextResponse.redirect(new URL('/', request.url))
       captured.forEach(({ name, value, options }) =>
