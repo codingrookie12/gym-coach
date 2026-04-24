@@ -27,6 +27,8 @@ import {
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 export type Screen =
   | 'detecting'          // checking localStorage + Notion on first load
@@ -41,6 +43,7 @@ export type Screen =
   | 'exercise-library'
 
 export interface AppState {
+  user: User | null
   split: Split | null
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
@@ -60,6 +63,7 @@ export default function App() {
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [appState, setAppState] = useState<AppState>({
+    user: null,
     split: null,
     coachingContext: null,
     plan: null,
@@ -97,7 +101,13 @@ export default function App() {
 
   // On mount: check localStorage → then Notion fallback
   useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+
     async function detect() {
+      // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setAppState(prev => ({ ...prev, user }))
+
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
       if (stored) {
