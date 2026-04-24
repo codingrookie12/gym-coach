@@ -26,7 +26,13 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session — required by @supabase/ssr
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // treat as unauthenticated on any error
+  }
 
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/auth')
