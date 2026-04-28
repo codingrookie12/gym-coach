@@ -50,6 +50,8 @@ Source: [conversation / user / Canny / research]
 
 **Git** — feature branch per issue (`GYM-XX-short-description`). Squash merge to `main`. Open a PR per branch. Commit format: `type(vX.X-GYM-XX): description`. Types: `feat` / `fix` / `chore` / `refactor` / `docs`. Ask before every push: *"New version or small tweak?"* — major digit = new feature, decimal = tweak. Pre-push lint gate active — never bypass with `--no-verify`.
 
+**Version label** — displayed version is hardcoded in `components/screens/HomeScreen.tsx` line 39. Must be manually updated on every version bump — it does not read from `package.json` automatically. Always update it as part of the first commit on a new version.
+
 **Code** — TypeScript strict. `Array.from()` not spread on Set/Map. CSS custom properties only, no hardcoded colors. All UI strings in translation files — no hardcoded copy in components.
 
 **Notion** — update decisions log at end of every working session when schema, naming, or architecture changes. Never update mid-session.
