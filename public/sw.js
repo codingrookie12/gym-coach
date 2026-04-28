@@ -1,6 +1,5 @@
-const CACHE_NAME = 'gym-coach-v1'
+const CACHE_NAME = 'gym-coach-v2'
 const SHELL_ASSETS = [
-  '/',
   '/manifest.json',
 ]
 
@@ -23,12 +22,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
-  // Don't cache API calls
-  if (url.pathname.startsWith('/api/')) {
+  // Never intercept navigation requests — let the server (middleware/auth) handle them
+  if (event.request.mode === 'navigate') {
     return
   }
 
-  // Cache-first for static shell
+  // Don't cache API calls or auth routes
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
+    return
+  }
+
+  // Cache-first for static assets only
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached
@@ -38,7 +42,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
         }
         return response
-      }).catch(() => caches.match('/'))
+      })
     })
   )
 })
