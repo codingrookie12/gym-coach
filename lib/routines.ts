@@ -57,7 +57,7 @@ export const PUSH_ROUTINE: Exercise[] = [
   { name: 'Side Lateral Raise',                            notionName: 'Side Lateral Raise',                   sets: 3, repRange: [12, 12], backup: null,                                split: 'Push', availableWeights: DB },
   { name: 'Face Pull',                                     notionName: 'Face Pull',                            sets: 3, repRange: [12, 15], backup: 'Reverse Machine Flyes',              split: 'Push', availableWeights: CABLE_FULL },
   { name: 'Triceps Pushdown - Rope Attachment',            notionName: 'Triceps Pushdown - Rope Attachment',   sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - V-bar Attachment', split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Standing Low-Pulley One-Arm Triceps Extension', notionName: 'Standing Low-Pulley One-Arm Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', split: 'Push', availableWeights: CABLE_LIGHT },
+  { name: 'Standing Low-pulley One-arm Triceps Extension', notionName: 'Standing Low-Pulley One-Arm Triceps Extension', split: 'Push', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', availableWeights: CABLE_LIGHT },
 ]
 
 export const PULL_ROUTINE: Exercise[] = [
