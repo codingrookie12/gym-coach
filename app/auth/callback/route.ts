@@ -1,0 +1,40 @@
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+
+  if (code) {
+    // Capture cookies to set — must go on the response, not next/headers,
+    // otherwise they are not sent to the browser on a redirect response.
+    const captured: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(c => captured.push(c))
+          },
+        },
+      }
+    )
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) {
+      const response = NextResponse.redirect(new URL('/', request.url))
+      captured.forEach(({ name, value, options }) =>
+        response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+      )
+      return response
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
+}
