@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import HomeScreen from '@/components/screens/HomeScreen'
 import ResumePromptScreen from '@/components/screens/ResumePromptScreen'
 import CoachingContextScreen from '@/components/screens/CoachingContextScreen'
@@ -58,6 +59,7 @@ export interface AppState {
 }
 
 export default function App() {
+  const router = useRouter()
   const [screen, setScreen] = useState<Screen>('detecting')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
@@ -235,6 +237,12 @@ export default function App() {
     navigate('home')
   }
 
+  async function handleLogout() {
+    const supabase = createSupabaseBrowserClient()
+    await supabase.auth.signOut()
+    router.replace('/login')
+  }
+
   return (
     <div style={{ background: 'var(--bg)', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
@@ -258,6 +266,7 @@ export default function App() {
           onSettings={() => navigate('manage-weights')}
           onLibrary={() => navigate('exercise-library')}
           onEquipment={() => setShowEquipmentPanel(true)}
+          onLogout={handleLogout}
           unavailableCount={getUnavailableExercises(exerciseAvailability).length}
           pendingCustomCount={pendingCustomCount}
         />
