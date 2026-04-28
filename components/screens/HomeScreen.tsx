@@ -7,6 +7,7 @@ interface HomeScreenProps {
   onSettings: () => void
   onLibrary: () => void
   onEquipment: () => void
+  onLogout: () => void
   unavailableCount: number
   pendingCustomCount?: number
 }
@@ -17,7 +18,7 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, unavailableCount, pendingCustomCount = 0 }: HomeScreenProps) {
+export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, onLogout, unavailableCount, pendingCustomCount = 0 }: HomeScreenProps) {
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
 
@@ -194,9 +195,22 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
           SELECT SPLIT TO BEGIN
         </span>
-        <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.1em' }}>
-          PUSH · PULL · LEGS
-        </span>
+        <button
+          onClick={onLogout}
+          className="font-mono"
+          style={{
+            fontSize: '0.55rem',
+            color: 'var(--text-secondary)',
+            letterSpacing: '0.1em',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+            padding: 0,
+          }}
+        >
+          SIGN OUT
+        </button>
       </div>
     </div>
   )
