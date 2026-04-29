@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Split, SPLIT_ORDER } from '@/lib/routines'
 
 interface PreSessionScreenProps {
@@ -18,10 +18,6 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-const CARD_WIDTH_RATIO = 0.78  // 78% of container width
-const CARD_GAP = 12
-const SWIPE_THRESHOLD = 40
-
 export default function PreSessionScreen({
   initialSplit,
   onSelectSplit,
@@ -31,129 +27,11 @@ export default function PreSessionScreen({
   pendingCustomCount = 0,
 }: PreSessionScreenProps) {
   const [selectedIdx, setSelectedIdx] = useState(() => SPLIT_ORDER.indexOf(initialSplit))
-  const [hasSwiped, setHasSwiped] = useState(false)
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  // Drag state
-  const dragStartX = useRef<number | null>(null)
-  const dragCurrentX = useRef<number>(0)
-  const isDragging = useRef(false)
-
-  const getOffset = useCallback((idx: number, liveOffset = 0) => {
-    const container = containerRef.current
-    if (!container) return 0
-    const containerWidth = container.offsetWidth
-    const cardWidth = containerWidth * CARD_WIDTH_RATIO
-    const trackWidth = SPLIT_DATA.length * cardWidth + (SPLIT_DATA.length - 1) * CARD_GAP
-    const centerOffset = (containerWidth - cardWidth) / 2
-    return -(idx * (cardWidth + CARD_GAP)) + centerOffset + liveOffset
-  }, [])
-
-  const setTrackTransform = useCallback((offset: number, animated: boolean) => {
-    const track = trackRef.current
-    if (!track) return
-    track.style.transition = animated ? 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)' : 'none'
-    track.style.transform = `translateX(${offset}px)`
-  }, [])
-
-  // Initial position: set before paint to avoid flash
-  useLayoutEffect(() => {
-    setTrackTransform(getOffset(selectedIdx), false)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // intentionally runs once on mount only
-
-  // Subsequent selectedIdx changes: animate
-  useEffect(() => {
-    setTrackTransform(getOffset(selectedIdx), true)
-  }, [selectedIdx, getOffset, setTrackTransform])
-
-  // Recalculate on resize
-  useEffect(() => {
-    const observer = new ResizeObserver(() => {
-      setTrackTransform(getOffset(selectedIdx), false)
-    })
-    if (containerRef.current) observer.observe(containerRef.current)
-    return () => observer.disconnect()
-  }, [selectedIdx, getOffset, setTrackTransform])
-
-  const handleDragStart = useCallback((clientX: number) => {
-    dragStartX.current = clientX
-    dragCurrentX.current = 0
-    isDragging.current = true
-    const track = trackRef.current
-    if (track) track.style.transition = 'none'
-  }, [])
-
-  const handleDragMove = useCallback((clientX: number) => {
-    if (!isDragging.current || dragStartX.current === null) return
-    const delta = clientX - dragStartX.current
-    dragCurrentX.current = delta
-    setTrackTransform(getOffset(selectedIdx, delta), false)
-  }, [selectedIdx, getOffset, setTrackTransform])
-
-  const handleDragEnd = useCallback(() => {
-    if (!isDragging.current) return
-    isDragging.current = false
-    const delta = dragCurrentX.current
-
-    if (Math.abs(delta) >= SWIPE_THRESHOLD) {
-      const direction = delta < 0 ? 1 : -1
-      const nextIdx = Math.max(0, Math.min(SPLIT_DATA.length - 1, selectedIdx + direction))
-      setSelectedIdx(nextIdx)
-      if (!hasSwiped) setHasSwiped(true)
-    } else {
-      // Snap back
-      setTrackTransform(getOffset(selectedIdx), true)
-    }
-
-    dragStartX.current = null
-    dragCurrentX.current = 0
-  }, [selectedIdx, hasSwiped, getOffset, setTrackTransform])
-
-  // Touch handlers
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    handleDragStart(e.touches[0].clientX)
-  }, [handleDragStart])
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    handleDragMove(e.touches[0].clientX)
-  }, [handleDragMove])
-
-  const onTouchEnd = useCallback(() => {
-    handleDragEnd()
-  }, [handleDragEnd])
-
-  // Mouse handlers
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    handleDragStart(e.clientX)
-  }, [handleDragStart])
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging.current) return
-    handleDragMove(e.clientX)
-  }, [handleDragMove])
-
-  const onMouseUp = useCallback(() => {
-    handleDragEnd()
-  }, [handleDragEnd])
-
-  const onMouseLeave = useCallback(() => {
-    if (isDragging.current) handleDragEnd()
-  }, [handleDragEnd])
-
-  // Keyboard navigation
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') {
-      setSelectedIdx(i => Math.max(0, i - 1))
-      setHasSwiped(true)
-    } else if (e.key === 'ArrowRight') {
-      setSelectedIdx(i => Math.min(SPLIT_DATA.length - 1, i + 1))
-      setHasSwiped(true)
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      onSelectSplit(SPLIT_ORDER[selectedIdx])
-    }
+    if (e.key === 'ArrowLeft') setSelectedIdx(i => Math.max(0, i - 1))
+    else if (e.key === 'ArrowRight') setSelectedIdx(i => Math.min(SPLIT_DATA.length - 1, i + 1))
+    else if (e.key === 'Enter' || e.key === ' ') onSelectSplit(SPLIT_ORDER[selectedIdx])
   }, [selectedIdx, onSelectSplit])
 
   const selectedSplit = SPLIT_ORDER[selectedIdx]
@@ -162,6 +40,8 @@ export default function PreSessionScreen({
     <div
       className="screen-enter flex flex-col"
       style={{ height: '100%', background: 'var(--bg)' }}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
     >
       {/* Header */}
       <div
@@ -229,57 +109,39 @@ export default function PreSessionScreen({
         </div>
       </div>
 
-      {/* Carousel */}
-      <div
-        ref={containerRef}
-        className="flex-1"
-        style={{ overflow: 'hidden', cursor: 'grab', userSelect: 'none', position: 'relative', minHeight: 0 }}
-        tabIndex={0}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}
-        onKeyDown={onKeyDown}
-      >
-        <div
-          ref={trackRef}
-          style={{
-            display: 'flex',
-            gap: `${CARD_GAP}px`,
-            height: '100%',
-            alignItems: 'center',
-            willChange: 'transform',
-          }}
-        >
-          {SPLIT_DATA.map((s, i) => {
-            const isSelected = i === selectedIdx
-            return (
+      {/* Split columns */}
+      <div className="flex-1 flex" style={{ minHeight: 0 }}>
+        {SPLIT_DATA.map((s, i) => {
+          const isSelected = i === selectedIdx
+          return (
+            <button
+              key={s.label}
+              onClick={() => setSelectedIdx(i)}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: isSelected ? 'var(--surface)' : 'none',
+                border: 'none',
+                borderTop: `3px solid ${isSelected ? 'var(--accent)' : 'transparent'}`,
+                borderRight: i < SPLIT_DATA.length - 1 ? '1px solid var(--border)' : 'none',
+                padding: 0,
+                cursor: isSelected ? 'default' : 'pointer',
+                position: 'relative',
+                transition: 'background 0.18s',
+              }}
+            >
+              {/* Inner content — dimmed when not selected */}
               <div
-                key={s.label}
-                onClick={() => {
-                  if (i === selectedIdx) return
-                  setSelectedIdx(i)
-                  setHasSwiped(true)
-                }}
                 style={{
-                  flexShrink: 0,
-                  width: `calc(${CARD_WIDTH_RATIO * 100}vw)`,
-                  height: '72%',
-                  border: `1px solid ${isSelected ? 'var(--accent-border)' : 'var(--border)'}`,
-                  borderRadius: '2px',
-                  background: isSelected ? 'var(--surface)' : 'transparent',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '16px',
-                  position: 'relative',
-                  transition: 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s, background 0.2s',
-                  transform: isSelected ? 'scale(1)' : 'scale(0.92)',
-                  cursor: isSelected ? 'default' : 'pointer',
+                  gap: '14px',
+                  opacity: isSelected ? 1 : 0.35,
+                  transition: 'opacity 0.18s',
                 }}
               >
                 {/* Index */}
@@ -292,9 +154,8 @@ export default function PreSessionScreen({
                     right: 0,
                     textAlign: 'center',
                     fontSize: '0.55rem',
-                    color: isSelected ? 'var(--text-secondary)' : 'var(--border-2)',
+                    color: 'var(--text-secondary)',
                     letterSpacing: '0.1em',
-                    transition: 'color 0.2s',
                   }}
                 >
                   {s.index}
@@ -304,26 +165,17 @@ export default function PreSessionScreen({
                 <span
                   className="font-display"
                   style={{
-                    fontSize: 'clamp(3.5rem, 16vw, 5rem)',
-                    color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    fontSize: 'clamp(2.8rem, 7vw, 4rem)',
+                    color: 'var(--text-primary)',
                     lineHeight: 1,
                     letterSpacing: '0.04em',
-                    transition: 'color 0.2s',
                   }}
                 >
-                  {s.label.toUpperCase()}
+                  {s.label}
                 </span>
 
                 {/* Accent bar */}
-                <div
-                  style={{
-                    width: '24px',
-                    height: '2px',
-                    background: 'var(--accent)',
-                    opacity: isSelected ? 1 : 0.15,
-                    transition: 'opacity 0.2s',
-                  }}
-                />
+                <div style={{ width: '24px', height: '2px', background: 'var(--accent)', opacity: 0.5 }} />
 
                 {/* Muscles */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
@@ -333,10 +185,9 @@ export default function PreSessionScreen({
                       className="font-mono"
                       style={{
                         fontSize: '0.55rem',
-                        color: isSelected ? 'var(--text-secondary)' : 'var(--border-2)',
+                        color: 'var(--text-secondary)',
                         letterSpacing: '0.12em',
                         textTransform: 'uppercase',
-                        transition: 'color 0.2s',
                       }}
                     >
                       {m}
@@ -344,9 +195,9 @@ export default function PreSessionScreen({
                   ))}
                 </div>
               </div>
-            )
-          })}
-        </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Footer */}
@@ -355,9 +206,6 @@ export default function PreSessionScreen({
         style={{
           padding: '12px 20px',
           borderTop: '1px solid var(--border)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
           flexShrink: 0,
         }}
       >
@@ -367,19 +215,6 @@ export default function PreSessionScreen({
         >
           START {selectedSplit.toUpperCase()}
         </button>
-        {!hasSwiped && (
-          <span
-            className="font-mono"
-            style={{
-              fontSize: '0.55rem',
-              color: 'var(--text-secondary)',
-              letterSpacing: '0.12em',
-              textAlign: 'center',
-            }}
-          >
-            SWIPE TO CHANGE DAY
-          </span>
-        )}
       </div>
     </div>
   )
