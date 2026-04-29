@@ -1,26 +1,42 @@
 import { NextResponse } from 'next/server'
-import { fetchLastSessions } from '@/lib/notion'
-import { Split } from '@/lib/routines'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
+import { getExerciseId } from '@/lib/supabase.queries'
 
 export async function GET(req: Request) {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ weight: null, reps: null })
+
   const { searchParams } = new URL(req.url)
   const name = searchParams.get('name')
-  const splitParam = searchParams.get('split') as Split | null
 
-  if (!name || !splitParam) {
-    return NextResponse.json({ weight: null, reps: null })
-  }
+  if (!name) return NextResponse.json({ weight: null, reps: null })
 
   try {
-    const sessions = await fetchLastSessions(splitParam, 3)
-    for (const session of sessions) {
-      const exData = session.exercises[name]
-      if (exData && exData.sets.length > 0) {
-        const firstSet = exData.sets[0]
-        return NextResponse.json({ weight: firstSet.weight || null, reps: firstSet.reps || null })
-      }
-    }
-    return NextResponse.json({ weight: null, reps: null })
+    const exerciseId = await getExerciseId(supabase, name)
+    if (!exerciseId) return NextResponse.json({ weight: null, reps: null })
+
+    // Weight from override table (primary source)
+    const { data: override } = await supabase
+      .from('exercise_weight_override')
+      .select('override_weight')
+      .eq('user_id', user.id)
+      .eq('exercise_id', exerciseId)
+      .maybeSingle()
+
+    // Latest reps from most recent set (override table doesn't store reps)
+    const { data: latestSet } = await supabase
+      .from('sets')
+      .select('reps')
+      .eq('exercise_id', exerciseId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    return NextResponse.json({
+      weight: override?.override_weight != null ? Number(override.override_weight) : null,
+      reps: latestSet?.reps ?? null,
+    })
   } catch {
     return NextResponse.json({ weight: null, reps: null })
   }

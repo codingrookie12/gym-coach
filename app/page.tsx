@@ -160,7 +160,7 @@ export default function App() {
         const set = exLog.sets[si]
         if (!set.completed) continue
 
-        const key = `${exLog.notionName}:${si + 1}`
+        const key = `${exLog.exerciseName}:${si + 1}`
         const prior = snapshot[key]
 
         if (prior) {
@@ -183,15 +183,15 @@ export default function App() {
             )
           }
         } else {
-          const planItem = appState.plan?.find(p => p.exercise.notionName === exLog.notionName)
+          const planItem = appState.plan?.find(p => p.exercise.name === exLog.exerciseName)
           newEntries.push({
-            exercise: exLog.notionName,
+            exercise: exLog.exerciseName,
             date: today,
             split: appState.split,
             weight: set.weight,
             set: si + 1,
             reps: set.reps,
-            entry: `${exLog.notionName} — Set ${si + 1}`,
+            entry: `${exLog.exerciseName} — Set ${si + 1}`,
             notes: exLog.notes || undefined,
             unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
           })
