@@ -20,11 +20,17 @@ export default function NumberPad({
   allowDecimal = false,
 }: NumberPadProps) {
   const [input, setInput] = useState(initialValue !== null && initialValue !== undefined ? String(initialValue) : '')
+  const [replaceOnNext, setReplaceOnNext] = useState(initialValue !== null && initialValue !== undefined)
 
   function press(val: string) {
     if (val === '.' && !allowDecimal) return
     if (val === '.' && input.includes('.')) return
     if (input.length >= 6) return
+    if (replaceOnNext) {
+      setReplaceOnNext(false)
+      setInput(val === '.' ? '0.' : val)
+      return
+    }
     setInput(prev => {
       if (prev === '0' && val !== '.') return val
       return prev + val
@@ -32,6 +38,7 @@ export default function NumberPad({
   }
 
   function backspace() {
+    setReplaceOnNext(false)
     setInput(prev => prev.slice(0, -1))
   }
 
