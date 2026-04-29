@@ -15,7 +15,7 @@
       "Lie down on the floor and secure your feet. Your legs should be bent at the knees.",
       "Place your hands behind or to the side of your head. You will begin with your back on the ground. This will be your starting position.",
       "Flex your hips and spine to raise your torso toward your knees.",
-      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only \u00be of the way down.",
+      "At the top of the contraction your torso should be perpendicular to the ground. Reverse the motion, going only ¾ of the way down.",
       "Repeat for the recommended amount of repetitions."
     ],
     "isCustom": false
@@ -2084,57 +2084,6 @@
     "isCustom": false
   },
   {
-    "id": "cable_curl_ez_bar",
-    "name": "Cable Curl (EZ Bar)",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Biceps"
-    ],
-    "secondaryMuscles": [
-      "Forearms"
-    ],
-    "split": "Pull",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
-    "id": "cable_curl_ez_bar_close",
-    "name": "Cable Curl (EZ Bar) \u2014 Close Grip",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Biceps"
-    ],
-    "secondaryMuscles": [
-      "Forearms"
-    ],
-    "split": "Pull",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
-    "id": "cable_curl_ez_bar_wide",
-    "name": "Cable Curl (EZ Bar) \u2014 Wide Grip",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Biceps"
-    ],
-    "secondaryMuscles": [
-      "Forearms"
-    ],
-    "split": "Pull",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "cable_curl_low_pulley",
     "name": "Cable Curl (Low Pulley)",
     "equipment": "Cable",
@@ -2277,7 +2226,7 @@
     "level": "beginner",
     "instructions": [
       "Sit next to a low pulley sideways (with legs stretched in front of you or crossed) and grasp the single hand cable attachment with the arm nearest to the cable. Tip: If you can adjust the pulley's height, you can use a flat bench to sit on instead.",
-      "Position the elbow against your side with the elbow bent at 90\u00b0 and the arm pointing towards the pulley. This will be your starting position.",
+      "Position the elbow against your side with the elbow bent at 90° and the arm pointing towards the pulley. This will be your starting position.",
       "Pull the single hand cable attachment toward your body by internally rotating your shoulder until your forearm is across your abs. You will be creating an imaginary semi-circle. Tip: The forearm should be perpendicular to your torso at all times.",
       "Slowly go back to the initial position.",
       "Repeat for the recommended amount of repetitions and then repeat the movement with the next arm."
@@ -2325,24 +2274,6 @@
       "Then, reposition and repeat the same series of movements on the opposite side."
     ],
     "isCustom": false
-  },
-  {
-    "id": "cable_lat_pulldown",
-    "name": "Cable Lat Pulldown",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Lats"
-    ],
-    "secondaryMuscles": [
-      "Middle Back",
-      "Biceps"
-    ],
-    "split": "Pull",
-    "mechanic": "compound",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Cable_Lying_Triceps_Extension",
@@ -2571,42 +2502,6 @@
     "isCustom": false
   },
   {
-    "id": "cable_seated_row_close",
-    "name": "Cable Seated Row (Close Grip)",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Middle Back"
-    ],
-    "secondaryMuscles": [
-      "Lats",
-      "Biceps"
-    ],
-    "split": "Pull",
-    "mechanic": "compound",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
-    "id": "cable_seated_row_wide",
-    "name": "Cable Seated Row (Wide Grip)",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Middle Back"
-    ],
-    "secondaryMuscles": [
-      "Lats",
-      "Biceps"
-    ],
-    "split": "Pull",
-    "mechanic": "compound",
-    "force": "pull",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Cable_Shoulder_Press",
     "name": "Cable Shoulder Press",
     "equipment": "Cable",
@@ -2650,21 +2545,6 @@
     "isCustom": false
   },
   {
-    "id": "cable_triceps_ext_horiz",
-    "name": "Cable Triceps Extension (Horizontal)",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Triceps"
-    ],
-    "secondaryMuscles": [],
-    "split": "Push",
-    "mechanic": "isolation",
-    "force": "push",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Cable_Wrist_Curl",
     "name": "Cable Wrist Curl",
     "equipment": "Cable",
@@ -2685,21 +2565,6 @@
       "Repeat for the recommended amount of repetitions."
     ],
     "isCustom": false
-  },
-  {
-    "id": "cable_wrist_ext_single",
-    "name": "Cable Wrist Extension (Single Arm)",
-    "equipment": "Cable",
-    "primaryMuscles": [
-      "Forearms"
-    ],
-    "secondaryMuscles": [],
-    "split": "Pull",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Calf_Press",
@@ -6062,38 +5927,6 @@
     "isCustom": false
   },
   {
-    "id": "hip_abduction_machine",
-    "name": "Hip Abduction (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Abductors"
-    ],
-    "secondaryMuscles": [
-      "Glutes"
-    ],
-    "split": "Legs",
-    "mechanic": "isolation",
-    "force": "push",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
-    "id": "hip_adduction_machine",
-    "name": "Hip Adduction (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Adductors"
-    ],
-    "secondaryMuscles": [],
-    "split": "Legs",
-    "mechanic": "isolation",
-    "force": "push",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Hip_Extension_with_Bands",
     "name": "Hip Extension with Bands",
     "equipment": "Bands",
@@ -7466,24 +7299,6 @@
     "isCustom": false
   },
   {
-    "id": "lat_pulldown_mts",
-    "name": "Lat Pulldown (MTS Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Lats"
-    ],
-    "secondaryMuscles": [
-      "Middle Back",
-      "Biceps"
-    ],
-    "split": "Pull",
-    "mechanic": "compound",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Lateral_Raise_-_With_Bands",
     "name": "Lateral Raise - with Bands",
     "equipment": "Bands",
@@ -7570,24 +7385,6 @@
       "Repeat for the recommended amount of repetitions and ensure to lock the safety pins properly once you are done. You do not want that platform falling on you fully loaded."
     ],
     "isCustom": false
-  },
-  {
-    "id": "leg_press_machine",
-    "name": "Leg Press (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Quadriceps"
-    ],
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "split": "Legs",
-    "mechanic": "compound",
-    "force": "push",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Leg_Pull-In",
@@ -7806,24 +7603,6 @@
       "Pause at the top of the motion, and then return the weight to the starting position."
     ],
     "isCustom": false
-  },
-  {
-    "id": "linear_hack_press",
-    "name": "Linear Hack Press",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Quadriceps"
-    ],
-    "secondaryMuscles": [
-      "Glutes",
-      "Hamstrings"
-    ],
-    "split": "Legs",
-    "mechanic": "compound",
-    "force": "push",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "London_Bridges",
@@ -9586,7 +9365,7 @@
     "force": "pull",
     "level": "beginner",
     "instructions": [
-      "Connect a standard handle to a tower, and\u2014if possible\u2014position the cable to shoulder height. If not, a low pulley will suffice.",
+      "Connect a standard handle to a tower, and—if possible—position the cable to shoulder height. If not, a low pulley will suffice.",
       "With your side to the cable, grab the handle with both hands and step away from the tower. You should be approximately arm's length away from the pulley, with the tension of the weight on the cable.",
       "With your feet positioned hip-width apart and knees slightly bent, hold the cable to the middle of your chest. This will be your starting position.",
       "Press the cable away from your chest, fully extending both arms. You core should be tight and engaged.",
@@ -10165,23 +9944,6 @@
       "Repeat for the recommended amount of repetitions."
     ],
     "isCustom": false
-  },
-  {
-    "id": "prone_leg_curl_machine",
-    "name": "Prone Leg Curl (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Hamstrings"
-    ],
-    "secondaryMuscles": [
-      "Calves"
-    ],
-    "split": "Legs",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Prone_Manual_Hamstring",
@@ -11386,21 +11148,6 @@
     "isCustom": false
   },
   {
-    "id": "seated_calf_raise_machine",
-    "name": "Seated Calf Raise (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Calves"
-    ],
-    "secondaryMuscles": [],
-    "split": "Legs",
-    "mechanic": "isolation",
-    "force": "push",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Seated_Close-Grip_Concentration_Barbell_Curl",
     "name": "Seated Close-grip Concentration Barbell Curl",
     "equipment": "Barbell",
@@ -11620,23 +11367,6 @@
     "isCustom": false
   },
   {
-    "id": "seated_leg_curl_machine",
-    "name": "Seated Leg Curl (Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Hamstrings"
-    ],
-    "secondaryMuscles": [
-      "Calves"
-    ],
-    "split": "Legs",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
-  },
-  {
     "id": "Seated_Leg_Tucks",
     "name": "Seated Leg Tucks",
     "equipment": "Bodyweight",
@@ -11767,24 +11497,6 @@
       "Now curl bar up as high as possible while flexing the forearms and exhaling. Hold the contraction at the top for a second and Tip: Only the wrist should move."
     ],
     "isCustom": false
-  },
-  {
-    "id": "seated_row_mts",
-    "name": "Seated Row (MTS Machine)",
-    "equipment": "Machine",
-    "primaryMuscles": [
-      "Middle Back"
-    ],
-    "secondaryMuscles": [
-      "Lats",
-      "Biceps"
-    ],
-    "split": "Pull",
-    "mechanic": "compound",
-    "force": "pull",
-    "level": "beginner",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Seated_Side_Lateral_Raise",
@@ -12066,23 +11778,6 @@
       "Extend as far as possible, pause and then return to the starting position."
     ],
     "isCustom": false
-  },
-  {
-    "id": "single_arm_preacher_hammer",
-    "name": "Single-Arm Preacher Hammer Curl",
-    "equipment": "Dumbbell",
-    "primaryMuscles": [
-      "Biceps"
-    ],
-    "secondaryMuscles": [
-      "Forearms"
-    ],
-    "split": "Pull",
-    "mechanic": "isolation",
-    "force": "pull",
-    "level": "intermediate",
-    "instructions": [],
-    "isCustom": true
   },
   {
     "id": "Single-Arm_Cable_Crossover",
