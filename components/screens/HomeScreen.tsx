@@ -23,9 +23,9 @@ export default function HomeScreen({ onSelectSplit, onSettings, onEquipment, onL
 
       {/* Header */}
       <div
-        className="safe-top flex items-center justify-between"
+        className="safe-top flex items-center justify-between px-5"
         style={{
-          padding: '0 20px 14px',
+          paddingBottom: '14px',
           borderBottom: '1px solid var(--border)',
           flexShrink: 0,
         }}
