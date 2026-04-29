@@ -27,7 +27,17 @@
 
 **Decision log** — append to the relevant Notion page's decisions log when: a schema changes, a naming convention is set, or a phase closes. Format: `Date | Decision | Rationale`. Never log routine code changes.
 
-**Session log** — at the end of any session where a phase closes, a major architectural decision is made, or a significant feature is designed: ask *"This session produced [X]. Should I log it?"* If yes, append one row to the [Session Log](https://www.notion.so/34991176d45981318fe8f4889641b974) inline database. Format: `Date | Type | Topic | Decisions Made | Output | Next Action`. After any PR merge, check if the closed issue is on the roadmap — if so, ask: *"Should I mark GYM-XX done on the roadmap?"*
+**Session log** — at the end of any session where a phase closes, a major architectural decision is made, or a significant feature is designed: ask *"This session produced [X]. Should I log it?"* If yes, append one row to the [Session Log](https://www.notion.so/34991176d45981318fe8f4889641b974) inline database. Format: `Date | Type | Topic | Decisions Made | Output | Next Action`.
+
+**Roadmap update** — after every PR merges to `main`, update the [Notion Roadmap](https://www.notion.so/34891176d45981549ae1c838fcfe4b26):
+1. Strikethrough the merged issue in its phase list
+2. Update the `Last updated` line at the top of the page (format: `YYYY-MM-DD — GYM-XX shipped (vX.X)`)
+3. If it was a **Phase 1 MVP gate item** (the numbered list): update the "Where Am I Right Now" section — three specific changes:
+   - Change `**In progress:** GYM-XX — [old title]` to the next item's number and title
+   - Replace the explanatory sentence below it with one sentence describing why the new item is the current blocker
+   - Remove the completed item from the front of the sequence line (e.g. `GYM-71 → GYM-72 → ...` becomes `GYM-72 → GYM-73 → ...`)
+4. If the merge **completes a phase** (all items done): update the phase Status to "Done ✅" and update "Where Am I Right Now" to point to the next phase's first item
+Do this immediately after the merge — do not batch roadmap updates across multiple sessions.
 
 **Idea capture** — when a new feature or improvement is proposed: search Linear for semantic duplicates first, then create a Backlog issue if none found. Linear only — no separate Notion entry.
 ```
