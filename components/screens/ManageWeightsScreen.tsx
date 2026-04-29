@@ -39,14 +39,18 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
     setEditingExercise(null)
 
     try {
-      await fetch('/api/weights/update', {
+      const res = await fetch('/api/weights/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ exercise: name, weight: value }),
       })
-      setWeights(prev => ({ ...prev, [name]: value }))
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // Confirm from server rather than optimistic update
+      setRefreshKey(k => k + 1)
     } catch (e) {
       console.error('Save failed:', e)
+      // Revert optimistic state — re-fetch current values
+      setRefreshKey(k => k + 1)
     }
     setSaving(null)
   }

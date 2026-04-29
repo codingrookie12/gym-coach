@@ -66,12 +66,13 @@ export async function upsertWeightOverride(
   weight: number,
   unit: string
 ): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from('exercise_weight_override')
     .upsert(
       { user_id: userId, exercise_id: exerciseId, override_weight: weight, unit },
       { onConflict: 'user_id,exercise_id' }
     )
+  if (error) throw error
 }
 
 // Returns last N sessions for a split, keyed by canonical exercise name.
