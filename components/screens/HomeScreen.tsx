@@ -36,7 +36,7 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v4.1
+            v4.2
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
