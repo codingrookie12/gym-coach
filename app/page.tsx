@@ -11,7 +11,9 @@ import PreSaveSummaryScreen from '@/components/screens/PreSaveSummaryScreen'
 import SessionSummaryScreen from '@/components/screens/SessionSummaryScreen'
 import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
 import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
+import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
+import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
 import { Split } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { SessionRecord } from '@/lib/notion'
@@ -41,7 +43,6 @@ export type Screen =
   | 'pre-save'
   | 'session-summary'
   | 'manage-weights'
-  | 'exercise-library'
 
 export interface AppState {
   user: User | null
@@ -61,6 +62,7 @@ export interface AppState {
 export default function App() {
   const router = useRouter()
   const [screen, setScreen] = useState<Screen>('detecting')
+  const [activeTab, setActiveTab] = useState<ActiveTab>('train')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
@@ -93,6 +95,7 @@ export default function App() {
     }))
     setPendingCustomCount(getIncompletePendingExercises().length)
     setScreen('home')
+    setActiveTab('train')
   }, [])
 
   // On mount: load equipment availability + pending custom exercise count
@@ -243,116 +246,137 @@ export default function App() {
     router.replace('/login')
   }
 
+  // Tab bar is visible on primary screens; hidden during workout flow
+  const showTabBar = activeTab !== 'train' || screen === 'home'
+
   return (
-    <div style={{ background: 'var(--bg)', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
 
-      {screen === 'detecting' && (
-        <LoadingScreen message="Checking today's session..." />
-      )}
+      {/* Tab content area — all panels stay mounted; display toggles preserve DOM scroll */}
+      <div style={{ flex: 1, minHeight: 0 }}>
 
-      {screen === 'resume-prompt' && (
-        <ResumePromptScreen
-          detectedSession={appState.detectedSession}
-          detectedSplit={appState.detectedSplit}
-          onResume={handleResume}
-          onFresh={handleStartFresh}
-          onSettings={() => navigate('manage-weights')}
-        />
-      )}
+        {/* Train tab */}
+        <div style={{ height: '100%', display: activeTab === 'train' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {screen === 'home' && (
-        <HomeScreen
-          onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
-          onSettings={() => navigate('manage-weights')}
-          onLibrary={() => navigate('exercise-library')}
-          onEquipment={() => setShowEquipmentPanel(true)}
-          onLogout={handleLogout}
-          unavailableCount={getUnavailableExercises(exerciseAvailability).length}
-          pendingCustomCount={pendingCustomCount}
-        />
-      )}
+          {screen === 'detecting' && (
+            <LoadingScreen message="Checking today's session..." />
+          )}
 
-      {screen === 'coaching-context' && appState.split && (
-        <CoachingContextScreen
-          split={appState.split}
-          unavailableExercises={getUnavailableExercises(exerciseAvailability)}
-          onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
-          coachingContext={appState.coachingContext}
-          plan={appState.plan}
-          onViewPlan={() => navigate('workout-overview')}
-          onBack={goHome}
-        />
-      )}
+          {screen === 'resume-prompt' && (
+            <ResumePromptScreen
+              detectedSession={appState.detectedSession}
+              detectedSplit={appState.detectedSplit}
+              onResume={handleResume}
+              onFresh={handleStartFresh}
+              onSettings={() => navigate('manage-weights')}
+            />
+          )}
 
-      {screen === 'workout-overview' && appState.plan && appState.split && (
-        <WorkoutOverviewScreen
-          split={appState.split}
-          plan={appState.plan}
-          hasResumable={!!appState.savedLogs}
-          onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
-          onResume={() => navigate('active-session')}
-          onBack={() => navigate('coaching-context')}
-          onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
-            const currentPlan = appState.plan!
-            const avgSets = currentPlan.length > 0
-              ? Math.max(1, Math.round(currentPlan.reduce((s, p) => s + p.exercise.sets, 0) / currentPlan.length))
-              : 3
-            const newEntry: ExercisePlan = {
-              exercise: {
-                name,
-                notionName: name,
-                sets: avgSets,
-                repRange: [8, 12],
-                backup: null,
-                split: appState.split!,
-              },
-              targetWeight: prefillWeight,
-              coachingNote: null,
-            }
-            updateState({ plan: [...currentPlan, newEntry] })
-            if (!matched) savePendingExercise(name)
-          }}
-        />
-      )}
+          {screen === 'home' && (
+            <HomeScreen
+              onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
+              onSettings={() => navigate('manage-weights')}
+              onEquipment={() => setShowEquipmentPanel(true)}
+              unavailableCount={getUnavailableExercises(exerciseAvailability).length}
+              pendingCustomCount={pendingCustomCount}
+            />
+          )}
 
-      {screen === 'active-session' && appState.plan && appState.split && (
-        <ActiveSessionScreen
-          split={appState.split}
-          plan={appState.plan}
-          initialLogs={appState.savedLogs ?? undefined}
-          initialExIdx={appState.savedExIdx}
-          initialSnapshot={appState.savedSnapshot}
-          onFinish={handleSessionFinish}
-          onBack={handleSessionBack}
-        />
-      )}
+          {screen === 'coaching-context' && appState.split && (
+            <CoachingContextScreen
+              split={appState.split}
+              unavailableExercises={getUnavailableExercises(exerciseAvailability)}
+              onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
+              coachingContext={appState.coachingContext}
+              plan={appState.plan}
+              onViewPlan={() => navigate('workout-overview')}
+              onBack={goHome}
+            />
+          )}
 
-      {screen === 'pre-save' && appState.plan && appState.split && (
-        <PreSaveSummaryScreen
-          split={appState.split}
-          plan={appState.plan}
-          logs={appState.exerciseLogs}
-          onSave={handleSaveSession}
-          onBack={() => navigate('active-session')}
-        />
-      )}
+          {screen === 'workout-overview' && appState.plan && appState.split && (
+            <WorkoutOverviewScreen
+              split={appState.split}
+              plan={appState.plan}
+              hasResumable={!!appState.savedLogs}
+              onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
+              onResume={() => navigate('active-session')}
+              onBack={() => navigate('coaching-context')}
+              onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
+                const currentPlan = appState.plan!
+                const avgSets = currentPlan.length > 0
+                  ? Math.max(1, Math.round(currentPlan.reduce((s, p) => s + p.exercise.sets, 0) / currentPlan.length))
+                  : 3
+                const newEntry: ExercisePlan = {
+                  exercise: {
+                    name,
+                    notionName: name,
+                    sets: avgSets,
+                    repRange: [8, 12],
+                    backup: null,
+                    split: appState.split!,
+                  },
+                  targetWeight: prefillWeight,
+                  coachingNote: null,
+                }
+                updateState({ plan: [...currentPlan, newEntry] })
+                if (!matched) savePendingExercise(name)
+              }}
+            />
+          )}
 
-      {screen === 'session-summary' && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
-        <SessionSummaryScreen
-          split={appState.split}
-          exerciseLogs={appState.exerciseLogs}
-          plan={appState.plan}
-          previousSessions={appState.sessions}
-          onDone={goHome}
-        />
-      )}
+          {screen === 'active-session' && appState.plan && appState.split && (
+            <ActiveSessionScreen
+              split={appState.split}
+              plan={appState.plan}
+              initialLogs={appState.savedLogs ?? undefined}
+              initialExIdx={appState.savedExIdx}
+              initialSnapshot={appState.savedSnapshot}
+              onFinish={handleSessionFinish}
+              onBack={handleSessionBack}
+            />
+          )}
 
-      {screen === 'manage-weights' && (
-        <ManageWeightsScreen onBack={goHome} />
-      )}
+          {screen === 'pre-save' && appState.plan && appState.split && (
+            <PreSaveSummaryScreen
+              split={appState.split}
+              plan={appState.plan}
+              logs={appState.exerciseLogs}
+              onSave={handleSaveSession}
+              onBack={() => navigate('active-session')}
+            />
+          )}
 
-      {screen === 'exercise-library' && (
-        <ExerciseLibraryScreen onBack={goHome} />
+          {screen === 'session-summary' && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
+            <SessionSummaryScreen
+              split={appState.split}
+              exerciseLogs={appState.exerciseLogs}
+              plan={appState.plan}
+              previousSessions={appState.sessions}
+              onDone={goHome}
+            />
+          )}
+
+          {screen === 'manage-weights' && (
+            <ManageWeightsScreen onBack={goHome} />
+          )}
+
+        </div>
+
+        {/* Library tab */}
+        <div style={{ height: '100%', display: activeTab === 'library' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <ExerciseLibraryScreen />
+        </div>
+
+        {/* Me tab */}
+        <div style={{ height: '100%', display: activeTab === 'me' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <MeScreen user={appState.user} onLogout={handleLogout} />
+        </div>
+
+      </div>
+
+      {showTabBar && (
+        <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} libraryBadge={pendingCustomCount} />
       )}
 
       {showEquipmentPanel && (

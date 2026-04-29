@@ -16,7 +16,7 @@ import { Split } from '@/lib/routines'
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface ExerciseLibraryScreenProps {
-  onBack: () => void
+  onBack?: () => void
   // Optional: highlight which exercises are "in your program"
   activeSplit?: Split
 }
@@ -590,19 +590,21 @@ export default function ExerciseLibraryScreen({
   const totalCount = ALL_EXERCISES.length
 
   return (
-    <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
+    <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
 
       {/* Header */}
       <div
         className="safe-top flex items-center gap-4 px-5"
         style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}
       >
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
-        >
-          ←
-        </button>
+        {onBack && (
+          <button
+            onClick={onBack}
+            style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
+          >
+            ←
+          </button>
+        )}
         <div style={{ flex: 1 }}>
           <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
             EXERCISE LIBRARY
