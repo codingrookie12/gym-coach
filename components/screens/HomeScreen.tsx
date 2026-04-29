@@ -5,7 +5,6 @@ import { Split } from '@/lib/routines'
 interface HomeScreenProps {
   onSelectSplit: (split: Split) => void
   onSettings: () => void
-  onLibrary: () => void
   onEquipment: () => void
   onLogout: () => void
   unavailableCount: number
@@ -18,9 +17,9 @@ const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
   { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
 ]
 
-export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEquipment, onLogout, unavailableCount, pendingCustomCount = 0 }: HomeScreenProps) {
+export default function HomeScreen({ onSelectSplit, onSettings, onEquipment, onLogout, unavailableCount, pendingCustomCount = 0 }: HomeScreenProps) {
   return (
-    <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
+    <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
 
       {/* Header */}
       <div
@@ -36,7 +35,7 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v4.2
+            v5.0
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -65,31 +64,6 @@ export default function HomeScreen({ onSelectSplit, onSettings, onLibrary, onEqu
               <rect x="6" y="10" width="12" height="4" rx="1" />
             </svg>
             EQUIP{unavailableCount > 0 && <span style={{ marginLeft: '2px' }}>({unavailableCount})</span>}
-          </button>
-          <button
-            onClick={onLibrary}
-            style={{
-              background: 'none',
-              border: `1px solid ${pendingCustomCount > 0 ? 'var(--accent-border)' : 'var(--border-2)'}`,
-              borderRadius: '2px',
-              padding: '7px 12px',
-              color: pendingCustomCount > 0 ? 'var(--accent)' : 'var(--text-mid)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: '0.95rem',
-              letterSpacing: '0.1em',
-              transition: 'border-color 0.12s, color 0.12s',
-              position: 'relative',
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
-            LIBRARY{pendingCustomCount > 0 && <span style={{ marginLeft: '2px' }}>({pendingCustomCount})</span>}
           </button>
           <button
             onClick={onSettings}
