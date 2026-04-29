@@ -277,7 +277,6 @@ export default function App() {
               onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
               onSettings={() => navigate('manage-weights')}
               onEquipment={() => setShowEquipmentPanel(true)}
-              onLogout={handleLogout}
               unavailableCount={getUnavailableExercises(exerciseAvailability).length}
               pendingCustomCount={pendingCustomCount}
             />
