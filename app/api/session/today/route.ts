@@ -1,44 +1,52 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@notionhq/client'
-import { Split } from '@/lib/routines'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
+import type { Split } from '@/lib/routines'
 
-const notion = new Client({ auth: process.env.NOTION_TOKEN })
-const DATABASE_ID = process.env.NOTION_DATABASE_ID!
-
-// Check if there are any entries for today across all splits.
-// Returns { split, entryCount } for the split with the most entries today,
-// or null if nothing logged today.
 export async function GET() {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ found: false })
+
   const today = new Date().toISOString().split('T')[0]
 
   try {
-    const response = await notion.databases.query({
-      database_id: DATABASE_ID,
-      filter: {
-        property: 'Date',
-        date: { equals: today },
-      },
-      page_size: 100,
-    })
+    // Fetch today's workouts for this user, with their training mode name
+    const { data: workouts } = await supabase
+      .from('workouts')
+      .select('id, training_modes(name)')
+      .eq('user_id', user.id)
+      .eq('date', today)
 
-    if (response.results.length === 0) {
-      return NextResponse.json({ found: false })
+    if (!workouts?.length) return NextResponse.json({ found: false })
+
+    const workoutIds = workouts.map(w => w.id as string)
+
+    // Count sets per workout
+    const { data: sets } = await supabase
+      .from('sets')
+      .select('workout_id')
+      .in('workout_id', workoutIds)
+
+    const setCounts: Record<string, number> = {}
+    for (const s of sets ?? []) {
+      const id = s.workout_id as string
+      setCounts[id] = (setCounts[id] ?? 0) + 1
     }
 
-    // Count entries per split
-    const counts: Record<string, number> = {}
-    for (const page of response.results as any[]) {
-      const split = page.properties['Split']?.select?.name
-      if (split) counts[split] = (counts[split] ?? 0) + 1
+    // Find the training mode with the most sets
+    let topSplit: Split | null = null
+    let topCount = 0
+    for (const w of workouts) {
+      const count = setCounts[w.id as string] ?? 0
+      if (count > topCount) {
+        topCount = count
+        topSplit = (w.training_modes as any)?.name as Split
+      }
     }
 
-    // Return the split with the most entries
-    const topSplit = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
-    return NextResponse.json({
-      found: true,
-      split: topSplit[0] as Split,
-      entryCount: topSplit[1],
-    })
+    if (!topSplit) return NextResponse.json({ found: false })
+
+    return NextResponse.json({ found: true, split: topSplit, entryCount: topCount })
   } catch (error) {
     console.error('Today check error:', error)
     return NextResponse.json({ found: false })

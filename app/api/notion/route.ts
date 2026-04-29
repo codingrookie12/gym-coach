@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchLastSessions } from '@/lib/notion'
+import { createSupabaseServerClient } from '@/lib/supabase.server'
+import { fetchLastSessionsFromSupabase } from '@/lib/supabase.queries'
 import { analyzeCoaching } from '@/lib/coaching'
 import { Split } from '@/lib/routines'
 
@@ -11,18 +12,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid split' }, { status: 400 })
   }
 
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const unavailableParam = searchParams.get('unavailable') ?? ''
     const unavailableExercises = unavailableParam
       ? unavailableParam.split(',').map(s => s.trim()).filter(Boolean)
       : []
 
-    const sessions = await fetchLastSessions(split, 5)
+    const sessions = await fetchLastSessionsFromSupabase(supabase, split, 5)
     const today = new Date().toISOString().split('T')[0]
     const { context, plan } = analyzeCoaching(split, sessions, today, unavailableExercises)
     return NextResponse.json({ context, plan, sessions })
   } catch (error) {
-    console.error('Notion fetch error:', error)
+    console.error('Session history fetch error:', error)
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
   }
 }

@@ -478,7 +478,7 @@ export default function ActiveSessionScreen({
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
   const [showAddSheet, setShowAddSheet] = useState(false)
-  // Snapshot: maps "notionName:setNum" -> { pageId, weight, reps, notes }
+  // Snapshot: maps "exerciseName:setNum" -> { pageId (Supabase set UUID), weight, reps, notes }
   const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
   // Track which exercise indices have been auto-saved (to avoid double-fire)
   const savedExIndices = useRef<Set<number>>(new Set(
@@ -548,13 +548,13 @@ export default function ActiveSessionScreen({
       const set = ex.sets[si]
       if (!set.completed) continue
       entries.push({
-        exercise: ex.notionName,
+        exercise: ex.exerciseName,
         date: today,
         split,
         weight: set.weight,
         set: si + 1,
         reps: set.reps,
-        entry: `${ex.notionName} — Set ${si + 1}`,
+        entry: `${ex.exerciseName} — Set ${si + 1}`,
         notes: ex.notes || undefined,
         unit: (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
       })
@@ -569,10 +569,10 @@ export default function ActiveSessionScreen({
     })
       .then(r => r.json())
       .then(data => {
-        // Store page IDs in snapshot keyed by "notionName:setNum"
+        // Store set IDs in snapshot keyed by "exerciseName:setNum"
         if (data.pageIds && Array.isArray(data.pageIds)) {
           data.pageIds.forEach((pageId: string, i: number) => {
-            const key = `${ex.notionName}:${setIndices[i]}`
+            const key = `${ex.exerciseName}:${setIndices[i]}`
             snapshot.current[key] = {
               pageId,
               weight: entries[i].weight,

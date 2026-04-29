@@ -19,7 +19,7 @@ export interface ExerciseLog {
   isCustom?: boolean  // true for mid-workout quick-adds not in exercises.json
 }
 
-// Keyed by `notionName:setNumber` (1-indexed), e.g. "Bench press:1"
+// Keyed by `exerciseName:setNumber` (1-indexed), e.g. "Wide-grip Barbell Bench Press:1"
 export type SavedSnapshot = Record<string, {
   pageId: string
   weight: number
