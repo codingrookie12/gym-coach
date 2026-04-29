@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import HomeScreen from '@/components/screens/HomeScreen'
+import PreSessionScreen from '@/components/screens/PreSessionScreen'
 import ResumePromptScreen from '@/components/screens/ResumePromptScreen'
 import CoachingContextScreen from '@/components/screens/CoachingContextScreen'
 import WorkoutOverviewScreen from '@/components/screens/WorkoutOverviewScreen'
@@ -14,7 +14,7 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-import { Split } from '@/lib/routines'
+import { Split, getNextSplit } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
@@ -57,6 +57,7 @@ export interface AppState {
   // From resume detection
   detectedSession: PersistedSession | null
   detectedSplit: Split | null  // from Notion fallback (no full log data)
+  lastSplit: Split | null      // most recently completed split (for carousel default)
 }
 
 export default function App() {
@@ -78,6 +79,7 @@ export default function App() {
     savedSnapshot: {},
     detectedSession: null,
     detectedSplit: null,
+    lastSplit: null,
   })
 
   const navigate = useCallback((to: Screen) => setScreen(to), [])
@@ -132,6 +134,15 @@ export default function App() {
         }
       } catch {
         // Notion unreachable — proceed normally
+      }
+
+      // 3. Fetch last completed split to pre-select the carousel default
+      try {
+        const res = await fetch('/api/session/last-split')
+        const data = await res.json()
+        if (data.split) setAppState(prev => ({ ...prev, lastSplit: data.split }))
+      } catch {
+        // Non-blocking — defaults to Push
       }
 
       setScreen('home')
@@ -215,7 +226,7 @@ export default function App() {
     await Promise.all(ops)
 
     clearSessionFromStorage()
-    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
+    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {}, lastSplit: appState.split })
     navigate('session-summary')
   }
 
@@ -273,7 +284,8 @@ export default function App() {
           )}
 
           {screen === 'home' && (
-            <HomeScreen
+            <PreSessionScreen
+              initialSplit={getNextSplit(appState.lastSplit)}
               onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
               onSettings={() => navigate('manage-weights')}
               onEquipment={() => setShowEquipmentPanel(true)}

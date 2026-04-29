@@ -1,5 +1,12 @@
 export type Split = 'Push' | 'Pull' | 'Legs'
 
+export const SPLIT_ORDER: Split[] = ['Push', 'Pull', 'Legs']
+
+export function getNextSplit(last: Split | null): Split {
+  if (!last) return 'Push'
+  return SPLIT_ORDER[(SPLIT_ORDER.indexOf(last) + 1) % SPLIT_ORDER.length]
+}
+
 export interface Exercise {
   name: string
   notionName: string  // Exact name as stored in the Notion DB Exercise select field
