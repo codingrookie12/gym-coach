@@ -45,7 +45,7 @@ const LEG_EXT = [5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125]
 // Standing Calf Raise: typically a plate-loaded machine — 10lb steps
 const CALF_RAISE = [20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160]
 
-// Linear Hack Press: barbell with plates, 10lb jumps observed (55→65)
+// Hack Squat: plate-loaded, 10lb jumps observed (55→65)
 const HACK_PRESS = [25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145]
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -70,8 +70,8 @@ export const PULL_ROUTINE: Exercise[] = [
 ]
 
 export const LEGS_ROUTINE: Exercise[] = [
-  { name: 'Linear Hack Press',    notionName: 'Linear Hack Press',    sets: 3, repRange: [8, 10],  backup: 'Hack Squat',          split: 'Legs', availableWeights: HACK_PRESS },
-  { name: 'Leg Press',            notionName: 'Leg Press',            sets: 3, repRange: [10, 12], backup: 'Linear Hack Press',   split: 'Legs', availableWeights: LEG_PRESS, weightConvention: 'per side' },
+  { name: 'Hack Squat',           notionName: 'Linear Hack Press',    sets: 3, repRange: [8, 10],  backup: 'Barbell Hack Squat',  split: 'Legs', availableWeights: HACK_PRESS },
+  { name: 'Leg Press',            notionName: 'Leg Press',            sets: 3, repRange: [10, 12], backup: 'Hack Squat',          split: 'Legs', availableWeights: LEG_PRESS, weightConvention: 'per side' },
   { name: 'Leg Extensions',       notionName: 'Leg Extensions',       sets: 3, repRange: [12, 12], backup: 'Single-leg Leg Extension', split: 'Legs', availableWeights: LEG_EXT },
   { name: 'Seated Leg Curl',      notionName: 'Seated Leg Curl',      sets: 3, repRange: [10, 12], backup: 'Lying Leg Curls',     split: 'Legs', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
   { name: 'Romanian Deadlift',    notionName: 'Romanian Deadlift',    sets: 3, repRange: [10, 12], backup: 'Stiff-legged Barbell Deadlift', split: 'Legs', availableWeights: RDL },
