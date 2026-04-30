@@ -847,7 +847,7 @@ export default function ActiveSessionScreen({
               <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
                 Replace <span style={{ color: 'var(--rust)' }}>{currentEx.exerciseName}</span> with <span style={{ color: 'var(--accent)' }}>{pendingSwapName}</span> for this exercise?
                 <br />
-                <span style={{ color: 'var(--text-secondary)' }}>You'll be asked to save as default after the session.</span>
+                <span style={{ color: 'var(--text-secondary)' }}>You&apos;ll be asked to save as default after the session.</span>
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button

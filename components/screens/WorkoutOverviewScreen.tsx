@@ -168,7 +168,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                       <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
                         Swap <span style={{ color: 'var(--rust)' }}>{pendingSwap.oldName}</span> → <span style={{ color: 'var(--accent)' }}>{pendingSwap.newName}</span> for today only?
                         <br />
-                        <span style={{ color: 'var(--text-secondary)' }}>You'll be asked to save as default after the session.</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>You&apos;ll be asked to save as default after the session.</span>
                       </p>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn-primary" onClick={confirmSwap} style={{ flex: 1, fontSize: '0.7rem', padding: '8px' }}>
