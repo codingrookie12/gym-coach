@@ -19,6 +19,7 @@ interface ExerciseLibraryScreenProps {
   onBack?: () => void
   activeSplit?: Split
   lastSplit?: Split | null  // drives "NEXT: X" hint on the active program card
+  onOpenProgramLibrary?: () => void
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -657,6 +658,7 @@ export default function ExerciseLibraryScreen({
   onBack,
   activeSplit,
   lastSplit,
+  onOpenProgramLibrary,
 }: ExerciseLibraryScreenProps) {
   const [tab, setTab] = useState<Tab>('browse')
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
@@ -707,31 +709,41 @@ export default function ExerciseLibraryScreen({
         }}>
           <ActiveProgramCard
             lastSplit={lastSplit}
-            onTap={() => setShowProgramDetail(true)}
+            onTap={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
           />
 
-          {/* Phase 2 placeholder tile */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            gap: '6px',
-            minWidth: '180px',
-            padding: '14px 16px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '2px',
-            opacity: 0.4,
-            flexShrink: 0,
-          }}>
+          {/* Browse all programs tile */}
+          <button
+            onClick={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: '6px',
+              minWidth: '160px',
+              padding: '14px 16px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '2px',
+              flexShrink: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 0.1s',
+            }}
+            onMouseDown={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
+            onMouseUp={e => (e.currentTarget.style.background = 'var(--surface)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
+            onTouchStart={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
+            onTouchEnd={e => (e.currentTarget.style.background = 'var(--surface)')}
+          >
             <span className="font-display" style={{ fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.06em' }}>
-              MORE PROGRAMS
+              ALL PROGRAMS
             </span>
             <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-              Coming soon
+              5 TIER 1 PROGRAMS ›
             </span>
-          </div>
+          </button>
         </div>
       </div>
 

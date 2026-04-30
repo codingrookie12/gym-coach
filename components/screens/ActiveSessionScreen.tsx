@@ -8,7 +8,7 @@ import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/NumberPad'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
 import { savePendingExercise } from '@/lib/customExercises'
-import { ExerciseDefinition } from '@/lib/exerciseLibrary'
+import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 
 interface ActiveSessionScreenProps {
   split: Split
@@ -18,6 +18,7 @@ interface ActiveSessionScreenProps {
   initialSnapshot?: SavedSnapshot
   onFinish: (logs: ExerciseLog[], snapshot: SavedSnapshot) => void
   onBack: (logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot) => void
+  onPermanentSwap?: (oldName: string, newName: string) => void
 }
 
 type PadMode = 'reps' | 'weight' | null
@@ -450,7 +451,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack,
+  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack, onPermanentSwap,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
@@ -653,18 +654,32 @@ export default function ActiveSessionScreen({
     }
   }
 
-  function swapToBackup() {
+  function swapToExercise(newName: string) {
     setLogs(prev => {
       const next = [...prev]
       const ex = { ...next[currentExIdx] }
-      if (!ex.backupName) return prev
       const prevPrimary = ex.exerciseName
-      ex.exerciseName = ex.backupName
-      ex.backupName = prevPrimary
+      ex.exerciseName = newName
+      ex.backupName = prevPrimary  // old primary becomes revert option
       next[currentExIdx] = ex
       return next
     })
     setSwapShown(false)
+  }
+
+  function getSwapOptions(): string[] {
+    const options: string[] = []
+    if (currentEx.backupName) options.push(currentEx.backupName)
+    const def = findExerciseByName(currentEx.exerciseName)
+    if (def) {
+      const alts = getAlternatives(def, {
+        availableEquipment: getUniqueEquipment(),
+        excludeNames: [currentEx.exerciseName, ...(currentEx.backupName ? [currentEx.backupName] : [])],
+        limit: 2,
+      })
+      options.push(...alts.map(a => a.name))
+    }
+    return options
   }
 
   function navigateToExercise(idx: number) {
@@ -809,11 +824,9 @@ export default function ActiveSessionScreen({
           >
             {activeUnit.toUpperCase()}
           </button>
-          {currentEx.backupName && (
-            <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
-              {swapShown ? 'HIDE' : 'SWAP'}
-            </button>
-          )}
+          <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
+            {swapShown ? 'HIDE' : 'SWAP'}
+          </button>
           <button
             onClick={skipExercise}
             style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
@@ -821,17 +834,42 @@ export default function ActiveSessionScreen({
             SKIP
           </button>
         </div>
-        {swapShown && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-            <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 500 }}>{currentEx.backupName}</span>
-            <button
-              onClick={swapToBackup}
-              style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
-            >
-              USE THIS
-            </button>
-          </div>
-        )}
+        {swapShown && (() => {
+          const options = getSwapOptions()
+          if (!options.length) return (
+            <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+              No alternatives available
+            </p>
+          )
+          return (
+            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {options.map(altName => (
+                <div key={altName} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 500, flex: 1 }}>
+                    {altName}
+                  </span>
+                  <button
+                    onClick={() => swapToExercise(altName)}
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    USE NOW
+                  </button>
+                  {onPermanentSwap && (
+                    <button
+                      onClick={() => {
+                        onPermanentSwap(currentEx.exerciseName, altName)
+                        swapToExercise(altName)
+                      }}
+                      style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      SET DEFAULT
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+        })()}
       </div>
 
       <div className="divider" />

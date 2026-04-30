@@ -14,8 +14,12 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-import { Split, getNextSplit } from '@/lib/routines'
+import { Split, getNextSplitForProgram } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
+import { getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
+import { getOrSeedRoutine, permanentlySwapExercise } from '@/lib/supabase.queries'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import {
@@ -30,7 +34,6 @@ import {
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 export type Screen =
@@ -46,6 +49,7 @@ export type Screen =
 
 export interface AppState {
   user: User | null
+  programId: string
   split: Split | null
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
@@ -65,10 +69,12 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('detecting')
   const [activeTab, setActiveTab] = useState<ActiveTab>('train')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
+  const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [appState, setAppState] = useState<AppState>({
     user: null,
+    programId: 'ppl-default',
     split: null,
     coachingContext: null,
     plan: null,
@@ -94,6 +100,7 @@ export default function App() {
       split: null, coachingContext: null, plan: null, sessions: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       detectedSession: null, detectedSplit: null,
+      // programId preserved intentionally
     }))
     setPendingCustomCount(getIncompletePendingExercises().length)
     setScreen('home')
@@ -285,8 +292,16 @@ export default function App() {
 
           {screen === 'home' && (
             <PreSessionScreen
-              initialSplit={getNextSplit(appState.lastSplit)}
-              onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
+              initialSplit={getNextSplitForProgram(appState.programId, appState.lastSplit)}
+              activeProgram={getProgramById(appState.programId) ?? ACTIVE_PROGRAM}
+              onSelectSplit={async (split) => {
+                updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
+                if (appState.user) {
+                  const supabase = createSupabaseBrowserClient()
+                  await getOrSeedRoutine(supabase, appState.user.id, appState.programId).catch(() => {})
+                }
+                navigate('coaching-context')
+              }}
               onSettings={() => navigate('manage-weights')}
               onEquipment={() => setShowEquipmentPanel(true)}
               unavailableCount={getUnavailableExercises(exerciseAvailability).length}
@@ -297,6 +312,7 @@ export default function App() {
           {screen === 'coaching-context' && appState.split && (
             <CoachingContextScreen
               split={appState.split}
+              programId={appState.programId}
               unavailableExercises={getUnavailableExercises(exerciseAvailability)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
@@ -334,6 +350,16 @@ export default function App() {
                 updateState({ plan: [...currentPlan, newEntry] })
                 if (!matched) savePendingExercise(name)
               }}
+              onPermanentSwap={appState.user ? async (oldName, newName) => {
+                const supabase = createSupabaseBrowserClient()
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+                // Update plan in memory so the session reflects the new exercise
+                updateState({
+                  plan: appState.plan!.map(p =>
+                    p.exercise.name === oldName ? { ...p, exercise: { ...p.exercise, name: newName, notionName: newName } } : p
+                  )
+                })
+              } : undefined}
             />
           )}
 
@@ -346,6 +372,10 @@ export default function App() {
               initialSnapshot={appState.savedSnapshot}
               onFinish={handleSessionFinish}
               onBack={handleSessionBack}
+              onPermanentSwap={appState.user ? async (oldName, newName) => {
+                const supabase = createSupabaseBrowserClient()
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+              } : undefined}
             />
           )}
 
@@ -377,7 +407,17 @@ export default function App() {
 
         {/* Library tab */}
         <div style={{ height: '100%', display: activeTab === 'library' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <ExerciseLibraryScreen lastSplit={appState.lastSplit} />
+          {showProgramLibrary ? (
+            <ProgramLibraryScreen
+              selectedId={appState.programId}
+              onBack={() => setShowProgramLibrary(false)}
+            />
+          ) : (
+            <ExerciseLibraryScreen
+              lastSplit={appState.lastSplit}
+              onOpenProgramLibrary={() => setShowProgramLibrary(true)}
+            />
+          )}
         </div>
 
         {/* Me tab */}

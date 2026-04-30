@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { Split, SPLIT_ORDER } from '@/lib/routines'
+import { Split } from '@/lib/routines'
+import { Program, ACTIVE_PROGRAM } from '@/lib/programs'
 
 interface PreSessionScreenProps {
   initialSplit: Split
@@ -10,13 +11,8 @@ interface PreSessionScreenProps {
   onEquipment: () => void
   unavailableCount: number
   pendingCustomCount?: number
+  activeProgram?: Program
 }
-
-const SPLIT_DATA: { label: Split; muscles: string[]; index: string }[] = [
-  { label: 'Push', muscles: ['Chest', 'Shoulders', 'Triceps'], index: '01' },
-  { label: 'Pull', muscles: ['Back', 'Biceps', 'Forearms'], index: '02' },
-  { label: 'Legs', muscles: ['Quads', 'Hams', 'Glutes', 'Calves'], index: '03' },
-]
 
 export default function PreSessionScreen({
   initialSplit,
@@ -25,16 +21,30 @@ export default function PreSessionScreen({
   onEquipment,
   unavailableCount,
   pendingCustomCount = 0,
+  activeProgram = ACTIVE_PROGRAM,
 }: PreSessionScreenProps) {
-  const [selectedIdx, setSelectedIdx] = useState(() => SPLIT_ORDER.indexOf(initialSplit))
+  const splits = activeProgram.splits
+  const splitMuscles = activeProgram.splitMuscles
+
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    const idx = splits.indexOf(initialSplit)
+    return idx >= 0 ? idx : 0
+  })
+
+  // Font size scales down as column count grows (longer split names in 4-col layouts)
+  const splitFontSize = splits.length <= 2
+    ? 'clamp(3rem, 10vw, 5rem)'
+    : splits.length === 3
+      ? 'clamp(2.8rem, 7vw, 4rem)'
+      : 'clamp(1.4rem, 3.5vw, 2.2rem)'
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') setSelectedIdx(i => Math.max(0, i - 1))
-    else if (e.key === 'ArrowRight') setSelectedIdx(i => Math.min(SPLIT_DATA.length - 1, i + 1))
-    else if (e.key === 'Enter' || e.key === ' ') onSelectSplit(SPLIT_ORDER[selectedIdx])
-  }, [selectedIdx, onSelectSplit])
+    else if (e.key === 'ArrowRight') setSelectedIdx(i => Math.min(splits.length - 1, i + 1))
+    else if (e.key === 'Enter' || e.key === ' ') onSelectSplit(splits[selectedIdx])
+  }, [splits, selectedIdx, onSelectSplit])
 
-  const selectedSplit = SPLIT_ORDER[selectedIdx]
+  const selectedSplit = splits[selectedIdx]
 
   return (
     <div
@@ -53,7 +63,7 @@ export default function PreSessionScreen({
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v6.0
+            v6.1
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -111,11 +121,12 @@ export default function PreSessionScreen({
 
       {/* Split columns */}
       <div className="flex-1 flex" style={{ minHeight: 0 }}>
-        {SPLIT_DATA.map((s, i) => {
+        {splits.map((splitName, i) => {
           const isSelected = i === selectedIdx
+          const muscles = splitMuscles[splitName] ?? []
           return (
             <button
-              key={s.label}
+              key={splitName}
               onClick={() => setSelectedIdx(i)}
               style={{
                 flex: 1,
@@ -126,7 +137,7 @@ export default function PreSessionScreen({
                 background: isSelected ? 'var(--surface)' : 'none',
                 border: 'none',
                 borderTop: `3px solid ${isSelected ? 'var(--accent)' : 'transparent'}`,
-                borderRight: i < SPLIT_DATA.length - 1 ? '1px solid var(--border)' : 'none',
+                borderRight: i < splits.length - 1 ? '1px solid var(--border)' : 'none',
                 padding: 0,
                 cursor: isSelected ? 'default' : 'pointer',
                 position: 'relative',
@@ -142,6 +153,7 @@ export default function PreSessionScreen({
                   gap: '14px',
                   opacity: isSelected ? 1 : 0.35,
                   transition: 'opacity 0.18s',
+                  padding: '0 4px',
                 }}
               >
                 {/* Index */}
@@ -158,20 +170,22 @@ export default function PreSessionScreen({
                     letterSpacing: '0.1em',
                   }}
                 >
-                  {s.index}
+                  {String(i + 1).padStart(2, '0')}
                 </span>
 
                 {/* Split name */}
                 <span
                   className="font-display"
                   style={{
-                    fontSize: 'clamp(2.8rem, 7vw, 4rem)',
+                    fontSize: splitFontSize,
                     color: 'var(--text-primary)',
                     lineHeight: 1,
                     letterSpacing: '0.04em',
+                    textAlign: 'center',
+                    wordBreak: 'break-word',
                   }}
                 >
-                  {s.label}
+                  {splitName}
                 </span>
 
                 {/* Accent bar */}
@@ -179,7 +193,7 @@ export default function PreSessionScreen({
 
                 {/* Muscles */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                  {s.muscles.map((m) => (
+                  {muscles.slice(0, 4).map(m => (
                     <span
                       key={m}
                       className="font-mono"

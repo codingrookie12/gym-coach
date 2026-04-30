@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from './supabase.server'
 import type { Split } from './routines'
 import type { SessionRecord } from './notion'
+import { getProgramById } from './programs'
+import { getAllExercisesForProgram } from './routines'
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
@@ -129,4 +131,87 @@ export async function fetchLastSessionsFromSupabase(
       }
       return { date, exercises }
     })
+}
+
+// Seeds the user's routine exercises for a program on first use.
+// Idempotent — uses ON CONFLICT DO NOTHING. Safe under concurrent tabs.
+export async function getOrSeedRoutine(
+  supabase: Supabase,
+  userId: string,
+  programId: string = 'ppl-default'
+): Promise<void> {
+  const { count } = await supabase
+    .from('user_routine_exercises')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  if (count && count > 0) return
+
+  const program = getProgramById(programId)
+  if (!program) throw new Error(`Unknown program: ${programId}`)
+
+  const exercises = getAllExercisesForProgram(programId)
+  if (!exercises.length) return
+
+  // Fetch training_mode_id for each unique split name
+  const splitNames = Array.from(new Set(exercises.map(e => e.split)))
+  const { data: modeRows } = await supabase
+    .from('training_modes')
+    .select('id, name')
+    .in('name', splitNames)
+
+  if (!modeRows?.length) throw new Error('training_modes not found for program splits')
+
+  const modeMap = new Map(modeRows.map(r => [r.name as string, r.id as string]))
+
+  const rows = exercises.map((ex, i) => {
+    const trainingModeId = modeMap.get(ex.split)
+    if (!trainingModeId) throw new Error(`No training_mode_id for split: ${ex.split}`)
+    return {
+      user_id: userId,
+      training_mode_id: trainingModeId,
+      exercise_name: ex.name,
+      notion_name: ex.notionName,
+      sets: ex.sets,
+      rep_range_min: ex.repRange[0],
+      rep_range_max: ex.repRange[1],
+      backup_name: ex.backup ?? null,
+      weight_unit: ex.weightUnit ?? 'lbs',
+      weight_convention: ex.weightConvention ?? null,
+      sort_order: i,
+    }
+  })
+
+  const { error } = await supabase
+    .from('user_routine_exercises')
+    .upsert(rows, { onConflict: 'user_id,training_mode_id,exercise_name', ignoreDuplicates: true })
+
+  if (error) throw error
+}
+
+// Permanently promotes an alternative exercise to primary in the user's routine.
+// The old primary exercise name is removed; the new one takes its slot.
+export async function permanentlySwapExercise(
+  supabase: Supabase,
+  userId: string,
+  splitName: string,
+  oldExerciseName: string,
+  newExerciseName: string
+): Promise<void> {
+  const { data: modeRow } = await supabase
+    .from('training_modes')
+    .select('id')
+    .eq('name', splitName)
+    .single()
+
+  if (!modeRow) throw new Error(`training_mode not found for split: ${splitName}`)
+
+  const { error } = await supabase
+    .from('user_routine_exercises')
+    .update({ exercise_name: newExerciseName, notion_name: newExerciseName })
+    .eq('user_id', userId)
+    .eq('training_mode_id', modeRow.id)
+    .eq('exercise_name', oldExerciseName)
+
+  if (error) throw error
 }

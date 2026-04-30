@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
-import { ExerciseDefinition } from '@/lib/exerciseLibrary'
+import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 
 interface WorkoutOverviewScreenProps {
   split: Split
@@ -14,15 +14,31 @@ interface WorkoutOverviewScreenProps {
   onResume?: () => void
   onBack: () => void
   onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
+  onPermanentSwap?: (oldName: string, newName: string) => void
 }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise }: WorkoutOverviewScreenProps) {
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onPermanentSwap }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
+  }
+
+  function getSwapOptions(exercise: ExercisePlan['exercise']): string[] {
+    const options: string[] = []
+    if (exercise.backup) options.push(exercise.backup)
+    const def = findExerciseByName(exercise.name)
+    if (def) {
+      const alts = getAlternatives(def, {
+        availableEquipment: getUniqueEquipment(),
+        excludeNames: [exercise.name, ...(exercise.backup ? [exercise.backup] : [])],
+        limit: 2,
+      })
+      options.push(...alts.map(a => a.name))
+    }
+    return options
   }
 
   return (
@@ -127,15 +143,42 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                   </button>
                 </div>
 
-                {/* Backup row */}
-                {isSwapped && item.exercise.backup && (
-                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="section-label">BACKUP:</span>
-                    <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400 }}>
-                      {item.exercise.backup}
-                    </span>
-                  </div>
-                )}
+                {/* Swap options */}
+                {isSwapped && (() => {
+                  const options = getSwapOptions(item.exercise)
+                  if (!options.length) return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+                      <span className="section-label" style={{ color: 'var(--text-secondary)' }}>NO ALTERNATIVES FOUND</span>
+                    </div>
+                  )
+                  return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span className="section-label" style={{ marginBottom: '2px' }}>ALTERNATIVES</span>
+                      {options.map(altName => (
+                        <div
+                          key={altName}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
+                        >
+                          <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, flex: 1 }}>
+                            {altName}
+                          </span>
+                          {onPermanentSwap && (
+                            <button
+                              className="swap-badge"
+                              onClick={() => {
+                                onPermanentSwap(item.exercise.name, altName)
+                                setSwappedIndex(null)
+                              }}
+                              style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
+                            >
+                              SET DEFAULT
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}

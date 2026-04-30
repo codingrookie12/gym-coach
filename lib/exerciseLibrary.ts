@@ -19,7 +19,7 @@ import exercisesData from './exercises.json'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type Split = 'Push' | 'Pull' | 'Legs'
+export type Split = string
 export type Equipment =
   | 'Barbell'
   | 'Dumbbell'
