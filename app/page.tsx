@@ -377,7 +377,7 @@ export default function App() {
 
         {/* Library tab */}
         <div style={{ height: '100%', display: activeTab === 'library' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <ExerciseLibraryScreen />
+          <ExerciseLibraryScreen lastSplit={appState.lastSplit} />
         </div>
 
         {/* Me tab */}

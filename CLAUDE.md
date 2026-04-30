@@ -37,6 +37,11 @@
    - Replace the explanatory sentence below it with one sentence describing why the new item is the current blocker
    - Remove the completed item from the front of the sequence line (e.g. `GYM-71 → GYM-72 → ...` becomes `GYM-72 → GYM-73 → ...`)
 4. If the merge **completes a phase** (all items done): update the phase Status to "Done ✅" and update "Where Am I Right Now" to point to the next phase's first item
+5. Update Linear issue statuses to reflect the new sequence state:
+   - Mark the merged issue as **Done** in Linear.
+   - Move the next gate item to **In Progress** in Linear.
+   - All remaining items in the "Next sequence" list stay or become **Todo** in Linear.
+   Linear always reflects the live sequence: 1 In Progress + all queued items as Todo + everything else Backlog.
 Do this immediately after the merge — do not batch roadmap updates across multiple sessions.
 
 **Idea capture** — when a new feature or improvement is proposed: search Linear for semantic duplicates first, then create a Backlog issue if none found. Linear only — no separate Notion entry.
