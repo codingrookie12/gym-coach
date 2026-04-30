@@ -3,7 +3,7 @@
  *
  * Single source of truth for exercise definitions.
  * Source: free-exercise-db (public domain) + custom exercises.
- * Do NOT edit exercises.json by hand — re-run the processing script instead.
+ * To add image paths to exercises.json, run: node scripts/gym73-add-exercise-images.mjs
  *
  * NAMING CONVENTION
  * -----------------
@@ -65,6 +65,10 @@ export interface ExerciseDefinition {
   level: 'beginner' | 'intermediate' | 'expert'
   instructions: string[]
   isCustom: boolean
+  /** CDN-relative image paths — ["FolderName/0.jpg", "FolderName/1.jpg"] (start + end position).
+   *  Resolve with: https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/{path}
+   *  2 exercises in the PPL program have no source match and will be undefined. */
+  images?: string[]
 }
 
 // ─── Dataset ──────────────────────────────────────────────────────────────────
