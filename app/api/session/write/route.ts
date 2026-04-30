@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     for (const { date, split, entries: groupEntries } of Array.from(groups.values())) {
       const trainingModeId = await getTrainingModeId(supabase, split)
+      if (!trainingModeId) continue
       const workoutId = await getOrCreateWorkout(supabase, user.id, date, trainingModeId)
 
       type InsertRow = {

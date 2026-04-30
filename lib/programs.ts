@@ -97,7 +97,7 @@ export const WENDLER_531_PROGRAM: Program = {
 
 export const UPPER_LOWER_PROGRAM: Program = {
   id: 'upper-lower',
-  name: 'Upper Lower',
+  name: 'Upper/Lower',
   shortName: 'U/L',
   splits: ['Upper A', 'Lower A', 'Upper B', 'Lower B'],
   splitMuscles: {

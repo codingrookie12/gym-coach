@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 
 interface WorkoutOverviewScreenProps {
@@ -23,6 +24,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
@@ -108,9 +110,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                       <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.08em', minWidth: '16px' }}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
-                      <span className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em' }}>
-                        {item.exercise.name}
-                      </span>
+                      <button
+                        onClick={() => setDetailExercise(findExerciseByName(item.exercise.name) ?? null)}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        <span className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em', textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
+                          {item.exercise.name}
+                        </span>
+                      </button>
                     </div>
 
                     {/* Stats row */}
@@ -194,9 +201,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                           key={altName}
                           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
                         >
-                          <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, flex: 1 }}>
-                            {altName}
-                          </span>
+                          <button
+                            onClick={() => setDetailExercise(findExerciseByName(altName) ?? null)}
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', flex: 1 }}
+                          >
+                            <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
+                              {altName}
+                            </span>
+                          </button>
                           <button
                             className="swap-badge"
                             onClick={() => requestSwap(i, item.exercise.name, altName)}
@@ -277,6 +289,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
             setShowAddSheet(false)
           }}
           onClose={() => setShowAddSheet(false)}
+        />
+      )}
+
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise}
+          inProgram={true}
+          onClose={() => setDetailExercise(null)}
         />
       )}
     </div>

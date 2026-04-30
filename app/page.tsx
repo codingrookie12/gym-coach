@@ -139,7 +139,14 @@ export default function App() {
     async function detect() {
       // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) setAppState(prev => ({ ...prev, user }))
+      if (user) {
+        setAppState(prev => ({ ...prev, user }))
+        const { data: profile } = await supabase
+          .from('users').select('active_program_id').eq('id', user.id).single()
+        if (profile?.active_program_id) {
+          setAppState(prev => ({ ...prev, programId: profile.active_program_id }))
+        }
+      }
 
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
@@ -425,6 +432,10 @@ export default function App() {
               onBack={() => setShowProgramLibrary(false)}
               onSelect={(id) => {
                 updateState({ programId: id, coachingContext: null, plan: null })
+                if (appState.user) {
+                  const supabase = createSupabaseBrowserClient()
+                  supabase.from('users').update({ active_program_id: id }).eq('id', appState.user.id)
+                }
                 setShowProgramLibrary(false)
               }}
             />

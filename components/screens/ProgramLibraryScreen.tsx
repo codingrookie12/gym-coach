@@ -202,7 +202,9 @@ export default function ProgramLibraryScreen({ onSelect, selectedId, onBack }: P
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '0 16px 16px',
+          paddingBottom: '16px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
           borderBottom: '1px solid var(--border)',
           flexShrink: 0,
         }}

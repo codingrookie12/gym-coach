@@ -10,8 +10,9 @@ import {
   getUniqueEquipment,
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
-import { getAllExercises, getRoutine, getNextSplit, Split } from '@/lib/routines'
+import { getAllExercises, getAllExercisesForProgram, getRoutine, getNextSplit, Split } from '@/lib/routines'
 import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -29,10 +30,6 @@ const SPLITS: (Split | 'All')[] = ['All', 'Push', 'Pull', 'Legs']
 const EQUIPMENT_OPTIONS = getUniqueEquipment()
 const MUSCLE_OPTIONS = getUniqueMuscles()
 
-// Build the set of exercise names in the PPL program (for "In Program" dot)
-const PROGRAM_EXERCISE_NAMES = new Set(getAllExercises().map(e => e.name))
-
-const EXERCISE_CDN = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -143,143 +140,6 @@ function ExerciseRow({
         </span>
       )}
     </button>
-  )
-}
-
-// ─── Exercise detail sheet ──────────────────────────────────────────────────────
-
-function ExerciseDetailSheet({
-  exercise,
-  inProgram,
-  onClose,
-}: {
-  exercise: ExerciseDefinition
-  inProgram: boolean
-  onClose: () => void
-}) {
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-          zIndex: 40, animation: 'fadeIn 0.15s ease',
-        }}
-      />
-      {/* Sheet */}
-      <div
-        style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
-          background: 'var(--surface)',
-          borderTop: '1px solid var(--border)',
-          borderRadius: '8px 8px 0 0',
-          zIndex: 50,
-          animation: 'slideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
-          maxHeight: '80dvh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-2)' }} />
-        </div>
-
-        {/* Header */}
-        <div style={{ padding: '4px 20px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-            <div>
-              <h2 className="font-display" style={{ fontSize: '1.4rem', color: 'var(--text-primary)', letterSpacing: '0.04em', margin: 0, lineHeight: 1.1 }}>
-                {exercise.name}
-              </h2>
-              <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                <span className="tag">{exercise.equipment}</span>
-                {inProgram && <span className="tag accent">In Program</span>}
-                {exercise.isCustom && <span className="tag accent">Custom</span>}
-                {exercise.split && <span className="tag">{exercise.split}</span>}
-                {exercise.level && (
-                  <span className="tag" style={{ textTransform: 'capitalize' }}>{exercise.level}</span>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontSize: '1.2rem', padding: '4px', flexShrink: 0 }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        {/* Body — scrollable */}
-        <div className="scroll-area" style={{ flex: 1, padding: '16px 20px 32px' }}>
-
-          {/* Exercise images — start + end position */}
-          {exercise.images && exercise.images.length >= 2 && (
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              {exercise.images.slice(0, 2).map((path, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    borderRadius: '4px',
-                    aspectRatio: '4/3',
-                    background: 'var(--surface-2)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <img
-                    src={`${EXERCISE_CDN}/${path}`}
-                    alt={i === 0 ? 'Start position' : 'End position'}
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    onError={e => {
-                      const wrapper = e.currentTarget.parentElement
-                      if (wrapper) wrapper.style.display = 'none'
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Muscles */}
-          <div style={{ marginBottom: '20px' }}>
-            <div className="section-label" style={{ marginBottom: '8px' }}>Primary Muscles</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {exercise.primaryMuscles.map(m => (
-                <span key={m} className="tag accent">{m}</span>
-              ))}
-            </div>
-          </div>
-          {exercise.secondaryMuscles.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
-              <div className="section-label" style={{ marginBottom: '8px' }}>Secondary Muscles</div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {exercise.secondaryMuscles.map(m => (
-                  <span key={m} className="tag">{m}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Instructions */}
-          {exercise.instructions.length > 0 && (
-            <div>
-              <div className="section-label" style={{ marginBottom: '10px' }}>Instructions</div>
-              <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {exercise.instructions.map((step, i) => (
-                  <li key={i} className="font-body" style={{ fontSize: '0.9rem', color: 'var(--text-mid)', lineHeight: 1.5 }}>
-                    {step}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
   )
 }
 
@@ -462,8 +322,10 @@ function ProgramDetailSheet({ onClose }: { onClose: () => void }) {
 
 function BrowseTab({
   onSelectExercise,
+  programExerciseNames,
 }: {
   onSelectExercise: (ex: ExerciseDefinition) => void
+  programExerciseNames: Set<string>
 }) {
   const [query, setQuery] = useState('')
   const [splitFilter, setSplitFilter] = useState<SplitFilter>('All')
@@ -642,7 +504,7 @@ function BrowseTab({
             <ExerciseRow
               key={ex.id}
               exercise={ex}
-              inProgram={PROGRAM_EXERCISE_NAMES.has(ex.name)}
+              inProgram={programExerciseNames.has(ex.name)}
               isCustom={ex.isCustom}
               onTap={onSelectExercise}
             />
@@ -668,6 +530,11 @@ export default function ExerciseLibraryScreen({
 
   const totalCount = ALL_EXERCISES.length
   const customExercises = ALL_EXERCISES.filter(e => e.isCustom)
+
+  const programExerciseNames = useMemo(
+    () => new Set(getAllExercisesForProgram(activeProgramId).map(e => e.name)),
+    [activeProgramId]
+  )
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
@@ -737,8 +604,8 @@ export default function ExerciseLibraryScreen({
                 )}
 
                 {/* Program name */}
-                <span className="font-display" style={{ fontSize: isActive ? '1.1rem' : '0.9rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
-                  {program.shortName}
+                <span className="font-display" style={{ fontSize: isActive ? '1rem' : '0.8rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
+                  {program.name}
                 </span>
 
                 {/* Level + style tags */}
@@ -824,7 +691,7 @@ export default function ExerciseLibraryScreen({
 
       {/* Tab content */}
       {tab === 'browse' && (
-        <BrowseTab onSelectExercise={setSelectedExercise} />
+        <BrowseTab onSelectExercise={setSelectedExercise} programExerciseNames={programExerciseNames} />
       )}
 
       {tab === 'custom' && (
@@ -844,7 +711,7 @@ export default function ExerciseLibraryScreen({
                 <ExerciseRow
                   key={ex.id}
                   exercise={ex}
-                  inProgram={PROGRAM_EXERCISE_NAMES.has(ex.name)}
+                  inProgram={programExerciseNames.has(ex.name)}
                   isCustom={true}
                   onTap={setSelectedExercise}
                 />
@@ -858,7 +725,7 @@ export default function ExerciseLibraryScreen({
       {selectedExercise && (
         <ExerciseDetailSheet
           exercise={selectedExercise}
-          inProgram={PROGRAM_EXERCISE_NAMES.has(selectedExercise.name)}
+          inProgram={programExerciseNames.has(selectedExercise.name)}
           onClose={() => setSelectedExercise(null)}
         />
       )}
@@ -868,11 +735,6 @@ export default function ExerciseLibraryScreen({
         <ProgramDetailSheet onClose={() => setShowProgramDetail(false)} />
       )}
 
-      {/* Sheet animations */}
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-      `}</style>
     </div>
   )
 }

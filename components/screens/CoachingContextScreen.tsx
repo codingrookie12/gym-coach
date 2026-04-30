@@ -40,7 +40,7 @@ export default function CoachingContextScreen({
         setError(err.message)
         setLoading(false)
       })
-  }, [split, coachingContext, unavailableExercises, onDataLoaded])
+  }, [split, programId, coachingContext, unavailableExercises, onDataLoaded])
 
   if (loading) return <LoadingScreen message={`Analyzing ${split} history...`} />
   if (error) return (

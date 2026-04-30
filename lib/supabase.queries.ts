@@ -6,14 +6,13 @@ import { getAllExercisesForProgram } from './routines'
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
-export async function getTrainingModeId(supabase: Supabase, split: Split): Promise<string> {
-  const { data, error } = await supabase
+export async function getTrainingModeId(supabase: Supabase, split: Split): Promise<string | null> {
+  const { data } = await supabase
     .from('training_modes')
     .select('id')
     .eq('name', split)
     .single()
-  if (error || !data) throw new Error(`Training mode not found: ${split}`)
-  return data.id as string
+  return data ? (data.id as string) : null
 }
 
 export async function getExerciseId(supabase: Supabase, canonicalName: string): Promise<string | null> {
@@ -85,6 +84,7 @@ export async function fetchLastSessionsFromSupabase(
   maxSessions: number = 5
 ): Promise<SessionRecord[]> {
   const trainingModeId = await getTrainingModeId(supabase, split)
+  if (!trainingModeId) return []
 
   const { data: workoutRows } = await supabase
     .from('workouts')
@@ -140,15 +140,20 @@ export async function getOrSeedRoutine(
   userId: string,
   programId: string = 'ppl-default'
 ): Promise<void> {
+  const program = getProgramById(programId)
+  if (!program) throw new Error(`Unknown program: ${programId}`)
+
+  // Per-program seeding guard: count existing rows only for this program's splits
+  const { data: guardModeRows } = await supabase
+    .from('training_modes').select('id').in('name', program.splits)
+  if (!guardModeRows?.length) return  // migration not applied yet — safe to bail
+  const guardModeIds = guardModeRows.map(r => r.id as string)
   const { count } = await supabase
     .from('user_routine_exercises')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
-
+    .in('training_mode_id', guardModeIds)
   if (count && count > 0) return
-
-  const program = getProgramById(programId)
-  if (!program) throw new Error(`Unknown program: ${programId}`)
 
   const exercises = getAllExercisesForProgram(programId)
   if (!exercises.length) return
@@ -160,7 +165,7 @@ export async function getOrSeedRoutine(
     .select('id, name')
     .in('name', splitNames)
 
-  if (!modeRows?.length) throw new Error('training_modes not found for program splits')
+  if (!modeRows?.length) return  // migration not applied — degrade gracefully
 
   const modeMap = new Map(modeRows.map(r => [r.name as string, r.id as string]))
 
