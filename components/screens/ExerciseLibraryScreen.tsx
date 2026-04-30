@@ -11,14 +11,15 @@ import {
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
 import { getAllExercises, getRoutine, getNextSplit, Split } from '@/lib/routines'
-import { ACTIVE_PROGRAM } from '@/lib/programs'
+import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface ExerciseLibraryScreenProps {
   onBack?: () => void
   activeSplit?: Split
-  lastSplit?: Split | null  // drives "NEXT: X" hint on the active program card
+  lastSplit?: Split | null
+  activeProgramId?: string
   onOpenProgramLibrary?: () => void
 }
 
@@ -658,6 +659,7 @@ export default function ExerciseLibraryScreen({
   onBack,
   activeSplit,
   lastSplit,
+  activeProgramId = 'ppl-default',
   onOpenProgramLibrary,
 }: ExerciseLibraryScreenProps) {
   const [tab, setTab] = useState<Tab>('browse')
@@ -695,55 +697,69 @@ export default function ExerciseLibraryScreen({
 
       {/* ── PROGRAMS SECTION ── */}
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border)' }}>
-        {/* Section label */}
         <div style={{ padding: '10px 20px 0' }}>
-          <span className="section-label">PROGRAMS</span>
+          <span className="section-label">MY PROGRAM</span>
         </div>
 
-        {/* Horizontal scroll row — Phase 2 will add more tiles here */}
-        <div style={{
-          display: 'flex',
-          gap: '10px',
-          padding: '10px 16px 14px',
-          overflowX: 'auto',
-        }}>
-          <ActiveProgramCard
-            lastSplit={lastSplit}
-            onTap={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
-          />
+        {/* Horizontal scroll — active program first, then others */}
+        <div style={{ display: 'flex', gap: '10px', padding: '10px 16px 14px', overflowX: 'auto' }}>
+          {[
+            ...(getProgramById(activeProgramId) ? [getProgramById(activeProgramId)!] : [ACTIVE_PROGRAM]),
+            ...PROGRAM_LIBRARY.filter(p => p.id !== activeProgramId),
+          ].map(program => {
+            const isActive = program.id === activeProgramId
+            const nextSplit = isActive && lastSplit ? getNextSplit(lastSplit) : null
+            return (
+              <button
+                key={program.id}
+                onClick={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '5px',
+                  minWidth: isActive ? '220px' : '170px',
+                  padding: '12px 14px',
+                  background: 'var(--surface)',
+                  border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                  borderRadius: '2px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  transition: 'border-color 0.12s',
+                }}
+              >
+                {/* Active badge */}
+                {isActive && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
+                    ACTIVE
+                  </span>
+                )}
 
-          {/* Browse all programs tile */}
-          <button
-            onClick={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              gap: '6px',
-              minWidth: '160px',
-              padding: '14px 16px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '2px',
-              flexShrink: 0,
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'background 0.1s',
-            }}
-            onMouseDown={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
-            onMouseUp={e => (e.currentTarget.style.background = 'var(--surface)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-            onTouchStart={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
-            onTouchEnd={e => (e.currentTarget.style.background = 'var(--surface)')}
-          >
-            <span className="font-display" style={{ fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.06em' }}>
-              ALL PROGRAMS
-            </span>
-            <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-              5 TIER 1 PROGRAMS ›
-            </span>
-          </button>
+                {/* Program name */}
+                <span className="font-display" style={{ fontSize: isActive ? '1.1rem' : '0.9rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
+                  {program.shortName}
+                </span>
+
+                {/* Level + style tags */}
+                <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
+                  {program.level.toUpperCase()} · {program.style.toUpperCase()}
+                </span>
+
+                {/* Next split hint for active program */}
+                {nextSplit && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.08em', marginTop: '2px' }}>
+                    NEXT: {nextSplit.toUpperCase()}
+                  </span>
+                )}
+
+                {/* Arrow hint for inactive */}
+                {!isActive && (
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginTop: '2px' }}>›</span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 

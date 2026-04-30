@@ -14,16 +14,31 @@ interface WorkoutOverviewScreenProps {
   onResume?: () => void
   onBack: () => void
   onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
-  onPermanentSwap?: (oldName: string, newName: string) => void
+  onSessionSwap?: (oldName: string, newName: string) => void
 }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onPermanentSwap }: WorkoutOverviewScreenProps) {
+type PendingSwap = { exIdx: number; oldName: string; newName: string }
+
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onSessionSwap }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
+  const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
+    setPendingSwap(null)
+  }
+
+  function requestSwap(exIdx: number, oldName: string, newName: string) {
+    setPendingSwap({ exIdx, oldName, newName })
+  }
+
+  function confirmSwap() {
+    if (!pendingSwap) return
+    onSessionSwap?.(pendingSwap.oldName, pendingSwap.newName)
+    setPendingSwap(null)
+    setSwappedIndex(null)
   }
 
   function getSwapOptions(exercise: ExercisePlan['exercise']): string[] {
@@ -146,6 +161,26 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                 {/* Swap options */}
                 {isSwapped && (() => {
                   const options = getSwapOptions(item.exercise)
+
+                  // Confirmation step
+                  if (pendingSwap?.exIdx === i) return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+                      <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
+                        Swap <span style={{ color: 'var(--rust)' }}>{pendingSwap.oldName}</span> → <span style={{ color: 'var(--accent)' }}>{pendingSwap.newName}</span> for today only?
+                        <br />
+                        <span style={{ color: 'var(--text-secondary)' }}>You'll be asked to save as default after the session.</span>
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-primary" onClick={confirmSwap} style={{ flex: 1, fontSize: '0.7rem', padding: '8px' }}>
+                          CONFIRM SWAP
+                        </button>
+                        <button onClick={() => setPendingSwap(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px 14px', cursor: 'pointer' }}>
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  )
+
                   if (!options.length) return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
                       <span className="section-label" style={{ color: 'var(--text-secondary)' }}>NO ALTERNATIVES FOUND</span>
@@ -153,7 +188,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                   )
                   return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span className="section-label" style={{ marginBottom: '2px' }}>ALTERNATIVES</span>
+                      <span className="section-label" style={{ marginBottom: '2px' }}>SWAP FOR TODAY</span>
                       {options.map(altName => (
                         <div
                           key={altName}
@@ -162,18 +197,13 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                           <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, flex: 1 }}>
                             {altName}
                           </span>
-                          {onPermanentSwap && (
-                            <button
-                              className="swap-badge"
-                              onClick={() => {
-                                onPermanentSwap(item.exercise.name, altName)
-                                setSwappedIndex(null)
-                              }}
-                              style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
-                            >
-                              SET DEFAULT
-                            </button>
-                          )}
+                          <button
+                            className="swap-badge"
+                            onClick={() => requestSwap(i, item.exercise.name, altName)}
+                            style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
+                          >
+                            USE TODAY
+                          </button>
                         </div>
                       ))}
                     </div>

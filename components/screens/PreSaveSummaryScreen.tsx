@@ -6,23 +6,30 @@ import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/NumberPad'
 
+interface SessionSwap { oldName: string; newName: string }
+
 interface PreSaveSummaryScreenProps {
   split: Split
   plan: ExercisePlan[]
   logs: ExerciseLog[]
+  sessionSwaps?: SessionSwap[]
   onSave: (logs: ExerciseLog[]) => Promise<void>
   onBack: () => void
+  onSetDefault?: (oldName: string, newName: string) => Promise<void>
 }
 
 type EditTarget = { exIdx: number; setIdx: number; field: 'weight' | 'reps' } | null
 
 export default function PreSaveSummaryScreen({
-  split, plan, logs: initialLogs, onSave, onBack,
+  split, plan, logs: initialLogs, sessionSwaps = [], onSave, onBack, onSetDefault,
 }: PreSaveSummaryScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(initialLogs)
   const [editTarget, setEditTarget] = useState<EditTarget>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [pendingDefault, setPendingDefault] = useState<SessionSwap | null>(null)
+  const [settingDefault, setSettingDefault] = useState(false)
+  const [defaultsDone, setDefaultsDone] = useState<Set<string>>(new Set())
 
   function openEdit(exIdx: number, setIdx: number, field: 'weight' | 'reps') {
     setEditTarget({ exIdx, setIdx, field })
@@ -39,6 +46,18 @@ export default function PreSaveSummaryScreen({
       return next
     })
     setEditTarget(null)
+  }
+
+  async function confirmSetDefault(swap: SessionSwap) {
+    if (!onSetDefault) return
+    setSettingDefault(true)
+    try {
+      await onSetDefault(swap.oldName, swap.newName)
+      setDefaultsDone(prev => new Set(Array.from(prev).concat(swap.oldName)))
+    } finally {
+      setSettingDefault(false)
+      setPendingDefault(null)
+    }
   }
 
   async function handleSave() {
@@ -149,6 +168,62 @@ export default function PreSaveSummaryScreen({
           })}
         </div>
       </div>
+
+      {/* Session swaps — make default? */}
+      {sessionSwaps.length > 0 && onSetDefault && (
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span className="section-label">SESSION SWAPS — MAKE DEFAULT?</span>
+          {sessionSwaps.map(swap => {
+            const done = defaultsDone.has(swap.oldName)
+            const isPending = pendingDefault?.oldName === swap.oldName
+            return (
+              <div key={swap.oldName}>
+                {isPending ? (
+                  <div style={{ background: 'var(--surface)', border: '1px solid var(--accent-border)', borderRadius: '2px', padding: '10px 12px' }}>
+                    <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '8px', lineHeight: 1.5 }}>
+                      Replace <span style={{ color: 'var(--rust)' }}>{swap.oldName}</span> with <span style={{ color: 'var(--accent)' }}>{swap.newName}</span> permanently?
+                      <br />
+                      <span style={{ color: 'var(--text-secondary)' }}>Your routine will always use {swap.newName} in its place.</span>
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => confirmSetDefault(swap)}
+                        disabled={settingDefault}
+                        style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--bg)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '7px', cursor: 'pointer', opacity: settingDefault ? 0.6 : 1 }}
+                      >
+                        {settingDefault ? 'SAVING...' : 'CONFIRM'}
+                      </button>
+                      <button
+                        onClick={() => setPendingDefault(null)}
+                        style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '7px 12px', cursor: 'pointer' }}
+                      >
+                        SKIP
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="font-mono" style={{ fontSize: '0.6rem', color: done ? 'var(--text-secondary)' : 'var(--text-mid)', flex: 1, textDecoration: done ? 'line-through' : 'none' }}>
+                      {swap.oldName} → {swap.newName}
+                    </span>
+                    {done ? (
+                      <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.06em' }}>SAVED</span>
+                    ) : (
+                      <button
+                        className="swap-badge"
+                        onClick={() => setPendingDefault(swap)}
+                        style={{ fontSize: '0.55rem' }}
+                      >
+                        SET DEFAULT
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Save CTA */}
       <div className="safe-bottom px-5" style={{ paddingTop: '14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>

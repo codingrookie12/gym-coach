@@ -18,7 +18,7 @@ interface ActiveSessionScreenProps {
   initialSnapshot?: SavedSnapshot
   onFinish: (logs: ExerciseLog[], snapshot: SavedSnapshot) => void
   onBack: (logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot) => void
-  onPermanentSwap?: (oldName: string, newName: string) => void
+  onSessionSwap?: (oldName: string, newName: string) => void
 }
 
 type PadMode = 'reps' | 'weight' | null
@@ -451,7 +451,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack, onPermanentSwap,
+  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack, onSessionSwap,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
@@ -478,6 +478,7 @@ export default function ActiveSessionScreen({
   const [overviewVisible, setOverviewVisible] = useState(false)
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
+  const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   // Snapshot: maps "exerciseName:setNum" -> { pageId (Supabase set UUID), weight, reps, notes }
   const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
@@ -655,15 +656,17 @@ export default function ActiveSessionScreen({
   }
 
   function swapToExercise(newName: string) {
+    const oldName = currentEx.exerciseName
     setLogs(prev => {
       const next = [...prev]
       const ex = { ...next[currentExIdx] }
-      const prevPrimary = ex.exerciseName
       ex.exerciseName = newName
-      ex.backupName = prevPrimary  // old primary becomes revert option
+      ex.backupName = oldName  // old primary becomes revert option
       next[currentExIdx] = ex
       return next
     })
+    onSessionSwap?.(oldName, newName)
+    setPendingSwapName(null)
     setSwapShown(false)
   }
 
@@ -685,6 +688,7 @@ export default function ActiveSessionScreen({
   function navigateToExercise(idx: number) {
     setCurrentExIdx(idx)
     setSwapShown(false)
+    setPendingSwapName(null)
     setPadMode(null)
     setActiveSetIdx(null)
   }
@@ -836,6 +840,32 @@ export default function ActiveSessionScreen({
         </div>
         {swapShown && (() => {
           const options = getSwapOptions()
+
+          // Confirmation step
+          if (pendingSwapName) return (
+            <div style={{ marginTop: '10px' }}>
+              <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
+                Replace <span style={{ color: 'var(--rust)' }}>{currentEx.exerciseName}</span> with <span style={{ color: 'var(--accent)' }}>{pendingSwapName}</span> for this exercise?
+                <br />
+                <span style={{ color: 'var(--text-secondary)' }}>You'll be asked to save as default after the session.</span>
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => swapToExercise(pendingSwapName)}
+                  style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--bg)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px', cursor: 'pointer' }}
+                >
+                  CONFIRM SWAP
+                </button>
+                <button
+                  onClick={() => setPendingSwapName(null)}
+                  style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px 14px', cursor: 'pointer' }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )
+
           if (!options.length) return (
             <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
               No alternatives available
@@ -849,22 +879,11 @@ export default function ActiveSessionScreen({
                     {altName}
                   </span>
                   <button
-                    onClick={() => swapToExercise(altName)}
+                    onClick={() => setPendingSwapName(altName)}
                     style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
                   >
                     USE NOW
                   </button>
-                  {onPermanentSwap && (
-                    <button
-                      onClick={() => {
-                        onPermanentSwap(currentEx.exerciseName, altName)
-                        swapToExercise(altName)
-                      }}
-                      style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
-                    >
-                      SET DEFAULT
-                    </button>
-                  )}
                 </div>
               ))}
             </div>

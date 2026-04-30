@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { PROGRAM_LIBRARY, type Program } from '@/lib/programs'
 
 interface ProgramLibraryScreenProps {
@@ -31,6 +32,7 @@ function ProgramCard({
   onSelect?: (id: string) => void
 }) {
   const { presentation: p } = program
+  const [confirming, setConfirming] = useState(false)
 
   return (
     <div
@@ -139,13 +141,43 @@ function ProgramCard({
       {/* Select CTA — only shown in picker mode */}
       {onSelect && (
         <div style={{ padding: '0 16px 16px' }}>
-          <button
-            className={isSelected ? 'btn-secondary' : 'btn-primary'}
-            style={{ width: '100%', fontSize: '0.85rem' }}
-            onClick={() => onSelect(program.id)}
-          >
-            {isSelected ? 'SELECTED' : 'SELECT PROGRAM'}
-          </button>
+          {isSelected ? (
+            <div
+              className="font-mono"
+              style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--accent)', letterSpacing: '0.1em', padding: '10px' }}
+            >
+              ACTIVE PROGRAM
+            </div>
+          ) : confirming ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', lineHeight: 1.5, margin: 0 }}>
+                Switch to <span style={{ color: 'var(--accent)' }}>{program.name}</span>? Takes effect next session — your current history is unchanged.
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className="btn-primary"
+                  style={{ flex: 1, fontSize: '0.8rem' }}
+                  onClick={() => { onSelect(program.id); setConfirming(false) }}
+                >
+                  CONFIRM
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.7rem', letterSpacing: '0.08em', padding: '0 16px', cursor: 'pointer' }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="btn-primary"
+              style={{ width: '100%', fontSize: '0.85rem' }}
+              onClick={() => setConfirming(true)}
+            >
+              SELECT PROGRAM
+            </button>
+          )}
         </div>
       )}
     </div>

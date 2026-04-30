@@ -47,6 +47,8 @@ export type Screen =
   | 'session-summary'
   | 'manage-weights'
 
+export interface SessionSwap { oldName: string; newName: string }
+
 export interface AppState {
   user: User | null
   programId: string
@@ -58,6 +60,7 @@ export interface AppState {
   savedLogs: ExerciseLog[] | null
   savedExIdx: number
   savedSnapshot: SavedSnapshot
+  sessionSwaps: SessionSwap[]
   // From resume detection
   detectedSession: PersistedSession | null
   detectedSplit: Split | null  // from Notion fallback (no full log data)
@@ -83,6 +86,7 @@ export default function App() {
     savedLogs: null,
     savedExIdx: 0,
     savedSnapshot: {},
+    sessionSwaps: [],
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
@@ -99,6 +103,7 @@ export default function App() {
       ...prev,
       split: null, coachingContext: null, plan: null, sessions: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+      sessionSwaps: [],
       detectedSession: null, detectedSplit: null,
       // programId preserved intentionally
     }))
@@ -106,6 +111,20 @@ export default function App() {
     setScreen('home')
     setActiveTab('train')
   }, [])
+
+  function handleSessionSwap(oldName: string, newName: string) {
+    setAppState(prev => ({
+      ...prev,
+      sessionSwaps: [...prev.sessionSwaps, { oldName, newName }],
+      plan: prev.plan
+        ? prev.plan.map(p =>
+            p.exercise.name === oldName
+              ? { ...p, exercise: { ...p.exercise, name: newName, notionName: newName } }
+              : p
+          )
+        : null,
+    }))
+  }
 
   // On mount: load equipment availability + pending custom exercise count
   useEffect(() => {
@@ -350,16 +369,7 @@ export default function App() {
                 updateState({ plan: [...currentPlan, newEntry] })
                 if (!matched) savePendingExercise(name)
               }}
-              onPermanentSwap={appState.user ? async (oldName, newName) => {
-                const supabase = createSupabaseBrowserClient()
-                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
-                // Update plan in memory so the session reflects the new exercise
-                updateState({
-                  plan: appState.plan!.map(p =>
-                    p.exercise.name === oldName ? { ...p, exercise: { ...p.exercise, name: newName, notionName: newName } } : p
-                  )
-                })
-              } : undefined}
+              onSessionSwap={handleSessionSwap}
             />
           )}
 
@@ -372,10 +382,7 @@ export default function App() {
               initialSnapshot={appState.savedSnapshot}
               onFinish={handleSessionFinish}
               onBack={handleSessionBack}
-              onPermanentSwap={appState.user ? async (oldName, newName) => {
-                const supabase = createSupabaseBrowserClient()
-                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
-              } : undefined}
+              onSessionSwap={handleSessionSwap}
             />
           )}
 
@@ -384,8 +391,13 @@ export default function App() {
               split={appState.split}
               plan={appState.plan}
               logs={appState.exerciseLogs}
+              sessionSwaps={appState.sessionSwaps}
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
+              onSetDefault={appState.user ? async (oldName, newName) => {
+                const supabase = createSupabaseBrowserClient()
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+              } : undefined}
             />
           )}
 
@@ -411,10 +423,15 @@ export default function App() {
             <ProgramLibraryScreen
               selectedId={appState.programId}
               onBack={() => setShowProgramLibrary(false)}
+              onSelect={(id) => {
+                updateState({ programId: id, coachingContext: null, plan: null })
+                setShowProgramLibrary(false)
+              }}
             />
           ) : (
             <ExerciseLibraryScreen
               lastSplit={appState.lastSplit}
+              activeProgramId={appState.programId}
               onOpenProgramLibrary={() => setShowProgramLibrary(true)}
             />
           )}
