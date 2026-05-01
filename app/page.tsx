@@ -141,13 +141,15 @@ export default function App() {
     async function detect() {
       // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
       const { data: { user } } = await supabase.auth.getUser()
+
+      // Resolve program ID from localStorage (instant) then DB (authoritative)
+      let resolvedProgramId: string | null = localStorage.getItem('active_program_id')
+
       if (user) {
         setAppState(prev => ({ ...prev, user }))
 
-        // Fast: localStorage (no auth dependency, survives auth race)
-        const cachedProgramId = localStorage.getItem('active_program_id')
-        if (cachedProgramId) {
-          setAppState(prev => ({ ...prev, programId: cachedProgramId }))
+        if (resolvedProgramId) {
+          setAppState(prev => ({ ...prev, programId: resolvedProgramId! }))
         }
 
         // Verify from DB (authoritative source)
@@ -156,6 +158,7 @@ export default function App() {
         if (profileError) {
           console.error('Failed to read active_program_id:', profileError.message)
         } else if (profile?.active_program_id) {
+          resolvedProgramId = profile.active_program_id
           localStorage.setItem('active_program_id', profile.active_program_id)
           setAppState(prev => ({ ...prev, programId: profile.active_program_id }))
         }
@@ -174,25 +177,31 @@ export default function App() {
         }
       }
 
+      // Resolve active program for filtering session detection
+      const activeProgramId = resolvedProgramId ?? 'ppl-default'
+      const activeProgram = getProgramById(activeProgramId)
+      const activeSplits = activeProgram?.splits ?? []
+
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
-      if (stored) {
+      if (stored && activeSplits.includes(stored.split)) {
         setAppState(prev => ({ ...prev, detectedSession: stored }))
         setScreen('resume-prompt')
         return
       }
+      if (stored) clearSessionFromStorage()
 
-      // 2. Notion fallback — slower, only tells us split + that entries exist
+      // 2. DB fallback — check for today's workout in the active program
       try {
         const res = await fetch('/api/session/today')
         const data = await res.json()
-        if (data.found) {
+        if (data.found && activeSplits.includes(data.split)) {
           setAppState(prev => ({ ...prev, detectedSplit: data.split }))
           setScreen('resume-prompt')
           return
         }
       } catch {
-        // Notion unreachable — proceed normally
+        // Unreachable — proceed normally
       }
 
       // 3. Fetch last completed split to pre-select the carousel default
