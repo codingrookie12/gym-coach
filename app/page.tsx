@@ -460,7 +460,7 @@ export default function App() {
                 updateState({ programId: id, coachingContext: null, plan: null })
                 if (appState.user) {
                   const supabase = createSupabaseBrowserClient()
-                  supabase.from('users').update({ active_program_id: id }).eq('id', appState.user.id)
+                  supabase.from('users').update({ active_program_id: id }).eq('id', appState.user.id).then(() => {})
                 }
                 setShowProgramLibrary(false)
               }}
