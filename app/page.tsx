@@ -14,8 +14,12 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-import { Split, getNextSplit } from '@/lib/routines'
+import { Split, getNextSplitForProgram } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
+import { getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
+import { getOrSeedRoutine, permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import {
@@ -30,7 +34,6 @@ import {
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
-import { createSupabaseBrowserClient } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 export type Screen =
@@ -44,8 +47,11 @@ export type Screen =
   | 'session-summary'
   | 'manage-weights'
 
+export interface SessionSwap { oldName: string; newName: string }
+
 export interface AppState {
   user: User | null
+  programId: string
   split: Split | null
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
@@ -54,6 +60,8 @@ export interface AppState {
   savedLogs: ExerciseLog[] | null
   savedExIdx: number
   savedSnapshot: SavedSnapshot
+  sessionSwaps: SessionSwap[]
+  sessionSyncStatus: 'confirmed' | 'partial' | null
   // From resume detection
   detectedSession: PersistedSession | null
   detectedSplit: Split | null  // from Notion fallback (no full log data)
@@ -65,10 +73,12 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('detecting')
   const [activeTab, setActiveTab] = useState<ActiveTab>('train')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
+  const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [appState, setAppState] = useState<AppState>({
     user: null,
+    programId: 'ppl-default',
     split: null,
     coachingContext: null,
     plan: null,
@@ -77,6 +87,8 @@ export default function App() {
     savedLogs: null,
     savedExIdx: 0,
     savedSnapshot: {},
+    sessionSwaps: [],
+    sessionSyncStatus: null,
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
@@ -93,12 +105,28 @@ export default function App() {
       ...prev,
       split: null, coachingContext: null, plan: null, sessions: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+      sessionSwaps: [], sessionSyncStatus: null,
       detectedSession: null, detectedSplit: null,
+      // programId preserved intentionally
     }))
     setPendingCustomCount(getIncompletePendingExercises().length)
     setScreen('home')
     setActiveTab('train')
   }, [])
+
+  function handleSessionSwap(oldName: string, newName: string) {
+    setAppState(prev => ({
+      ...prev,
+      sessionSwaps: [...prev.sessionSwaps, { oldName, newName }],
+      plan: prev.plan
+        ? prev.plan.map(p =>
+            p.exercise.name === oldName
+              ? { ...p, exercise: { ...p.exercise, name: newName, notionName: newName } }
+              : p
+          )
+        : null,
+    }))
+  }
 
   // On mount: load equipment availability + pending custom exercise count
   useEffect(() => {
@@ -113,27 +141,67 @@ export default function App() {
     async function detect() {
       // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) setAppState(prev => ({ ...prev, user }))
+
+      // Resolve program ID: localStorage (instant) → server API (authoritative, guaranteed auth)
+      let resolvedProgramId: string | null = localStorage.getItem('active_program_id')
+      if (resolvedProgramId) {
+        setAppState(prev => ({ ...prev, programId: resolvedProgramId! }))
+      }
+
+      try {
+        const res = await fetch('/api/user/program')
+        const data = await res.json()
+        if (data.programId) {
+          resolvedProgramId = data.programId
+          localStorage.setItem('active_program_id', data.programId)
+          setAppState(prev => ({ ...prev, programId: data.programId }))
+        }
+      } catch {
+        // Network error — localStorage cache is the fallback
+      }
+
+      if (user) {
+        setAppState(prev => ({ ...prev, user }))
+
+        // Silently retry any partial syncs from previous sessions
+        const { data: pending } = await supabase
+          .from('failed_syncs')
+          .select('id, payload, retry_count')
+          .eq('user_id', user.id)
+          .is('resolved_at', null)
+          .lte('retry_count', 3)
+          .order('created_at', { ascending: true })
+          .limit(10)
+        if (pending?.length) {
+          retryFailedSyncs(supabase, user.id, pending).catch(() => {})
+        }
+      }
+
+      // Resolve active program for filtering session detection
+      const activeProgramId = resolvedProgramId ?? 'ppl-default'
+      const activeProgram = getProgramById(activeProgramId)
+      const activeSplits = activeProgram?.splits ?? []
 
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
-      if (stored) {
+      if (stored && activeSplits.includes(stored.split)) {
         setAppState(prev => ({ ...prev, detectedSession: stored }))
         setScreen('resume-prompt')
         return
       }
+      if (stored) clearSessionFromStorage()
 
-      // 2. Notion fallback — slower, only tells us split + that entries exist
+      // 2. DB fallback — check for today's workout in the active program
       try {
         const res = await fetch('/api/session/today')
         const data = await res.json()
-        if (data.found) {
+        if (data.found && activeSplits.includes(data.split)) {
           setAppState(prev => ({ ...prev, detectedSplit: data.split }))
           setScreen('resume-prompt')
           return
         }
       } catch {
-        // Notion unreachable — proceed normally
+        // Unreachable — proceed normally
       }
 
       // 3. Fetch last completed split to pre-select the carousel default
@@ -213,20 +281,30 @@ export default function App() {
       }
     }
 
-    const ops: Promise<any>[] = [...patchPromises]
-    if (newEntries.length > 0) {
-      ops.push(
-        fetch('/api/session/write', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entries: newEntries }),
-        })
-      )
-    }
-    await Promise.all(ops)
+    const [, writeResponse] = await Promise.all([
+      Promise.all(patchPromises),
+      newEntries.length > 0
+        ? fetch('/api/session/write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entries: newEntries }),
+          })
+        : Promise.resolve(null),
+    ])
 
-    clearSessionFromStorage()
-    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {}, lastSplit: appState.split })
+    let syncStatus: 'confirmed' | 'partial' = 'confirmed'
+    if (writeResponse) {
+      const data = await writeResponse.json()
+      if (!data.success) throw new Error(data.error ?? 'Save failed')
+      syncStatus = data.skipped?.length > 0 ? 'partial' : 'confirmed'
+    }
+
+    if (syncStatus === 'confirmed') clearSessionFromStorage()
+
+    updateState({
+      exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+      lastSplit: appState.split, sessionSyncStatus: syncStatus,
+    })
     navigate('session-summary')
   }
 
@@ -285,8 +363,16 @@ export default function App() {
 
           {screen === 'home' && (
             <PreSessionScreen
-              initialSplit={getNextSplit(appState.lastSplit)}
-              onSelectSplit={(split) => { updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('coaching-context') }}
+              initialSplit={getNextSplitForProgram(appState.programId, appState.lastSplit)}
+              activeProgram={getProgramById(appState.programId) ?? ACTIVE_PROGRAM}
+              onSelectSplit={async (split) => {
+                updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
+                if (appState.user) {
+                  const supabase = createSupabaseBrowserClient()
+                  await getOrSeedRoutine(supabase, appState.user.id, appState.programId).catch(() => {})
+                }
+                navigate('coaching-context')
+              }}
               onSettings={() => navigate('manage-weights')}
               onEquipment={() => setShowEquipmentPanel(true)}
               unavailableCount={getUnavailableExercises(exerciseAvailability).length}
@@ -297,6 +383,7 @@ export default function App() {
           {screen === 'coaching-context' && appState.split && (
             <CoachingContextScreen
               split={appState.split}
+              programId={appState.programId}
               unavailableExercises={getUnavailableExercises(exerciseAvailability)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
@@ -334,6 +421,7 @@ export default function App() {
                 updateState({ plan: [...currentPlan, newEntry] })
                 if (!matched) savePendingExercise(name)
               }}
+              onSessionSwap={handleSessionSwap}
             />
           )}
 
@@ -346,6 +434,7 @@ export default function App() {
               initialSnapshot={appState.savedSnapshot}
               onFinish={handleSessionFinish}
               onBack={handleSessionBack}
+              onSessionSwap={handleSessionSwap}
             />
           )}
 
@@ -354,8 +443,13 @@ export default function App() {
               split={appState.split}
               plan={appState.plan}
               logs={appState.exerciseLogs}
+              sessionSwaps={appState.sessionSwaps}
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
+              onSetDefault={appState.user ? async (oldName, newName) => {
+                const supabase = createSupabaseBrowserClient()
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+              } : undefined}
             />
           )}
 
@@ -365,6 +459,7 @@ export default function App() {
               exerciseLogs={appState.exerciseLogs}
               plan={appState.plan}
               previousSessions={appState.sessions}
+              syncStatus={appState.sessionSyncStatus ?? undefined}
               onDone={goHome}
             />
           )}
@@ -377,7 +472,29 @@ export default function App() {
 
         {/* Library tab */}
         <div style={{ height: '100%', display: activeTab === 'library' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <ExerciseLibraryScreen lastSplit={appState.lastSplit} />
+          {showProgramLibrary ? (
+            <ProgramLibraryScreen
+              selectedId={appState.programId}
+              onBack={() => setShowProgramLibrary(false)}
+              onSelect={async (id) => {
+                updateState({ programId: id, coachingContext: null, plan: null, lastSplit: null })
+                localStorage.setItem('active_program_id', id)
+                clearSessionFromStorage()
+                setShowProgramLibrary(false)
+                fetch('/api/user/program', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ programId: id }),
+                }).catch(() => {})
+              }}
+            />
+          ) : (
+            <ExerciseLibraryScreen
+              lastSplit={appState.lastSplit}
+              activeProgramId={appState.programId}
+              onOpenProgramLibrary={() => setShowProgramLibrary(true)}
+            />
+          )}
         </div>
 
         {/* Me tab */}

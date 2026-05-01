@@ -17,6 +17,7 @@ interface SessionSummaryScreenProps {
   exerciseLogs: ExerciseLog[]
   plan: ExercisePlan[]
   previousSessions: SessionRecord[]
+  syncStatus?: 'confirmed' | 'partial'
   onDone: () => void
 }
 
@@ -213,7 +214,7 @@ function MetadataSheet({
 }
 
 export default function SessionSummaryScreen({
-  split, exerciseLogs, plan, previousSessions, onDone,
+  split, exerciseLogs, plan, previousSessions, syncStatus, onDone,
 }: SessionSummaryScreenProps) {
   const progressFlags: string[] = []
   const stallFlags: string[] = []
@@ -280,6 +281,16 @@ export default function SessionSummaryScreen({
         style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}
       >
         <p className="section-label" style={{ margin: '0 0 4px 0' }}>SESSION COMPLETE</p>
+        {syncStatus === 'confirmed' && (
+          <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
+            ✓ SAVED TO HISTORY
+          </p>
+        )}
+        {syncStatus === 'partial' && (
+          <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
+            ⚠ PARTIAL SYNC — queued for auto-retry
+          </p>
+        )}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <h1 className="font-display" style={{ fontSize: '2.4rem', margin: 0, color: 'var(--accent)', letterSpacing: '0.04em', lineHeight: 1 }}>
             {split} Done

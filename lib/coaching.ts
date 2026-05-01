@@ -1,4 +1,4 @@
-import { Split, Exercise, getRoutine, getAllExercises } from './routines'
+import { Split, Exercise, getRoutineForProgram, getAllExercisesForProgram } from './routines'
 import { SessionRecord } from './notion'
 import { findExerciseByName, getAlternatives, getUniqueEquipment } from './exerciseLibrary'
 
@@ -9,7 +9,7 @@ function matchesExercise(notionName: string, routineName: string): boolean {
 // Resolves the best substitute for an unavailable exercise.
 // Filters: same primary muscles, not unavailable, not the original.
 // Falls back to null if no substitute found.
-function resolveSubstitute(exercise: Exercise, unavailableExercises: string[]): Exercise | null {
+function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], programId: string): Exercise | null {
   const def = findExerciseByName(exercise.name)
   if (!def) return null
 
@@ -22,7 +22,7 @@ function resolveSubstitute(exercise: Exercise, unavailableExercises: string[]): 
   if (alternatives.length === 0) return null
 
   const altName = alternatives[0].name
-  const altInRoutine = getAllExercises().find(e => e.name === altName)
+  const altInRoutine = getAllExercisesForProgram(programId).find(e => e.name === altName)
   if (altInRoutine) return altInRoutine
 
   return {
@@ -63,12 +63,14 @@ function daysBetween(dateA: string, dateB: string): number {
 
 
 export function analyzeCoaching(
+  programId: string,
   split: Split,
   sessions: SessionRecord[],
   today: string,
-  unavailableExercises: string[] = []
+  unavailableExercises: string[] = [],
+  weightOverrides: Record<string, number> = {}
 ): { context: CoachingContext; plan: ExercisePlan[] } {
-  const routine = getRoutine(split)
+  const routine = getRoutineForProgram(programId, split)
   const flags: CoachingFlag[] = []
   const trending: string[] = []
   let deloadRecommended = false
@@ -85,7 +87,7 @@ export function analyzeCoaching(
     let substitutionNote: string | null = null
 
     if (unavailableExercises.includes(exercise.name)) {
-      const substitute = resolveSubstitute(exercise, unavailableExercises)
+      const substitute = resolveSubstitute(exercise, unavailableExercises, programId)
       if (substitute) {
         substitutionNote = `${exercise.name} unavailable — substituting ${substitute.name}`
         exercise = substitute
@@ -107,13 +109,18 @@ export function analyzeCoaching(
       }
     }
 
-    // No history
+    // No history for this split — fall back to cross-program weight override
     if (exerciseSessions.length === 0) {
-      flags.push({ exercise: exerciseName, type: 'no-history', message: 'No weight logged — set your working weight today' })
+      const overrideWeight = weightOverrides[exerciseName] ?? null
+      if (overrideWeight === null) {
+        flags.push({ exercise: exerciseName, type: 'no-history', message: 'No weight logged — set your working weight today' })
+      }
       return {
         exercise: { ...exercise, name: exerciseName },
-        targetWeight: null,
-        coachingNote: substitutionNote ?? 'No weight logged — set your working weight today',
+        targetWeight: overrideWeight,
+        coachingNote: substitutionNote ?? (overrideWeight !== null
+          ? 'Start weight carried from your history — adjust as needed'
+          : exercise.programNote ?? 'No weight logged — set your working weight today'),
       }
     }
 
@@ -212,7 +219,7 @@ export function analyzeCoaching(
     return {
       exercise: { ...exercise, name: exerciseName },
       targetWeight,
-      coachingNote: substitutionNote ?? coachingNote,
+      coachingNote: substitutionNote ?? coachingNote ?? exercise.programNote ?? null,
     }
   })
 

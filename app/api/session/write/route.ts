@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     for (const { date, split, entries: groupEntries } of Array.from(groups.values())) {
       const trainingModeId = await getTrainingModeId(supabase, split)
+      if (!trainingModeId) continue
       const workoutId = await getOrCreateWorkout(supabase, user.id, date, trainingModeId)
 
       type InsertRow = {
@@ -98,6 +99,18 @@ export async function POST(request: NextRequest) {
           upsertWeightOverride(supabase, user.id, exerciseId, weight, unit)
         )
       )
+    }
+
+    if (skipped.length > 0) {
+      void (async () => {
+        try {
+          await supabase.from('failed_syncs').insert({
+            user_id: user.id,
+            payload: { entries: entries.filter((e: NotionEntry) => skipped.includes(e.exercise)), skippedNames: skipped },
+            error_message: `Exercises not found in library: ${skipped.join(', ')}`,
+          })
+        } catch {}
+      })()
     }
 
     return NextResponse.json({

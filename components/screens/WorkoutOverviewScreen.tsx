@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
-import { ExerciseDefinition } from '@/lib/exerciseLibrary'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
+import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 
 interface WorkoutOverviewScreenProps {
   split: Split
@@ -14,15 +15,47 @@ interface WorkoutOverviewScreenProps {
   onResume?: () => void
   onBack: () => void
   onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
+  onSessionSwap?: (oldName: string, newName: string) => void
 }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise }: WorkoutOverviewScreenProps) {
+type PendingSwap = { exIdx: number; oldName: string; newName: string }
+
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onSessionSwap }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
+  const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const cardio = CARDIO_RECOMMENDATION[split]
 
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
+    setPendingSwap(null)
+  }
+
+  function requestSwap(exIdx: number, oldName: string, newName: string) {
+    setPendingSwap({ exIdx, oldName, newName })
+  }
+
+  function confirmSwap() {
+    if (!pendingSwap) return
+    onSessionSwap?.(pendingSwap.oldName, pendingSwap.newName)
+    setPendingSwap(null)
+    setSwappedIndex(null)
+  }
+
+  function getSwapOptions(exercise: ExercisePlan['exercise']): string[] {
+    const options: string[] = []
+    if (exercise.backup) options.push(exercise.backup)
+    const def = findExerciseByName(exercise.name)
+    if (def) {
+      const alts = getAlternatives(def, {
+        availableEquipment: getUniqueEquipment(),
+        excludeNames: [exercise.name, ...(exercise.backup ? [exercise.backup] : [])],
+        limit: 2,
+      })
+      options.push(...alts.map(a => a.name))
+    }
+    return options
   }
 
   return (
@@ -77,9 +110,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                       <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.08em', minWidth: '16px' }}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
-                      <span className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em' }}>
-                        {item.exercise.name}
-                      </span>
+                      <button
+                        onClick={() => setDetailExercise(findExerciseByName(item.exercise.name) ?? null)}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        <span className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '0.02em', textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
+                          {item.exercise.name}
+                        </span>
+                      </button>
                     </div>
 
                     {/* Stats row */}
@@ -127,15 +165,62 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                   </button>
                 </div>
 
-                {/* Backup row */}
-                {isSwapped && item.exercise.backup && (
-                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="section-label">BACKUP:</span>
-                    <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400 }}>
-                      {item.exercise.backup}
-                    </span>
-                  </div>
-                )}
+                {/* Swap options */}
+                {isSwapped && (() => {
+                  const options = getSwapOptions(item.exercise)
+
+                  // Confirmation step
+                  if (pendingSwap?.exIdx === i) return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+                      <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
+                        Swap <span style={{ color: 'var(--rust)' }}>{pendingSwap.oldName}</span> → <span style={{ color: 'var(--accent)' }}>{pendingSwap.newName}</span> for today only?
+                        <br />
+                        <span style={{ color: 'var(--text-secondary)' }}>You&apos;ll be asked to save as default after the session.</span>
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-primary" onClick={confirmSwap} style={{ flex: 1, fontSize: '0.7rem', padding: '8px' }}>
+                          CONFIRM SWAP
+                        </button>
+                        <button onClick={() => setPendingSwap(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px 14px', cursor: 'pointer' }}>
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  )
+
+                  if (!options.length) return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+                      <span className="section-label" style={{ color: 'var(--text-secondary)' }}>NO ALTERNATIVES FOUND</span>
+                    </div>
+                  )
+                  return (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span className="section-label" style={{ marginBottom: '2px' }}>SWAP FOR TODAY</span>
+                      {options.map(altName => (
+                        <div
+                          key={altName}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
+                        >
+                          <button
+                            onClick={() => setDetailExercise(findExerciseByName(altName) ?? null)}
+                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', flex: 1 }}
+                          >
+                            <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
+                              {altName}
+                            </span>
+                          </button>
+                          <button
+                            className="swap-badge"
+                            onClick={() => requestSwap(i, item.exercise.name, altName)}
+                            style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
+                          >
+                            USE TODAY
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })}
@@ -204,6 +289,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
             setShowAddSheet(false)
           }}
           onClose={() => setShowAddSheet(false)}
+        />
+      )}
+
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise}
+          inProgram={true}
+          onClose={() => setDetailExercise(null)}
         />
       )}
     </div>

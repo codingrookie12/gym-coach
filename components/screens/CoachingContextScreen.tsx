@@ -8,6 +8,7 @@ import LoadingScreen from '@/components/LoadingScreen'
 
 interface CoachingContextScreenProps {
   split: Split
+  programId?: string
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
   unavailableExercises: string[]
@@ -17,7 +18,7 @@ interface CoachingContextScreenProps {
 }
 
 export default function CoachingContextScreen({
-  split, coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
+  split, programId = 'ppl-default', coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +29,7 @@ export default function CoachingContextScreen({
     const unavailableParam = unavailableExercises.length > 0
       ? `&unavailable=${encodeURIComponent(unavailableExercises.join(','))}`
       : ''
-    fetch(`/api/notion?split=${split}${unavailableParam}`)
+    fetch(`/api/notion?split=${split}&programId=${programId}${unavailableParam}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error)
@@ -39,7 +40,7 @@ export default function CoachingContextScreen({
         setError(err.message)
         setLoading(false)
       })
-  }, [split, coachingContext, unavailableExercises, onDataLoaded])
+  }, [split, programId, coachingContext, unavailableExercises, onDataLoaded])
 
   if (loading) return <LoadingScreen message={`Analyzing ${split} history...`} />
   if (error) return (
@@ -150,7 +151,7 @@ export default function CoachingContextScreen({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {noHistoryFlags.map((f, i) => (
                   <p key={i} className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)', margin: 0 }}>
-                    {f.exercise} — set working weight today
+                    {f.exercise} — {f.message}
                   </p>
                 ))}
               </div>
