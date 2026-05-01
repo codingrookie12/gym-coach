@@ -143,9 +143,20 @@ export default function App() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setAppState(prev => ({ ...prev, user }))
-        const { data: profile } = await supabase
-          .from('users').select('active_program_id').eq('id', user.id).single()
-        if (profile?.active_program_id) {
+
+        // Fast: localStorage (no auth dependency, survives auth race)
+        const cachedProgramId = localStorage.getItem('active_program_id')
+        if (cachedProgramId) {
+          setAppState(prev => ({ ...prev, programId: cachedProgramId }))
+        }
+
+        // Verify from DB (authoritative source)
+        const { data: profile, error: profileError } = await supabase
+          .from('users').select('active_program_id').eq('id', user.id).maybeSingle()
+        if (profileError) {
+          console.error('Failed to read active_program_id:', profileError.message)
+        } else if (profile?.active_program_id) {
+          localStorage.setItem('active_program_id', profile.active_program_id)
           setAppState(prev => ({ ...prev, programId: profile.active_program_id }))
         }
 
@@ -456,11 +467,17 @@ export default function App() {
             <ProgramLibraryScreen
               selectedId={appState.programId}
               onBack={() => setShowProgramLibrary(false)}
-              onSelect={(id) => {
-                updateState({ programId: id, coachingContext: null, plan: null })
+              onSelect={async (id) => {
+                updateState({ programId: id, coachingContext: null, plan: null, lastSplit: null })
+                localStorage.setItem('active_program_id', id)
+                clearSessionFromStorage()
                 if (appState.user) {
                   const supabase = createSupabaseBrowserClient()
-                  supabase.from('users').update({ active_program_id: id }).eq('id', appState.user.id).then(() => {})
+                  const { error } = await supabase
+                    .from('users')
+                    .update({ active_program_id: id })
+                    .eq('id', appState.user.id)
+                  if (error) console.error('Failed to persist program:', error.message)
                 }
                 setShowProgramLibrary(false)
               }}
