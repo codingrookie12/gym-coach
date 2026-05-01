@@ -10,7 +10,7 @@ import {
   getUniqueEquipment,
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
-import { getAllExercises, getAllExercisesForProgram, getRoutine, getNextSplit, Split } from '@/lib/routines'
+import { getAllExercisesForProgram, getRoutine, getNextSplitForProgram, Split } from '@/lib/routines'
 import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
@@ -137,73 +137,6 @@ function ExerciseRow({
           style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', flexShrink: 0 }}
         >
           {exercise.mechanic.toUpperCase()}
-        </span>
-      )}
-    </button>
-  )
-}
-
-// ─── Active program card ────────────────────────────────────────────────────────
-
-function ActiveProgramCard({
-  lastSplit,
-  onTap,
-}: {
-  lastSplit?: Split | null
-  onTap: () => void
-}) {
-  const program = ACTIVE_PROGRAM
-  const nextSplit = lastSplit ? getNextSplit(lastSplit) : null
-
-  return (
-    <button
-      onClick={onTap}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        gap: '6px',
-        minWidth: '240px',
-        padding: '14px 16px',
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: '2px',
-        textAlign: 'left',
-        cursor: 'pointer',
-        transition: 'background 0.1s',
-        flexShrink: 0,
-      }}
-      onMouseDown={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
-      onMouseUp={e => (e.currentTarget.style.background = 'var(--surface)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
-      onTouchStart={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.04)')}
-      onTouchEnd={e => (e.currentTarget.style.background = 'var(--surface)')}
-    >
-      {/* Name + chevron */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px' }}>
-        <span className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-primary)', letterSpacing: '0.06em' }}>
-          MY SPLIT: {program.shortName}
-        </span>
-        <span style={{ color: 'var(--text-mid)', fontSize: '1rem', lineHeight: 1 }}>›</span>
-      </div>
-
-      {/* Splits */}
-      <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-        {program.splits.join(' · ')}
-      </span>
-
-      {/* Next split hint */}
-      {nextSplit && (
-        <span
-          className="font-mono"
-          style={{
-            fontSize: '0.55rem',
-            color: 'var(--accent)',
-            letterSpacing: '0.08em',
-            marginTop: '2px',
-          }}
-        >
-          NEXT: {nextSplit.toUpperCase()} DAY
         </span>
       )}
     </button>
@@ -575,7 +508,7 @@ export default function ExerciseLibraryScreen({
             ...PROGRAM_LIBRARY.filter(p => p.id !== activeProgramId),
           ].map(program => {
             const isActive = program.id === activeProgramId
-            const nextSplit = isActive && lastSplit ? getNextSplit(lastSplit) : null
+            const nextSplit = isActive && lastSplit ? getNextSplitForProgram(program.id, lastSplit) : null
             return (
               <button
                 key={program.id}
@@ -608,9 +541,18 @@ export default function ExerciseLibraryScreen({
                   {program.name}
                 </span>
 
-                {/* Level + style tags */}
-                <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-                  {program.level.toUpperCase()} · {program.style.toUpperCase()}
+                {/* Style + level — each color-coded */}
+                <span className="font-mono" style={{
+                  fontSize: '0.5rem', letterSpacing: '0.08em',
+                  color: ({ hypertrophy: 'var(--accent)', strength: 'var(--rust)', powerlifting: 'var(--rust)', endurance: 'var(--text-mid)' } as Record<string, string>)[program.style] ?? 'var(--text-secondary)',
+                }}>
+                  {program.style.toUpperCase()}
+                </span>
+                <span className="font-mono" style={{
+                  fontSize: '0.5rem', letterSpacing: '0.08em',
+                  color: ({ beginner: 'var(--text-secondary)', intermediate: 'var(--text-mid)', advanced: 'var(--text-primary)' } as Record<string, string>)[program.level] ?? 'var(--text-secondary)',
+                }}>
+                  {program.level.toUpperCase()}
                 </span>
 
                 {/* Next split hint for active program */}

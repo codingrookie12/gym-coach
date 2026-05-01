@@ -9,6 +9,7 @@ import NumberPad from '@/components/NumberPad'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
 import { savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ActiveSessionScreenProps {
   split: Split
@@ -480,6 +481,7 @@ export default function ActiveSessionScreen({
   const [swapShown, setSwapShown] = useState(false)
   const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   // Snapshot: maps "exerciseName:setNum" -> { pageId (Supabase set UUID), weight, reps, notes }
   const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
   // Track which exercise indices have been auto-saved (to avoid double-fire)
@@ -815,9 +817,17 @@ export default function ActiveSessionScreen({
 
       {/* Exercise name + controls */}
       <div className="px-5 py-4" style={{ flexShrink: 0 }}>
-        <h2 className="font-display" style={{ fontSize: '2rem', color: 'var(--text-primary)', margin: '0 0 8px 0', lineHeight: 1, letterSpacing: '0.03em' }}>
-          {currentEx.exerciseName}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <h2 className="font-display" style={{ fontSize: '2rem', color: 'var(--text-primary)', margin: 0, lineHeight: 1, letterSpacing: '0.03em' }}>
+            {currentEx.exerciseName}
+          </h2>
+          <button
+            onClick={() => setDetailExercise(findExerciseByName(currentEx.exerciseName) ?? null)}
+            style={{ background: 'none', border: 'none', color: 'var(--border-2)', cursor: 'pointer', fontSize: '1.1rem', padding: '4px', flexShrink: 0, lineHeight: 1 }}
+          >
+            ⓘ
+          </button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--text-mid)' }}>
             {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} reps
@@ -1057,6 +1067,9 @@ export default function ActiveSessionScreen({
           onConfirm={confirmWeight}
           onCancel={() => { setPadMode(null); setActiveSetIdx(null) }}
         />
+      )}
+      {detailExercise && (
+        <ExerciseDetailSheet exercise={detailExercise} inProgram={true} onClose={() => setDetailExercise(null)} />
       )}
     </div>
   )

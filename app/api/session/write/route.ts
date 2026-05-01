@@ -101,6 +101,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (skipped.length > 0) {
+      void (async () => {
+        try {
+          await supabase.from('failed_syncs').insert({
+            user_id: user.id,
+            payload: { entries: entries.filter((e: NotionEntry) => skipped.includes(e.exercise)), skippedNames: skipped },
+            error_message: `Exercises not found in library: ${skipped.join(', ')}`,
+          })
+        } catch {}
+      })()
+    }
+
     return NextResponse.json({
       success: true,
       pageIds: pageIds.filter(id => id !== ''),

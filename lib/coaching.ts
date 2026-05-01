@@ -213,7 +213,7 @@ export function analyzeCoaching(
     return {
       exercise: { ...exercise, name: exerciseName },
       targetWeight,
-      coachingNote: substitutionNote ?? coachingNote,
+      coachingNote: substitutionNote ?? coachingNote ?? exercise.programNote ?? null,
     }
   })
 

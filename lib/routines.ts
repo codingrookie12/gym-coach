@@ -18,6 +18,7 @@ export interface Exercise {
   weightConvention?: string
   availableWeights?: number[]
   weightUnit?: 'lbs' | 'pins'
+  programNote?: string
 }
 
 // ─── Weight sequences by equipment type ───────────────────────────────────────
@@ -103,7 +104,7 @@ export const LEGS_ROUTINE: Exercise[] = [
 // ─── 5/3/1 (Wendler) ──────────────────────────────────────────────────────────
 
 const WENDLER_OHP_ROUTINE: Exercise[] = [
-  { name: 'Standing Military Press',    notionName: 'Standing Military Press',    sets: 3, repRange: [5, 5],   backup: 'Dumbbell Shoulder Press',              split: 'OHP Day',      availableWeights: BARBELL },
+  { name: 'Standing Military Press',    notionName: 'Standing Military Press',    sets: 3, repRange: [1, 5],   backup: 'Dumbbell Shoulder Press',              split: 'OHP Day',      availableWeights: BARBELL, programNote: 'Wave cycle: W1=3×5, W2=3×3, W3=5/3/1 — add 5 lbs to TM after completing W3' },
   { name: 'Dumbbell Bench Press',       notionName: 'Dumbbell Bench Press',       sets: 3, repRange: [10, 15], backup: 'Incline Dumbbell Press',               split: 'OHP Day',      availableWeights: DB },
   { name: 'Bent Over Barbell Row',      notionName: 'Bent Over Barbell Row',      sets: 3, repRange: [10, 15], backup: 'Seated Cable Rows',                    split: 'OHP Day',      availableWeights: BARBELL },
   { name: 'Face Pull',                  notionName: 'Face Pull',                  sets: 3, repRange: [15, 20], backup: null,                                   split: 'OHP Day',      availableWeights: CABLE_FULL },
@@ -111,7 +112,7 @@ const WENDLER_OHP_ROUTINE: Exercise[] = [
 ]
 
 const WENDLER_DEADLIFT_ROUTINE: Exercise[] = [
-  { name: 'Barbell Deadlift',           notionName: 'Barbell Deadlift',           sets: 3, repRange: [5, 5],   backup: 'Romanian Deadlift',                   split: 'Deadlift Day', availableWeights: BARBELL },
+  { name: 'Barbell Deadlift',           notionName: 'Barbell Deadlift',           sets: 3, repRange: [1, 5],   backup: 'Romanian Deadlift',                   split: 'Deadlift Day', availableWeights: BARBELL, programNote: 'Wave cycle: W1=3×5, W2=3×3, W3=5/3/1 — add 10 lbs to TM after completing W3' },
   { name: 'Romanian Deadlift',          notionName: 'Romanian Deadlift',          sets: 3, repRange: [8, 12],  backup: 'Barbell Deadlift',                    split: 'Deadlift Day', availableWeights: RDL },
   { name: 'Seated Leg Curl',            notionName: 'Seated Leg Curl',            sets: 3, repRange: [10, 15], backup: null,                                   split: 'Deadlift Day', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
   { name: 'Hanging Leg Raise',          notionName: 'Hanging Leg Raise',          sets: 3, repRange: [10, 15], backup: 'Flat Bench Lying Leg Raise',           split: 'Deadlift Day', availableWeights: [] },
@@ -119,7 +120,7 @@ const WENDLER_DEADLIFT_ROUTINE: Exercise[] = [
 ]
 
 const WENDLER_BENCH_ROUTINE: Exercise[] = [
-  { name: 'Wide-grip Barbell Bench Press',           notionName: 'Wide-grip Barbell Bench Press',           sets: 3, repRange: [5, 5],   backup: 'Dumbbell Bench Press',                         split: 'Bench Day', availableWeights: BARBELL },
+  { name: 'Wide-grip Barbell Bench Press',           notionName: 'Wide-grip Barbell Bench Press',           sets: 3, repRange: [1, 5],   backup: 'Dumbbell Bench Press',                         split: 'Bench Day', availableWeights: BARBELL, programNote: 'Wave cycle: W1=3×5, W2=3×3, W3=5/3/1 — add 5 lbs to TM after completing W3' },
   { name: 'Incline Dumbbell Press',                  notionName: 'Incline Dumbbell Press',                  sets: 3, repRange: [8, 12],  backup: 'Seated Cable Fly',                             split: 'Bench Day', availableWeights: DB },
   { name: 'Seated Cable Rows',                       notionName: 'Seated Cable Rows',                       sets: 3, repRange: [10, 15], backup: 'Bent Over Barbell Row',                        split: 'Bench Day', availableWeights: CABLE_HEAVY },
   { name: 'Triceps Pushdown - Rope Attachment',      notionName: 'Triceps Pushdown - Rope Attachment',      sets: 3, repRange: [10, 15], backup: 'Standing Low-pulley One-arm Triceps Extension', split: 'Bench Day', availableWeights: CABLE_FULL },
@@ -127,7 +128,7 @@ const WENDLER_BENCH_ROUTINE: Exercise[] = [
 ]
 
 const WENDLER_SQUAT_ROUTINE: Exercise[] = [
-  { name: 'Barbell Squat',              notionName: 'Barbell Squat',              sets: 3, repRange: [5, 5],   backup: 'Hack Squat',         split: 'Squat Day', availableWeights: BARBELL },
+  { name: 'Barbell Squat',              notionName: 'Barbell Squat',              sets: 3, repRange: [1, 5],   backup: 'Hack Squat',         split: 'Squat Day', availableWeights: BARBELL, programNote: 'Wave cycle: W1=3×5, W2=3×3, W3=5/3/1 — add 10 lbs to TM after completing W3' },
   { name: 'Leg Press',                  notionName: 'Leg Press',                  sets: 3, repRange: [10, 12], backup: 'Hack Squat',         split: 'Squat Day', availableWeights: LEG_PRESS, weightConvention: 'per side' },
   { name: 'Leg Extensions',             notionName: 'Leg Extensions',             sets: 3, repRange: [12, 12], backup: 'Leg Press',          split: 'Squat Day', availableWeights: LEG_EXT },
   { name: 'Seated Leg Curl',            notionName: 'Seated Leg Curl',            sets: 3, repRange: [10, 12], backup: null,                 split: 'Squat Day', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },

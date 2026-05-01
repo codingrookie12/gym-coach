@@ -194,6 +194,33 @@ export async function getOrSeedRoutine(
   if (error) throw error
 }
 
+// Retries entries from failed_syncs. Marks resolved or increments retry_count.
+export async function retryFailedSyncs(
+  supabase: Supabase,
+  userId: string,
+  pending: Array<{ id: string; payload: any; retry_count: number }>
+): Promise<void> {
+  for (const row of pending) {
+    const entries = row.payload?.entries
+    if (!entries?.length) continue
+    try {
+      const res = await fetch('/api/session/write', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries }),
+      })
+      const data = await res.json()
+      if (data.success && !data.skipped?.length) {
+        await supabase.from('failed_syncs').update({ resolved_at: new Date().toISOString() }).eq('id', row.id).eq('user_id', userId)
+      } else {
+        await supabase.from('failed_syncs').update({ retry_count: row.retry_count + 1 }).eq('id', row.id).eq('user_id', userId)
+      }
+    } catch {
+      await supabase.from('failed_syncs').update({ retry_count: row.retry_count + 1 }).eq('id', row.id).eq('user_id', userId)
+    }
+  }
+}
+
 // Permanently promotes an alternative exercise to primary in the user's routine.
 // The old primary exercise name is removed; the new one takes its slot.
 export async function permanentlySwapExercise(

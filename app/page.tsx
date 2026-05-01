@@ -18,7 +18,7 @@ import { Split, getNextSplitForProgram } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
 import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
-import { getOrSeedRoutine, permanentlySwapExercise } from '@/lib/supabase.queries'
+import { getOrSeedRoutine, permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
@@ -61,6 +61,7 @@ export interface AppState {
   savedExIdx: number
   savedSnapshot: SavedSnapshot
   sessionSwaps: SessionSwap[]
+  sessionSyncStatus: 'confirmed' | 'partial' | null
   // From resume detection
   detectedSession: PersistedSession | null
   detectedSplit: Split | null  // from Notion fallback (no full log data)
@@ -87,6 +88,7 @@ export default function App() {
     savedExIdx: 0,
     savedSnapshot: {},
     sessionSwaps: [],
+    sessionSyncStatus: null,
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
@@ -103,7 +105,7 @@ export default function App() {
       ...prev,
       split: null, coachingContext: null, plan: null, sessions: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
-      sessionSwaps: [],
+      sessionSwaps: [], sessionSyncStatus: null,
       detectedSession: null, detectedSplit: null,
       // programId preserved intentionally
     }))
@@ -145,6 +147,19 @@ export default function App() {
           .from('users').select('active_program_id').eq('id', user.id).single()
         if (profile?.active_program_id) {
           setAppState(prev => ({ ...prev, programId: profile.active_program_id }))
+        }
+
+        // Silently retry any partial syncs from previous sessions
+        const { data: pending } = await supabase
+          .from('failed_syncs')
+          .select('id, payload, retry_count')
+          .eq('user_id', user.id)
+          .is('resolved_at', null)
+          .lte('retry_count', 3)
+          .order('created_at', { ascending: true })
+          .limit(10)
+        if (pending?.length) {
+          retryFailedSyncs(supabase, user.id, pending).catch(() => {})
         }
       }
 
@@ -246,20 +261,30 @@ export default function App() {
       }
     }
 
-    const ops: Promise<any>[] = [...patchPromises]
-    if (newEntries.length > 0) {
-      ops.push(
-        fetch('/api/session/write', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entries: newEntries }),
-        })
-      )
-    }
-    await Promise.all(ops)
+    const [, writeResponse] = await Promise.all([
+      Promise.all(patchPromises),
+      newEntries.length > 0
+        ? fetch('/api/session/write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ entries: newEntries }),
+          })
+        : Promise.resolve(null),
+    ])
 
-    clearSessionFromStorage()
-    updateState({ exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {}, lastSplit: appState.split })
+    let syncStatus: 'confirmed' | 'partial' = 'confirmed'
+    if (writeResponse) {
+      const data = await writeResponse.json()
+      if (!data.success) throw new Error(data.error ?? 'Save failed')
+      syncStatus = data.skipped?.length > 0 ? 'partial' : 'confirmed'
+    }
+
+    if (syncStatus === 'confirmed') clearSessionFromStorage()
+
+    updateState({
+      exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+      lastSplit: appState.split, sessionSyncStatus: syncStatus,
+    })
     navigate('session-summary')
   }
 
@@ -414,6 +439,7 @@ export default function App() {
               exerciseLogs={appState.exerciseLogs}
               plan={appState.plan}
               previousSessions={appState.sessions}
+              syncStatus={appState.sessionSyncStatus ?? undefined}
               onDone={goHome}
             />
           )}
