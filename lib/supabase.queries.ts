@@ -194,6 +194,22 @@ export async function getOrSeedRoutine(
   if (error) throw error
 }
 
+// Fetches the max logged weight per exercise for a user, keyed by exercise name.
+// Used as a cross-program weight fallback in the coaching engine.
+export async function fetchWeightOverrides(supabase: Supabase, userId: string): Promise<Record<string, number>> {
+  const { data } = await supabase
+    .from('exercise_weight_override')
+    .select('override_weight, exercises(name)')
+    .eq('user_id', userId)
+  if (!data) return {}
+  const result: Record<string, number> = {}
+  for (const row of data) {
+    const name = (row.exercises as any)?.name as string | undefined
+    if (name) result[name] = Number(row.override_weight)
+  }
+  return result
+}
+
 // Retries entries from failed_syncs. Marks resolved or increments retry_count.
 export async function retryFailedSyncs(
   supabase: Supabase,

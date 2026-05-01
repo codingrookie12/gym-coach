@@ -1,18 +1,16 @@
 /**
  * seed-program-exercises.ts
  *
- * Seeds ALL exercises from ALL programs into the exercises table.
+ * Seeds the FULL exercise library (exercises.json) into the exercises table.
  * Idempotent — uses upsert with ignoreDuplicates so it's safe to re-run.
  *
- * Run: npx tsx scripts/seed-program-exercises.ts
+ * Run: npx tsx --env-file=.env.local scripts/seed-program-exercises.ts
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { PROGRAM_LIBRARY } from '../lib/programs'
-import { getAllExercisesForProgram } from '../lib/routines'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -27,34 +25,21 @@ if (!url || !key) {
 const supabase = createClient(url, key)
 
 const exercisesRaw: any[] = JSON.parse(readFileSync(resolve(root, 'lib/exercises.json'), 'utf8'))
-const nameIndex = new Map<string, any>(exercisesRaw.map(e => [e.name.toLowerCase(), e]))
 
-// Collect ALL unique exercise names (primary + backup) from ALL programs
-const allNames = new Set<string>()
-for (const program of PROGRAM_LIBRARY) {
-  for (const ex of getAllExercisesForProgram(program.id)) {
-    allNames.add(ex.name)
-    if (ex.backup) allNames.add(ex.backup)
-  }
-}
+const rows = exercisesRaw.map((ex: any) => ({
+  name: ex.name,
+  equipment: ex.equipment ?? null,
+  primary_muscles: ex.primaryMuscles ?? [],
+  secondary_muscles: ex.secondaryMuscles ?? [],
+  instructions: ex.instructions ?? [],
+  images: ex.images ?? [],
+  level: ex.level ?? null,
+  mechanic: ex.mechanic ?? null,
+  is_custom: false,
+  metadata_complete: true,
+}))
 
-const rows = Array.from(allNames).map(name => {
-  const ex = nameIndex.get(name.toLowerCase())
-  return {
-    name,
-    equipment: ex?.equipment ?? null,
-    primary_muscles: ex?.primaryMuscles ?? [],
-    secondary_muscles: ex?.secondaryMuscles ?? [],
-    instructions: ex?.instructions ?? [],
-    images: ex?.images ?? [],
-    level: ex?.level ?? null,
-    mechanic: ex?.mechanic ?? null,
-    is_custom: false,
-    metadata_complete: ex != null,
-  }
-})
-
-console.log(`Seeding ${rows.length} exercises across ${PROGRAM_LIBRARY.length} programs...`)
+console.log(`Seeding ${rows.length} exercises from exercises.json...`)
 
 ;(async () => {
   const { error } = await supabase

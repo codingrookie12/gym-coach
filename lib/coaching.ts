@@ -67,7 +67,8 @@ export function analyzeCoaching(
   split: Split,
   sessions: SessionRecord[],
   today: string,
-  unavailableExercises: string[] = []
+  unavailableExercises: string[] = [],
+  weightOverrides: Record<string, number> = {}
 ): { context: CoachingContext; plan: ExercisePlan[] } {
   const routine = getRoutineForProgram(programId, split)
   const flags: CoachingFlag[] = []
@@ -108,13 +109,16 @@ export function analyzeCoaching(
       }
     }
 
-    // No history
+    // No history for this split — fall back to cross-program weight override
     if (exerciseSessions.length === 0) {
-      flags.push({ exercise: exerciseName, type: 'no-history', message: 'No weight logged — set your working weight today' })
+      const overrideWeight = weightOverrides[exerciseName] ?? null
+      flags.push({ exercise: exerciseName, type: 'no-history', message: overrideWeight !== null ? 'Weight carried from history' : 'No weight logged — set your working weight today' })
       return {
         exercise: { ...exercise, name: exerciseName },
-        targetWeight: null,
-        coachingNote: substitutionNote ?? 'No weight logged — set your working weight today',
+        targetWeight: overrideWeight,
+        coachingNote: substitutionNote ?? (overrideWeight !== null
+          ? 'Start weight carried from your history — adjust as needed'
+          : exercise.programNote ?? 'No weight logged — set your working weight today'),
       }
     }
 

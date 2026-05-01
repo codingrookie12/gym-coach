@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase.server'
-import { fetchLastSessionsFromSupabase } from '@/lib/supabase.queries'
+import { fetchLastSessionsFromSupabase, fetchWeightOverrides } from '@/lib/supabase.queries'
 import { analyzeCoaching } from '@/lib/coaching'
 import { Split } from '@/lib/routines'
 
@@ -23,9 +23,12 @@ export async function GET(request: NextRequest) {
       ? unavailableParam.split(',').map(s => s.trim()).filter(Boolean)
       : []
 
-    const sessions = await fetchLastSessionsFromSupabase(supabase, split, 5)
+    const [sessions, weightOverrides] = await Promise.all([
+      fetchLastSessionsFromSupabase(supabase, split, 5),
+      fetchWeightOverrides(supabase, user.id),
+    ])
     const today = new Date().toISOString().split('T')[0]
-    const { context, plan } = analyzeCoaching(programId, split, sessions, today, unavailableExercises)
+    const { context, plan } = analyzeCoaching(programId, split, sessions, today, unavailableExercises, weightOverrides)
     return NextResponse.json({ context, plan, sessions })
   } catch (error) {
     console.error('Session history fetch error:', error)
