@@ -151,7 +151,7 @@ export default function CoachingContextScreen({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {noHistoryFlags.map((f, i) => (
                   <p key={i} className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)', margin: 0 }}>
-                    {f.exercise} — set working weight today
+                    {f.exercise} — {f.message}
                   </p>
                 ))}
               </div>

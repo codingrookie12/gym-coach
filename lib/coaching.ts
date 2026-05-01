@@ -112,7 +112,9 @@ export function analyzeCoaching(
     // No history for this split — fall back to cross-program weight override
     if (exerciseSessions.length === 0) {
       const overrideWeight = weightOverrides[exerciseName] ?? null
-      flags.push({ exercise: exerciseName, type: 'no-history', message: overrideWeight !== null ? 'Weight carried from history' : 'No weight logged — set your working weight today' })
+      if (overrideWeight === null) {
+        flags.push({ exercise: exerciseName, type: 'no-history', message: 'No weight logged — set your working weight today' })
+      }
       return {
         exercise: { ...exercise, name: exerciseName },
         targetWeight: overrideWeight,
