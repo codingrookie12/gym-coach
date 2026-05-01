@@ -142,26 +142,26 @@ export default function App() {
       // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
       const { data: { user } } = await supabase.auth.getUser()
 
-      // Resolve program ID from localStorage (instant) then DB (authoritative)
+      // Resolve program ID: localStorage (instant) → server API (authoritative, guaranteed auth)
       let resolvedProgramId: string | null = localStorage.getItem('active_program_id')
+      if (resolvedProgramId) {
+        setAppState(prev => ({ ...prev, programId: resolvedProgramId! }))
+      }
+
+      try {
+        const res = await fetch('/api/user/program')
+        const data = await res.json()
+        if (data.programId) {
+          resolvedProgramId = data.programId
+          localStorage.setItem('active_program_id', data.programId)
+          setAppState(prev => ({ ...prev, programId: data.programId }))
+        }
+      } catch {
+        // Network error — localStorage cache is the fallback
+      }
 
       if (user) {
         setAppState(prev => ({ ...prev, user }))
-
-        if (resolvedProgramId) {
-          setAppState(prev => ({ ...prev, programId: resolvedProgramId! }))
-        }
-
-        // Verify from DB (authoritative source)
-        const { data: profile, error: profileError } = await supabase
-          .from('users').select('active_program_id').eq('id', user.id).maybeSingle()
-        if (profileError) {
-          console.error('Failed to read active_program_id:', profileError.message)
-        } else if (profile?.active_program_id) {
-          resolvedProgramId = profile.active_program_id
-          localStorage.setItem('active_program_id', profile.active_program_id)
-          setAppState(prev => ({ ...prev, programId: profile.active_program_id }))
-        }
 
         // Silently retry any partial syncs from previous sessions
         const { data: pending } = await supabase
@@ -480,15 +480,12 @@ export default function App() {
                 updateState({ programId: id, coachingContext: null, plan: null, lastSplit: null })
                 localStorage.setItem('active_program_id', id)
                 clearSessionFromStorage()
-                if (appState.user) {
-                  const supabase = createSupabaseBrowserClient()
-                  const { error } = await supabase
-                    .from('users')
-                    .update({ active_program_id: id })
-                    .eq('id', appState.user.id)
-                  if (error) console.error('Failed to persist program:', error.message)
-                }
                 setShowProgramLibrary(false)
+                fetch('/api/user/program', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ programId: id }),
+                }).catch(() => {})
               }}
             />
           ) : (
