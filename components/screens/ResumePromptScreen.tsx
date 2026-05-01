@@ -115,7 +115,7 @@ export default function ResumePromptScreen({
             width: '100%', maxWidth: '280px',
           }}>
             <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', margin: 0, lineHeight: 1.6 }}>
-              Entries found in Notion for today. Start fresh or continue from where you think you left off.
+              Entries found for today. Start fresh or continue from where you think you left off.
             </p>
           </div>
         )}
