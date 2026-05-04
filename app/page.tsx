@@ -10,6 +10,7 @@ import ActiveSessionScreen from '@/components/screens/ActiveSessionScreen'
 import PreSaveSummaryScreen from '@/components/screens/PreSaveSummaryScreen'
 import SessionSummaryScreen from '@/components/screens/SessionSummaryScreen'
 import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
+import RoutineEditorScreen from '@/components/screens/RoutineEditorScreen'
 import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -47,6 +48,7 @@ export type Screen =
   | 'pre-save'
   | 'session-summary'
   | 'manage-weights'
+  | 'routine-editor'
 
 export interface SessionSwap { oldName: string; newName: string }
 
@@ -63,6 +65,7 @@ export interface AppState {
   savedSnapshot: SavedSnapshot
   sessionSwaps: SessionSwap[]
   sessionSyncStatus: 'confirmed' | 'partial' | null
+  workoutStartedAt: string | null
   // From resume detection
   detectedSession: PersistedSession | null
   detectedSplit: Split | null  // from Notion fallback (no full log data)
@@ -90,6 +93,7 @@ export default function App() {
     savedSnapshot: {},
     sessionSwaps: [],
     sessionSyncStatus: null,
+    workoutStartedAt: null,
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
@@ -300,7 +304,7 @@ export default function App() {
         ? fetch('/api/session/write', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entries: newEntries }),
+            body: JSON.stringify({ entries: newEntries, ...(appState.workoutStartedAt ? { startedAt: appState.workoutStartedAt } : {}) }),
           })
         : Promise.resolve(null),
     ])
@@ -314,9 +318,15 @@ export default function App() {
 
     if (syncStatus === 'confirmed') clearSessionFromStorage()
 
+    fetch('/api/session/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: today, split: appState.split }),
+    }).catch(() => {})
+
     updateState({
       exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
-      lastSplit: appState.split, sessionSyncStatus: syncStatus,
+      lastSplit: appState.split, sessionSyncStatus: syncStatus, workoutStartedAt: null,
     })
     navigate('session-summary')
   }
@@ -330,6 +340,7 @@ export default function App() {
       savedLogs: s.logs,
       savedExIdx: s.exIdx,
       savedSnapshot: s.snapshot,
+      workoutStartedAt: s.startedAt ?? null,
     })
     // Need coaching context + plan — go through coaching screen first
     navigate('coaching-context')
@@ -427,7 +438,7 @@ export default function App() {
               split={appState.split}
               plan={appState.plan}
               hasResumable={!!appState.savedLogs}
-              onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {} }); navigate('active-session') }}
+              onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {}, workoutStartedAt: new Date().toISOString() }); navigate('active-session') }}
               onResume={() => navigate('active-session')}
               onBack={() => navigate('coaching-context')}
               onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
@@ -461,6 +472,7 @@ export default function App() {
               initialLogs={appState.savedLogs ?? undefined}
               initialExIdx={appState.savedExIdx}
               initialSnapshot={appState.savedSnapshot}
+              startedAt={appState.workoutStartedAt ?? undefined}
               onFinish={handleSessionFinish}
               onBack={handleSessionBack}
               onSessionSwap={handleSessionSwap}
@@ -497,6 +509,14 @@ export default function App() {
             <ManageWeightsScreen onBack={goHome} />
           )}
 
+          {screen === 'routine-editor' && appState.user && (
+            <RoutineEditorScreen
+              programId={appState.programId}
+              userId={appState.user.id}
+              onBack={goHome}
+            />
+          )}
+
         </div>
 
         {/* Library tab */}
@@ -522,6 +542,7 @@ export default function App() {
               lastSplit={appState.lastSplit}
               activeProgramId={appState.programId}
               onOpenProgramLibrary={() => setShowProgramLibrary(true)}
+              onEditRoutine={() => setScreen('routine-editor')}
             />
           )}
         </div>
