@@ -509,13 +509,6 @@ export default function App() {
             <ManageWeightsScreen onBack={goHome} />
           )}
 
-          {screen === 'routine-editor' && appState.user && (
-            <RoutineEditorScreen
-              programId={appState.programId}
-              userId={appState.user.id}
-              onBack={goHome}
-            />
-          )}
 
         </div>
 
@@ -556,6 +549,16 @@ export default function App() {
 
       {showTabBar && (
         <BottomTabBar activeTab={activeTab} onTabChange={setActiveTab} libraryBadge={pendingCustomCount} />
+      )}
+
+      {screen === 'routine-editor' && appState.user && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'var(--bg)' }}>
+          <RoutineEditorScreen
+            programId={appState.programId}
+            userId={appState.user.id}
+            onBack={goHome}
+          />
+        </div>
       )}
 
       {showEquipmentPanel && (
