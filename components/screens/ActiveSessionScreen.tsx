@@ -17,6 +17,7 @@ interface ActiveSessionScreenProps {
   initialLogs?: ExerciseLog[]
   initialExIdx?: number
   initialSnapshot?: SavedSnapshot
+  startedAt?: string
   onFinish: (logs: ExerciseLog[], snapshot: SavedSnapshot) => void
   onBack: (logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot) => void
   onSessionSwap?: (oldName: string, newName: string) => void
@@ -452,7 +453,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, onFinish, onBack, onSessionSwap,
+  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, onFinish, onBack, onSessionSwap,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
@@ -523,8 +524,9 @@ export default function ActiveSessionScreen({
       exIdx: currentExIdx,
       logs,
       snapshot: snapshot.current,
+      ...(startedAt ? { startedAt } : {}),
     })
-  }, [logs, currentExIdx, split])
+  }, [logs, currentExIdx, split, startedAt])
 
   const [showSaved, setShowSaved] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -569,7 +571,7 @@ export default function ActiveSessionScreen({
     fetch('/api/session/write', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries }),
+      body: JSON.stringify({ entries, ...(startedAt ? { startedAt } : {}) }),
     })
       .then(r => r.json())
       .then(data => {

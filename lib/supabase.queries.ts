@@ -28,7 +28,8 @@ export async function getOrCreateWorkout(
   supabase: Supabase,
   userId: string,
   date: string,
-  trainingModeId: string
+  trainingModeId: string,
+  startedAt?: string
 ): Promise<string> {
   const { data: existing } = await supabase
     .from('workouts')
@@ -41,7 +42,7 @@ export async function getOrCreateWorkout(
 
   const { data: inserted, error } = await supabase
     .from('workouts')
-    .insert({ user_id: userId, date, training_mode_id: trainingModeId })
+    .insert({ user_id: userId, date, training_mode_id: trainingModeId, started_at: startedAt ?? new Date().toISOString() })
     .select('id')
     .single()
 
