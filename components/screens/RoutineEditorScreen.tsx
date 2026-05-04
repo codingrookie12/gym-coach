@@ -10,7 +10,7 @@ import {
   removeExerciseFromRoutine,
   type RoutineExerciseRow,
 } from '@/lib/userRoutine'
-import { type ExerciseDefinition } from '@/lib/exerciseLibrary'
+import { type ExerciseDefinition, findExerciseByName } from '@/lib/exerciseLibrary'
 import ExercisePickerSheet from '@/components/ExercisePickerSheet'
 
 interface RoutineEditorScreenProps {
@@ -35,12 +35,12 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
+  const [swapTarget, setSwapTarget] = useState<RoutineExerciseRow | null>(null)
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const pendingDeleteRef = useRef<PendingDelete | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
 
-  // Keep ref in sync so timeout callbacks see the latest value
   useEffect(() => {
     pendingDeleteRef.current = pendingDelete
   }, [pendingDelete])
@@ -63,7 +63,6 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       }
     }
     load()
-    // Flush any pending delete when unmounting
     return () => {
       const pd = pendingDeleteRef.current
       if (pd) {
@@ -87,20 +86,16 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     const row = rows.find(r => r.exercise_name === exerciseName)
     if (!row) return
 
-    // Flush any in-flight delete first
     flushPendingDelete()
 
-    // Optimistic remove
     setExerciseMap(prev => {
       const next = new Map(prev)
       next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.exercise_name !== exerciseName))
       return next
     })
 
-    // Schedule DB delete after undo window
     const timeoutId = setTimeout(() => {
       removeExerciseFromRoutine(supabase, userId, activeSplit, exerciseName).catch(() => {
-        // Revert on error
         setExerciseMap(prev => {
           const next = new Map(prev)
           const current = prev.get(activeSplit) ?? []
@@ -152,7 +147,6 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       equipment: def.equipment ?? null,
     }
 
-    // Optimistic add
     setExerciseMap(prev => {
       const next = new Map(prev)
       next.set(activeSplit, [...(prev.get(activeSplit) ?? []), tempRow])
@@ -164,11 +158,9 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
         name: def.name,
         equipment: def.equipment ?? undefined,
       })
-      // Refresh to get canonical ID + sort_order
       const refreshed = await getUserRoutineForSplit(supabase, userId, activeSplit)
       setExerciseMap(prev => new Map(prev).set(activeSplit, refreshed))
     } catch {
-      // Revert on error
       setExerciseMap(prev => {
         const next = new Map(prev)
         next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.id !== tempRow.id))
@@ -177,8 +169,60 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     }
   }
 
+  async function handleSwapExercise(target: RoutineExerciseRow, newDef: ExerciseDefinition) {
+    setSwapTarget(null)
+    const rows = exerciseMap.get(activeSplit) ?? []
+    const tempRow: RoutineExerciseRow = {
+      id: `temp-${Date.now()}`,
+      exercise_name: newDef.name,
+      notion_name: newDef.name,
+      sets: target.sets,
+      rep_range_min: target.rep_range_min,
+      rep_range_max: target.rep_range_max,
+      backup_name: null,
+      weight_unit: target.weight_unit,
+      weight_convention: target.weight_convention,
+      sort_order: target.sort_order,
+      equipment: newDef.equipment ?? null,
+    }
+
+    // Optimistic replace — keep same position
+    setExerciseMap(prev => {
+      const next = new Map(prev)
+      next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
+        r.exercise_name === target.exercise_name ? tempRow : r
+      ))
+      return next
+    })
+
+    try {
+      await removeExerciseFromRoutine(supabase, userId, activeSplit, target.exercise_name)
+      await addExerciseToRoutine(supabase, userId, activeSplit, {
+        name: newDef.name,
+        equipment: newDef.equipment ?? undefined,
+      })
+      const refreshed = await getUserRoutineForSplit(supabase, userId, activeSplit)
+      setExerciseMap(prev => new Map(prev).set(activeSplit, refreshed))
+    } catch {
+      // Revert to original row on error
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
+          r.id === tempRow.id ? target : r
+        ))
+        return next
+      })
+    }
+  }
+
   const currentRows = exerciseMap.get(activeSplit) ?? []
-  const excludeNames = currentRows.map(r => r.exercise_name)
+  // In swap mode, exclude all except the target (target itself excluded by getAlternatives)
+  const pickerExcludeNames = swapTarget
+    ? currentRows.filter(r => r.exercise_name !== swapTarget.exercise_name).map(r => r.exercise_name)
+    : currentRows.map(r => r.exercise_name)
+  const swapTargetDef = swapTarget ? findExerciseByName(swapTarget.exercise_name) : undefined
+
+  const pickerOpen = showPicker || swapTarget !== null
 
   if (loading) {
     return (
@@ -271,8 +315,6 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '14px 20px',
                 borderBottom: '1px solid var(--border)',
                 transition: 'opacity 0.15s',
               }}
@@ -280,36 +322,51 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
               {/* Index */}
               <span
                 className="font-mono"
-                style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', flexShrink: 0, width: '20px' }}
+                style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', flexShrink: 0, width: '20px', paddingLeft: '20px' }}
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
 
-              {/* Exercise name */}
-              <span
-                className="font-body"
-                style={{ flex: 1, fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.3 }}
+              {/* Tappable row body — opens swap picker */}
+              <button
+                onClick={() => { flushPendingDelete(); setSwapTarget(row) }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '3px',
+                  padding: '14px 8px 14px 12px',
+                  background: 'none',
+                  border: 'none',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  minWidth: 0,
+                  transition: 'background 0.1s',
+                }}
+                onMouseDown={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.03)')}
+                onMouseUp={e => (e.currentTarget.style.background = 'none')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                onTouchStart={e => (e.currentTarget.style.background = 'rgba(212,241,58,0.03)')}
+                onTouchEnd={e => (e.currentTarget.style.background = 'none')}
               >
-                {row.exercise_name}
-              </span>
-
-              {/* Sets × reps */}
-              <span
-                className="font-mono"
-                style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', flexShrink: 0 }}
-              >
-                {row.sets}×{row.rep_range_min}–{row.rep_range_max}
-              </span>
+                <span className="font-body" style={{ fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.3 }}>
+                  {row.exercise_name}
+                </span>
+                <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
+                  {row.sets}×{row.rep_range_min}–{row.rep_range_max} · tap to swap
+                </span>
+              </button>
 
               {/* Remove */}
               <button
-                onClick={() => handleRemove(row.exercise_name)}
+                onClick={e => { e.stopPropagation(); handleRemove(row.exercise_name) }}
                 style={{
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
-                  padding: '4px',
+                  padding: '14px 20px 14px 8px',
                   display: 'flex',
                   alignItems: 'center',
                   lineHeight: 1,
@@ -409,12 +466,17 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
         </div>
       )}
 
-      {showPicker && (
+      {pickerOpen && (
         <ExercisePickerSheet
           split={activeSplit}
-          excludeNames={excludeNames}
-          onSelect={handleAddExercise}
-          onClose={() => setShowPicker(false)}
+          splitMuscles={program?.splitMuscles[activeSplit] ?? []}
+          excludeNames={pickerExcludeNames}
+          swapTarget={swapTargetDef}
+          onSelect={swapTarget
+            ? (def) => handleSwapExercise(swapTarget, def)
+            : handleAddExercise
+          }
+          onClose={() => { setShowPicker(false); setSwapTarget(null) }}
         />
       )}
     </div>

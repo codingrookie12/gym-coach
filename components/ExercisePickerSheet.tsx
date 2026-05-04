@@ -1,12 +1,14 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { ExerciseDefinition, filterExercises } from '@/lib/exerciseLibrary'
-import type { Split } from '@/lib/routines'
+import { ExerciseDefinition, filterExercises, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ExercisePickerSheetProps {
   split: string
+  splitMuscles?: string[]
   excludeNames: string[]
+  swapTarget?: ExerciseDefinition
   onSelect: (exercise: ExerciseDefinition) => void
   onClose: () => void
   title?: string
@@ -16,75 +18,125 @@ function PickerRow({
   exercise,
   excluded,
   onSelect,
+  onInfo,
 }: {
   exercise: ExerciseDefinition
   excluded: boolean
   onSelect: () => void
+  onInfo: () => void
 }) {
   return (
-    <button
-      onClick={excluded ? undefined : onSelect}
-      disabled={excluded}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '13px 20px',
-        background: 'none',
-        border: 'none',
-        borderBottom: '1px solid var(--border)',
-        width: '100%',
-        textAlign: 'left',
-        cursor: excluded ? 'default' : 'pointer',
-        opacity: excluded ? 0.4 : 1,
-        transition: 'background 0.1s',
-      }}
-      onMouseDown={e => { if (!excluded) e.currentTarget.style.background = 'rgba(212,241,58,0.04)' }}
-      onMouseUp={e => { e.currentTarget.style.background = 'none' }}
-      onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
-      onTouchStart={e => { if (!excluded) e.currentTarget.style.background = 'rgba(212,241,58,0.04)' }}
-      onTouchEnd={e => { e.currentTarget.style.background = 'none' }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="font-body" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.3, marginBottom: '3px' }}>
-          {exercise.name}
+    <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+      {/* Main tappable area */}
+      <button
+        onClick={excluded ? undefined : onSelect}
+        disabled={excluded}
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '13px 0 13px 20px',
+          background: 'none',
+          border: 'none',
+          textAlign: 'left',
+          cursor: excluded ? 'default' : 'pointer',
+          opacity: excluded ? 0.4 : 1,
+          minWidth: 0,
+          transition: 'background 0.1s',
+        }}
+        onMouseDown={e => { if (!excluded) e.currentTarget.style.background = 'rgba(212,241,58,0.04)' }}
+        onMouseUp={e => { e.currentTarget.style.background = 'none' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+        onTouchStart={e => { if (!excluded) e.currentTarget.style.background = 'rgba(212,241,58,0.04)' }}
+        onTouchEnd={e => { e.currentTarget.style.background = 'none' }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="font-body" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.3, marginBottom: '3px' }}>
+            {exercise.name}
+          </div>
+          <div style={{ display: 'flex', gap: '5px' }}>
+            <span className="tag">{exercise.equipment}</span>
+            {exercise.primaryMuscles.slice(0, 1).map(m => (
+              <span key={m} className="tag">{m}</span>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '5px' }}>
-          <span className="tag">{exercise.equipment}</span>
-          {exercise.primaryMuscles.slice(0, 1).map(m => (
-            <span key={m} className="tag">{m}</span>
-          ))}
-        </div>
-      </div>
+      </button>
 
-      {excluded ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5">
-          <polyline points="20 6 9 17 4 12" />
+      {/* Info button */}
+      <button
+        onClick={onInfo}
+        style={{
+          background: 'none', border: 'none',
+          color: 'var(--text-secondary)', cursor: 'pointer',
+          padding: '13px 8px', flexShrink: 0, lineHeight: 1,
+          display: 'flex', alignItems: 'center',
+          transition: 'color 0.1s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-mid)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" strokeLinecap="round" />
         </svg>
-      ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      )}
-    </button>
+      </button>
+
+      {/* Add / already-in-routine indicator */}
+      <div
+        style={{
+          padding: '13px 16px 13px 4px', flexShrink: 0,
+          opacity: excluded ? 0.4 : 1,
+          display: 'flex', alignItems: 'center',
+        }}
+      >
+        {excluded ? (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        )}
+      </div>
+    </div>
   )
 }
 
 export default function ExercisePickerSheet({
   split,
+  splitMuscles = [],
   excludeNames,
+  swapTarget,
   onSelect,
   onClose,
-  title = 'ADD EXERCISE',
+  title,
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('')
+  const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const suggested = useMemo(
-    () => filterExercises({ split: split as Split }).slice(0, 8),
-    [split]
-  )
+  const resolvedTitle = title ?? (swapTarget ? `SWAP ${swapTarget.name.toUpperCase()}` : 'ADD EXERCISE')
+
+  const suggested = useMemo(() => {
+    if (swapTarget) {
+      return getAlternatives(swapTarget, {
+        availableEquipment: getUniqueEquipment(),
+        excludeNames,
+        limit: 8,
+      })
+    }
+    if (splitMuscles.length > 0) {
+      return filterExercises({ excludeNames })
+        .filter(ex => splitMuscles.some(m => ex.primaryMuscles.some(pm => pm.toLowerCase() === m.toLowerCase())))
+        .slice(0, 8)
+    }
+    return filterExercises({ excludeNames }).slice(0, 8)
+  }, [swapTarget, splitMuscles, excludeNames])
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return []
@@ -92,6 +144,10 @@ export default function ExercisePickerSheet({
   }, [query])
 
   const isSearching = query.trim().length > 0
+
+  const suggestedLabel = swapTarget
+    ? `ALTERNATIVES — ${swapTarget.primaryMuscles[0]?.toUpperCase() ?? split.toUpperCase()}`
+    : `SUGGESTED — ${split.toUpperCase()}`
 
   return (
     <>
@@ -131,7 +187,7 @@ export default function ExercisePickerSheet({
           }}
         >
           <span className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-primary)', letterSpacing: '0.06em' }}>
-            {title}
+            {resolvedTitle}
           </span>
           <button
             onClick={onClose}
@@ -199,15 +255,15 @@ export default function ExercisePickerSheet({
                     exercise={ex}
                     excluded={excludeNames.includes(ex.name)}
                     onSelect={() => onSelect(ex)}
+                    onInfo={() => setDetailExercise(ex)}
                   />
                 ))
               )}
             </>
           ) : (
             <>
-              {/* Suggested section */}
               <div style={{ padding: '8px 20px 4px' }}>
-                <span className="section-label">SUGGESTED — {split.toUpperCase()}</span>
+                <span className="section-label">{suggestedLabel}</span>
               </div>
               {suggested.length === 0 ? (
                 <div style={{ padding: '16px 20px' }}>
@@ -222,6 +278,7 @@ export default function ExercisePickerSheet({
                     exercise={ex}
                     excluded={excludeNames.includes(ex.name)}
                     onSelect={() => onSelect(ex)}
+                    onInfo={() => setDetailExercise(ex)}
                   />
                 ))
               )}
@@ -234,6 +291,14 @@ export default function ExercisePickerSheet({
           )}
         </div>
       </div>
+
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise}
+          inProgram={excludeNames.includes(detailExercise.name)}
+          onClose={() => setDetailExercise(null)}
+        />
+      )}
     </>
   )
 }
