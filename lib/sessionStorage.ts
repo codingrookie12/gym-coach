@@ -12,6 +12,7 @@ export interface PersistedSession {
   exIdx: number
   logs: ExerciseLog[]
   snapshot: SavedSnapshot
+  startedAt?: string    // ISO timestamp captured when BEGIN WORKOUT was clicked
 }
 
 export function saveSessionToStorage(session: PersistedSession): void {
