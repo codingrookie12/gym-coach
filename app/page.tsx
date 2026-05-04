@@ -38,6 +38,7 @@ import type { User } from '@supabase/supabase-js'
 
 export type Screen =
   | 'detecting'          // checking localStorage + Notion on first load
+  | 'onboarding'         // new user: pick a program before first session
   | 'resume-prompt'      // found unfinished session → ask resume or fresh
   | 'home'
   | 'coaching-context'
@@ -162,6 +163,18 @@ export default function App() {
 
       if (user) {
         setAppState(prev => ({ ...prev, user }))
+
+        // Check onboarding status — new users pick a program before first session
+        try {
+          const obRes = await fetch('/api/user/onboarding')
+          const obData = await obRes.json()
+          if (!obData.onboardingCompleted) {
+            setScreen('onboarding')
+            return
+          }
+        } catch {
+          // Network error — proceed normally (user can switch program via Library tab)
+        }
 
         // Silently retry any partial syncs from previous sessions
         const { data: pending } = await supabase
@@ -335,8 +348,8 @@ export default function App() {
     router.replace('/login')
   }
 
-  // Tab bar is visible on primary screens; hidden during workout flow
-  const showTabBar = activeTab !== 'train' || screen === 'home'
+  // Tab bar is visible on primary screens; hidden during workout flow and onboarding
+  const showTabBar = screen !== 'onboarding' && (activeTab !== 'train' || screen === 'home')
 
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden', position: 'relative' }}>
@@ -349,6 +362,22 @@ export default function App() {
 
           {screen === 'detecting' && (
             <LoadingScreen message="Checking today's session..." />
+          )}
+
+          {screen === 'onboarding' && (
+            <ProgramLibraryScreen
+              onSelect={async (id) => {
+                updateState({ programId: id })
+                localStorage.setItem('active_program_id', id)
+                await fetch('/api/user/program', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ programId: id }),
+                })
+                await fetch('/api/user/onboarding', { method: 'POST' })
+                goHome()
+              }}
+            />
           )}
 
           {screen === 'resume-prompt' && (
