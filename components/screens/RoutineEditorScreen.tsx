@@ -166,7 +166,8 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
         next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
         return next
       })
-    } catch {
+    } catch (err) {
+      console.error('handleAddExercise failed:', err)
       setExerciseMap(prev => {
         const next = new Map(prev)
         next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.id !== tempId))
@@ -213,7 +214,8 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
         next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
         return next
       })
-    } catch {
+    } catch (err) {
+      console.error('handleSwapExercise failed:', err)
       setExerciseMap(prev => {
         const next = new Map(prev)
         next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
