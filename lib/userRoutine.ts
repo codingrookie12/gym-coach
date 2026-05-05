@@ -65,7 +65,7 @@ export async function addExerciseToRoutine(
 
   const { error } = await supabase
     .from('user_routine_exercises')
-    .insert({
+    .upsert({
       user_id: userId,
       training_mode_id: modeId,
       exercise_name: exercise.name,
@@ -76,7 +76,7 @@ export async function addExerciseToRoutine(
       equipment: exercise.equipment ?? null,
       weight_unit: exercise.weightUnit ?? 'lbs',
       sort_order: sortOrder,
-    })
+    }, { onConflict: 'user_id,training_mode_id,exercise_name', ignoreDuplicates: true })
   if (error) throw error
 }
 
