@@ -131,10 +131,13 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
   }
 
   async function handleAddExercise(def: ExerciseDefinition) {
+    flushPendingDelete()
     setShowPicker(false)
     const rows = exerciseMap.get(activeSplit) ?? []
+    const sortOrder = rows.length ? Math.max(...rows.map(r => r.sort_order)) + 1 : 0
+    const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       exercise_name: def.name,
       notion_name: def.name,
       sets: 3,
@@ -143,7 +146,7 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       backup_name: null,
       weight_unit: 'lbs',
       weight_convention: null,
-      sort_order: rows.length,
+      sort_order: sortOrder,
       equipment: def.equipment ?? null,
     }
 
@@ -154,26 +157,30 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     })
 
     try {
-      await addExerciseToRoutine(supabase, userId, activeSplit, {
+      const realRow = await addExerciseToRoutine(supabase, userId, activeSplit, {
         name: def.name,
         equipment: def.equipment ?? undefined,
+      }, sortOrder)
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
+        return next
       })
-      const refreshed = await getUserRoutineForSplit(supabase, userId, activeSplit)
-      setExerciseMap(prev => new Map(prev).set(activeSplit, refreshed))
     } catch {
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.id !== tempRow.id))
+        next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.id !== tempId))
         return next
       })
     }
   }
 
   async function handleSwapExercise(target: RoutineExerciseRow, newDef: ExerciseDefinition) {
+    flushPendingDelete()
     setSwapTarget(null)
-    const rows = exerciseMap.get(activeSplit) ?? []
+    const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       exercise_name: newDef.name,
       notion_name: newDef.name,
       sets: target.sets,
@@ -190,25 +197,27 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     setExerciseMap(prev => {
       const next = new Map(prev)
       next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
-        r.exercise_name === target.exercise_name ? tempRow : r
+        r.id === target.id ? tempRow : r
       ))
       return next
     })
 
     try {
       await removeExerciseFromRoutine(supabase, userId, activeSplit, target.exercise_name)
-      await addExerciseToRoutine(supabase, userId, activeSplit, {
+      const realRow = await addExerciseToRoutine(supabase, userId, activeSplit, {
         name: newDef.name,
         equipment: newDef.equipment ?? undefined,
+      }, target.sort_order)
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
+        return next
       })
-      const refreshed = await getUserRoutineForSplit(supabase, userId, activeSplit)
-      setExerciseMap(prev => new Map(prev).set(activeSplit, refreshed))
     } catch {
-      // Revert to original row on error
       setExerciseMap(prev => {
         const next = new Map(prev)
         next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
-          r.id === tempRow.id ? target : r
+          r.id === tempId ? target : r
         ))
         return next
       })

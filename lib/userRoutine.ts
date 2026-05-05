@@ -48,22 +48,12 @@ export async function addExerciseToRoutine(
   supabase: Supabase,
   userId: string,
   splitName: string,
-  exercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' }
-): Promise<void> {
+  exercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' },
+  sortOrder: number
+): Promise<RoutineExerciseRow> {
   const modeId = await resolveModeId(supabase, splitName)
 
-  const { data: maxRow } = await supabase
-    .from('user_routine_exercises')
-    .select('sort_order')
-    .eq('user_id', userId)
-    .eq('training_mode_id', modeId)
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const sortOrder = maxRow ? (maxRow.sort_order as number) + 1 : 0
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_routine_exercises')
     .upsert({
       user_id: userId,
@@ -76,8 +66,12 @@ export async function addExerciseToRoutine(
       equipment: exercise.equipment ?? null,
       weight_unit: exercise.weightUnit ?? 'lbs',
       sort_order: sortOrder,
-    }, { onConflict: 'user_id,training_mode_id,exercise_name', ignoreDuplicates: true })
+    }, { onConflict: 'user_id,training_mode_id,exercise_name' })
+    .select('id, exercise_name, notion_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, sort_order, equipment')
+    .single()
   if (error) throw error
+  if (!data) throw new Error('addExerciseToRoutine: upsert returned no row')
+  return data as RoutineExerciseRow
 }
 
 export async function removeExerciseFromRoutine(
@@ -87,13 +81,17 @@ export async function removeExerciseFromRoutine(
   exerciseName: string
 ): Promise<void> {
   const modeId = await resolveModeId(supabase, splitName)
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_routine_exercises')
     .delete()
     .eq('user_id', userId)
     .eq('training_mode_id', modeId)
     .eq('exercise_name', exerciseName)
+    .select('id')
   if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error(`removeExerciseFromRoutine: no row deleted for "${exerciseName}" in ${splitName}`)
+  }
 }
 
 // Maps DB rows to the Exercise interface used by the coaching engine.

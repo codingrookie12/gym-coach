@@ -27,7 +27,27 @@ function PickerRow({
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-      {/* Main tappable area */}
+      {/* Info button — separate from main tappable to avoid nested buttons */}
+      <button
+        onClick={onInfo}
+        style={{
+          background: 'none', border: 'none',
+          color: 'var(--text-secondary)', cursor: 'pointer',
+          padding: '13px 8px 13px 20px', flexShrink: 0, lineHeight: 1,
+          display: 'flex', alignItems: 'center',
+          transition: 'color 0.1s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-mid)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {/* Main tappable area — name, tags, AND +/✓ indicator all inside the button */}
       <button
         onClick={excluded ? undefined : onSelect}
         disabled={excluded}
@@ -36,7 +56,7 @@ function PickerRow({
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '13px 0 13px 20px',
+          padding: '13px 16px 13px 8px',
           background: 'none',
           border: 'none',
           textAlign: 'left',
@@ -62,47 +82,19 @@ function PickerRow({
             ))}
           </div>
         </div>
+        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+          {excluded ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          )}
+        </span>
       </button>
-
-      {/* Info button */}
-      <button
-        onClick={onInfo}
-        style={{
-          background: 'none', border: 'none',
-          color: 'var(--text-secondary)', cursor: 'pointer',
-          padding: '13px 8px', flexShrink: 0, lineHeight: 1,
-          display: 'flex', alignItems: 'center',
-          transition: 'color 0.1s',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-mid)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" strokeLinecap="round" />
-        </svg>
-      </button>
-
-      {/* Add / already-in-routine indicator */}
-      <div
-        style={{
-          padding: '13px 16px 13px 4px', flexShrink: 0,
-          opacity: excluded ? 0.4 : 1,
-          display: 'flex', alignItems: 'center',
-        }}
-      >
-        {excluded ? (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        )}
-      </div>
     </div>
   )
 }
