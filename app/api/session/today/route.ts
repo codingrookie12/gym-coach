@@ -16,6 +16,7 @@ export async function GET() {
       .select('id, training_modes(name)')
       .eq('user_id', user.id)
       .eq('date', today)
+      .is('finished_at', null)
 
     if (!workouts?.length) return NextResponse.json({ found: false })
 
