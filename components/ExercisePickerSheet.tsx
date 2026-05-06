@@ -110,6 +110,7 @@ export default function ExercisePickerSheet({
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('')
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
+  const [pendingSelection, setPendingSelection] = useState<ExerciseDefinition | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const resolvedTitle = title ?? (swapTarget ? `SWAP ${swapTarget.name.toUpperCase()}` : 'ADD EXERCISE')
@@ -246,7 +247,7 @@ export default function ExercisePickerSheet({
                     key={ex.id}
                     exercise={ex}
                     excluded={excludeNames.includes(ex.name)}
-                    onSelect={() => onSelect(ex)}
+                    onSelect={() => setPendingSelection(ex)}
                     onInfo={() => setDetailExercise(ex)}
                   />
                 ))
@@ -269,7 +270,7 @@ export default function ExercisePickerSheet({
                     key={ex.id}
                     exercise={ex}
                     excluded={excludeNames.includes(ex.name)}
-                    onSelect={() => onSelect(ex)}
+                    onSelect={() => setPendingSelection(ex)}
                     onInfo={() => setDetailExercise(ex)}
                   />
                 ))
@@ -282,6 +283,74 @@ export default function ExercisePickerSheet({
             </>
           )}
         </div>
+
+        {/* Confirmation panel — slides up when a row is tapped, before save fires */}
+        {pendingSelection && (
+          <div
+            style={{
+              flexShrink: 0,
+              padding: '16px 20px',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--surface)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              animation: 'slideUp 0.18s ease',
+            }}
+          >
+            <div>
+              <span className="section-label" style={{ color: 'var(--accent)' }}>CONFIRM</span>
+              <div className="font-body" style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 500, marginTop: '6px', lineHeight: 1.3 }}>
+                {pendingSelection.name}
+              </div>
+              <div className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '4px' }}>
+                {swapTarget
+                  ? `REPLACE ${swapTarget.name.toUpperCase()}`
+                  : `ADD TO ${split.toUpperCase()}`}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setPendingSelection(null)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'none',
+                  border: '1px solid var(--border-2)',
+                  borderRadius: '2px',
+                  color: 'var(--text-mid)',
+                  fontFamily: 'Space Mono, monospace',
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.1em',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.1s, color 0.1s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-mid)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--text-mid)' }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => { onSelect(pendingSelection) }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'var(--accent)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: '2px',
+                  color: 'var(--bg)',
+                  fontFamily: 'Space Mono, monospace',
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.1em',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                }}
+              >
+                CONFIRM
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {detailExercise && (
