@@ -1,0 +1,61 @@
+// GYM-79: UI string constants for the program builder, library, and onboarding flows.
+// All user-facing copy lives here (except exercise/split names which are user data).
+// When i18n is introduced, this file becomes the en-US source.
+
+export const t = {
+  // Program Builder
+  builder: {
+    titleCreate: 'Program Builder',
+    titleEdit: 'Edit Program',
+    namePlaceholder: 'e.g. My Custom Split',
+    nameLabel: 'PROGRAM NAME',
+    nameMinLengthError: 'Program name must be at least 3 characters',
+    addSplitButton: '+ ADD SPLIT',
+    maxSplitsWarning: 'Maximum 7 splits reached',
+    splitNamePlaceholder: 'Split name',
+    addExerciseButton: '+ ADD EXERCISE',
+    setsLabel: 'S',
+    repRangeLabel: 'Reps',
+    saveButton: 'CREATE PROGRAM',
+    saveButtonEdit: 'DONE',
+    savingButton: 'SAVING...',
+    cancelButton: 'Cancel',
+    deleteSplitConfirm: 'DELETE',
+    deleteSplitCancel: 'CANCEL',
+    archiveNotice: 'This split has logged workouts and was archived',
+    noExercises: 'No exercises yet',
+    sessionBlockBanner: 'Finish your current workout before editing this program.',
+  },
+
+  // Program Library
+  library: {
+    title: 'PROGRAMS',
+    myProgramsHeader: 'MY PROGRAMS',
+    emptyState: 'No custom programs yet — clone a template below or build your own.',
+    templatesHeader: 'TEMPLATES',
+    buildMyOwnCta: '+ BUILD MY OWN',
+    editButton: 'EDIT',
+    deleteButton: 'DELETE',
+    deleteConfirmButton: 'CONFIRM',
+    deleteCancelButton: 'CANCEL',
+    selectButton: 'SELECT',
+    activeBadge: 'ACTIVE',
+    useTemplateButton: 'USE THIS TEMPLATE',
+    confirmButton: 'CONFIRM',
+    cancelButton: 'CANCEL',
+    loading: 'LOADING...',
+  },
+
+  // Onboarding
+  onboarding: {
+    title: 'Choose Your Program',
+    subtitle: 'Pick a template to get started, or build your own from scratch.',
+    templateSectionHeader: 'TEMPLATES',
+    buildMyOwnCta: '+ BUILD MY OWN',
+  },
+
+  // Session block banner (shown when user tries to edit during active workout)
+  sessionBlock: {
+    banner: 'Finish your current workout before editing this program.',
+  },
+} as const
