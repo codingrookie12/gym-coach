@@ -1,4 +1,4 @@
-import { Split, Exercise, getRoutineForProgram, getAllExercisesForProgram } from './routines'
+import { Exercise } from './routines'
 import { SessionRecord } from './notion'
 import { findExerciseByName, getAlternatives, getUniqueEquipment } from './exerciseLibrary'
 
@@ -9,7 +9,7 @@ function matchesExercise(notionName: string, routineName: string): boolean {
 // Resolves the best substitute for an unavailable exercise.
 // Filters: same primary muscles, not unavailable, not the original.
 // Falls back to null if no substitute found.
-function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], programId: string): Exercise | null {
+function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], routine: Exercise[]): Exercise | null {
   const def = findExerciseByName(exercise.name)
   if (!def) return null
 
@@ -22,7 +22,7 @@ function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], p
   if (alternatives.length === 0) return null
 
   const altName = alternatives[0].name
-  const altInRoutine = getAllExercisesForProgram(programId).find(e => e.name === altName)
+  const altInRoutine = routine.find(e => e.name === altName)
   if (altInRoutine) return altInRoutine
 
   return {
@@ -64,14 +64,13 @@ function daysBetween(dateA: string, dateB: string): number {
 
 export function analyzeCoaching(
   programId: string,
-  split: Split,
+  split: string,
   sessions: SessionRecord[],
   today: string,
   unavailableExercises: string[] = [],
   weightOverrides: Record<string, number> = {},
-  routineOverride?: Exercise[]
+  routine: Exercise[] = []
 ): { context: CoachingContext; plan: ExercisePlan[] } {
-  const routine = routineOverride?.length ? routineOverride : getRoutineForProgram(programId, split)
   const flags: CoachingFlag[] = []
   const trending: string[] = []
   let deloadRecommended = false
@@ -88,7 +87,7 @@ export function analyzeCoaching(
     let substitutionNote: string | null = null
 
     if (unavailableExercises.includes(exercise.name)) {
-      const substitute = resolveSubstitute(exercise, unavailableExercises, programId)
+      const substitute = resolveSubstitute(exercise, unavailableExercises, routine)
       if (substitute) {
         substitutionNote = `${exercise.name} unavailable — substituting ${substitute.name}`
         exercise = substitute

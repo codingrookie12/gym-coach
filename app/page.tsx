@@ -19,7 +19,7 @@ import { Split, getNextSplitForProgram } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
 import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
-import { getOrSeedRoutine, permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
+import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
@@ -55,6 +55,7 @@ export interface SessionSwap { oldName: string; newName: string }
 export interface AppState {
   user: User | null
   programId: string
+  userProgramSplitId: string | null
   split: Split | null
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
@@ -83,6 +84,7 @@ export default function App() {
   const [appState, setAppState] = useState<AppState>({
     user: null,
     programId: 'ppl-default',
+    userProgramSplitId: null,
     split: null,
     coachingContext: null,
     plan: null,
@@ -213,7 +215,7 @@ export default function App() {
         const res = await fetch('/api/session/today')
         const data = await res.json()
         if (data.found && activeSplits.includes(data.split)) {
-          setAppState(prev => ({ ...prev, detectedSplit: data.split }))
+          setAppState(prev => ({ ...prev, detectedSplit: data.split, userProgramSplitId: data.userProgramSplitId ?? null }))
           setScreen('resume-prompt')
           return
         }
@@ -225,7 +227,7 @@ export default function App() {
       try {
         const res = await fetch('/api/session/last-split')
         const data = await res.json()
-        if (data.split) setAppState(prev => ({ ...prev, lastSplit: data.split }))
+        if (data.split) setAppState(prev => ({ ...prev, lastSplit: data.split, userProgramSplitId: data.userProgramSplitId ?? prev.userProgramSplitId }))
       } catch {
         // Non-blocking — defaults to Push
       }
@@ -293,6 +295,7 @@ export default function App() {
             entry: `${exLog.exerciseName} — Set ${si + 1}`,
             notes: exLog.notes || undefined,
             unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
+            userProgramSplitId: appState.userProgramSplitId ?? undefined,
           })
         }
       }
@@ -321,7 +324,7 @@ export default function App() {
     fetch('/api/session/finish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: today, split: appState.split }),
+      body: JSON.stringify({ date: today, userProgramSplitId: appState.userProgramSplitId }),
     }).catch(() => {})
 
     updateState({
@@ -407,10 +410,6 @@ export default function App() {
               activeProgram={getProgramById(appState.programId) ?? ACTIVE_PROGRAM}
               onSelectSplit={async (split) => {
                 updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
-                if (appState.user) {
-                  const supabase = createSupabaseBrowserClient()
-                  await getOrSeedRoutine(supabase, appState.user.id, appState.programId).catch(() => {})
-                }
                 navigate('coaching-context')
               }}
               onSettings={() => navigate('manage-weights')}
@@ -424,6 +423,7 @@ export default function App() {
             <CoachingContextScreen
               split={appState.split}
               programId={appState.programId}
+              userProgramSplitId={appState.userProgramSplitId ?? undefined}
               unavailableExercises={getUnavailableExercises(exerciseAvailability)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
@@ -487,9 +487,9 @@ export default function App() {
               sessionSwaps={appState.sessionSwaps}
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
-              onSetDefault={appState.user ? async (oldName, newName) => {
+              onSetDefault={appState.user && appState.userProgramSplitId ? async (oldName, newName) => {
                 const supabase = createSupabaseBrowserClient()
-                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.userProgramSplitId!, oldName, newName).catch(() => {})
               } : undefined}
             />
           )}
@@ -554,7 +554,7 @@ export default function App() {
       {screen === 'routine-editor' && appState.user && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'var(--bg)' }}>
           <RoutineEditorScreen
-            programId={appState.programId}
+            splits={(getProgramById(appState.programId)?.splits ?? []).map(s => ({ id: s, name: s }))}
             userId={appState.user.id}
             onBack={goHome}
           />

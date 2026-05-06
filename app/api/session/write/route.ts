@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase.server'
 import {
-  getTrainingModeId,
   getExerciseId,
   getOrCreateWorkout,
   upsertWeightOverride,
+  resolveLegacyTrainingModeId,
 } from '@/lib/supabase.queries'
 import type { NotionEntry } from '@/lib/notion'
-import type { Split } from '@/lib/routines'
 
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient()
@@ -23,25 +22,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid entries' }, { status: 400 })
     }
 
-    // Group by (date, split) to minimise workout lookups
-    const groups = new Map<string, { date: string; split: Split; entries: NotionEntry[] }>()
+    const groups = new Map<string, { date: string; userProgramSplitId: string; splitName: string; entries: NotionEntry[] }>()
     for (const entry of entries) {
-      const key = `${entry.date}::${entry.split}`
-      if (!groups.has(key)) groups.set(key, { date: entry.date, split: entry.split, entries: [] })
+      const key = `${entry.date}::${entry.userProgramSplitId ?? entry.split}`
+      if (!groups.has(key)) {
+        groups.set(key, {
+          date: entry.date,
+          userProgramSplitId: entry.userProgramSplitId ?? '',
+          splitName: entry.split,
+          entries: [],
+        })
+      }
       groups.get(key)!.entries.push(entry)
     }
 
-    // Track inserted IDs in original entry order
     const pageIds: string[] = new Array(entries.length).fill('')
     const entryIndexMap = new Map<NotionEntry, number>()
     entries.forEach((e, i) => entryIndexMap.set(e, i))
 
     const skipped: string[] = []
 
-    for (const { date, split, entries: groupEntries } of Array.from(groups.values())) {
-      const trainingModeId = await getTrainingModeId(supabase, split)
-      if (!trainingModeId) continue
-      const workoutId = await getOrCreateWorkout(supabase, user.id, date, trainingModeId, startedAt)
+    for (const { date, userProgramSplitId, splitName, entries: groupEntries } of Array.from(groups.values())) {
+      if (!userProgramSplitId) continue
+      const legacyModeId = await resolveLegacyTrainingModeId(supabase, splitName)
+      const workoutId = await getOrCreateWorkout(supabase, user.id, date, userProgramSplitId, legacyModeId, startedAt)
 
       type InsertRow = {
         workout_id: string
@@ -87,7 +91,6 @@ export async function POST(request: NextRequest) {
         if (pos !== undefined) pageIds[pos] = row.id
       })
 
-      // Update override table with max weight per exercise from this session
       const maxWeights = new Map<string, { weight: number; unit: string }>()
       for (const ins of inserts) {
         const existing = maxWeights.get(ins.exercise_id)

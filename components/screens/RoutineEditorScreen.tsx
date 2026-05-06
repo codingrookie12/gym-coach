@@ -1,9 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getProgramById } from '@/lib/programs'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
-import { getOrSeedRoutine } from '@/lib/supabase.queries'
 import {
   getUserRoutineForSplit,
   addExerciseToRoutine,
@@ -13,24 +11,27 @@ import {
 import { type ExerciseDefinition, findExerciseByName } from '@/lib/exerciseLibrary'
 import ExercisePickerSheet from '@/components/ExercisePickerSheet'
 
+interface SplitInfo {
+  id: string
+  name: string
+}
+
 interface RoutineEditorScreenProps {
-  programId: string
+  splits: SplitInfo[]
   userId: string
+  splitMuscles?: Record<string, string[]>
   onBack: () => void
 }
 
 interface PendingDelete {
   exerciseName: string
-  split: string
+  splitId: string
   row: RoutineExerciseRow
   timeoutId: ReturnType<typeof setTimeout>
 }
 
-export default function RoutineEditorScreen({ programId, userId, onBack }: RoutineEditorScreenProps) {
-  const program = getProgramById(programId)
-  const splits = program?.splits ?? ['Push', 'Pull', 'Legs']
-
-  const [activeSplit, setActiveSplit] = useState(splits[0])
+export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBack }: RoutineEditorScreenProps) {
+  const [activeSplitId, setActiveSplitId] = useState(splits[0]?.id ?? '')
   const [exerciseMap, setExerciseMap] = useState<Map<string, RoutineExerciseRow[]>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +41,7 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
   const pendingDeleteRef = useRef<PendingDelete | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
+  const activeSplit = splits.find(s => s.id === activeSplitId)
 
   useEffect(() => {
     pendingDeleteRef.current = pendingDelete
@@ -48,11 +50,10 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
   useEffect(() => {
     async function load() {
       try {
-        await getOrSeedRoutine(supabase as any, userId, programId)
         const entries = await Promise.all(
           splits.map(async split => {
-            const rows = await getUserRoutineForSplit(supabase, userId, split)
-            return [split, rows] as [string, RoutineExerciseRow[]]
+            const rows = await getUserRoutineForSplit(supabase, split.id)
+            return [split.id, rows] as [string, RoutineExerciseRow[]]
           })
         )
         setExerciseMap(new Map(entries))
@@ -67,7 +68,7 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       const pd = pendingDeleteRef.current
       if (pd) {
         clearTimeout(pd.timeoutId)
-        removeExerciseFromRoutine(supabase, userId, pd.split, pd.exerciseName).catch(() => {})
+        removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName).catch(() => {})
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,12 +78,12 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     const pd = pendingDeleteRef.current
     if (!pd) return
     clearTimeout(pd.timeoutId)
-    removeExerciseFromRoutine(supabase, userId, pd.split, pd.exerciseName).catch(() => {})
+    removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName).catch(() => {})
     setPendingDelete(null)
   }, [supabase, userId])
 
   function handleRemove(exerciseName: string) {
-    const rows = exerciseMap.get(activeSplit) ?? []
+    const rows = exerciseMap.get(activeSplitId) ?? []
     const row = rows.find(r => r.exercise_name === exerciseName)
     if (!row) return
 
@@ -90,23 +91,23 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
 
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.exercise_name !== exerciseName))
+      next.set(activeSplitId, (prev.get(activeSplitId) ?? []).filter(r => r.exercise_name !== exerciseName))
       return next
     })
 
     const timeoutId = setTimeout(() => {
-      removeExerciseFromRoutine(supabase, userId, activeSplit, exerciseName).catch(() => {
+      removeExerciseFromRoutine(supabase, userId, activeSplitId, exerciseName).catch(() => {
         setExerciseMap(prev => {
           const next = new Map(prev)
-          const current = prev.get(activeSplit) ?? []
-          next.set(activeSplit, [...current, row].sort((a, b) => a.sort_order - b.sort_order))
+          const current = prev.get(activeSplitId) ?? []
+          next.set(activeSplitId, [...current, row].sort((a, b) => a.sort_order - b.sort_order))
           return next
         })
       })
       setPendingDelete(null)
     }, 3000)
 
-    const pd: PendingDelete = { exerciseName, split: activeSplit, row, timeoutId }
+    const pd: PendingDelete = { exerciseName, splitId: activeSplitId, row, timeoutId }
     setPendingDelete(pd)
     pendingDeleteRef.current = pd
   }
@@ -117,23 +118,23 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     clearTimeout(pd.timeoutId)
     setExerciseMap(prev => {
       const next = new Map(prev)
-      const current = prev.get(pd.split) ?? []
-      next.set(pd.split, [...current, pd.row].sort((a, b) => a.sort_order - b.sort_order))
+      const current = prev.get(pd.splitId) ?? []
+      next.set(pd.splitId, [...current, pd.row].sort((a, b) => a.sort_order - b.sort_order))
       return next
     })
     setPendingDelete(null)
     pendingDeleteRef.current = null
   }
 
-  function handleSwitchSplit(split: string) {
+  function handleSwitchSplit(splitId: string) {
     flushPendingDelete()
-    setActiveSplit(split)
+    setActiveSplitId(splitId)
   }
 
   async function handleAddExercise(def: ExerciseDefinition) {
     flushPendingDelete()
     setShowPicker(false)
-    const rows = exerciseMap.get(activeSplit) ?? []
+    const rows = exerciseMap.get(activeSplitId) ?? []
     const sortOrder = rows.length ? Math.max(...rows.map(r => r.sort_order)) + 1 : 0
     const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
@@ -152,25 +153,25 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
 
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplit, [...(prev.get(activeSplit) ?? []), tempRow])
+      next.set(activeSplitId, [...(prev.get(activeSplitId) ?? []), tempRow])
       return next
     })
 
     try {
-      const realRow = await addExerciseToRoutine(supabase, userId, activeSplit, {
+      const realRow = await addExerciseToRoutine(supabase, userId, activeSplitId, {
         name: def.name,
         equipment: def.equipment ?? undefined,
       }, sortOrder)
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
+        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r => r.id === tempId ? realRow : r))
         return next
       })
     } catch (err) {
       console.error('handleAddExercise failed:', err)
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplit, (prev.get(activeSplit) ?? []).filter(r => r.id !== tempId))
+        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).filter(r => r.id !== tempId))
         return next
       })
     }
@@ -194,31 +195,30 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       equipment: newDef.equipment ?? null,
     }
 
-    // Optimistic replace — keep same position
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
+      next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r =>
         r.id === target.id ? tempRow : r
       ))
       return next
     })
 
     try {
-      await removeExerciseFromRoutine(supabase, userId, activeSplit, target.exercise_name)
-      const realRow = await addExerciseToRoutine(supabase, userId, activeSplit, {
+      await removeExerciseFromRoutine(supabase, userId, activeSplitId, target.exercise_name)
+      const realRow = await addExerciseToRoutine(supabase, userId, activeSplitId, {
         name: newDef.name,
         equipment: newDef.equipment ?? undefined,
       }, target.sort_order)
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r => r.id === tempId ? realRow : r))
+        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r => r.id === tempId ? realRow : r))
         return next
       })
     } catch (err) {
       console.error('handleSwapExercise failed:', err)
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplit, (prev.get(activeSplit) ?? []).map(r =>
+        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r =>
           r.id === tempId ? target : r
         ))
         return next
@@ -226,8 +226,7 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
     }
   }
 
-  const currentRows = exerciseMap.get(activeSplit) ?? []
-  // In swap mode, exclude all except the target (target itself excluded by getAlternatives)
+  const currentRows = exerciseMap.get(activeSplitId) ?? []
   const pickerExcludeNames = swapTarget
     ? currentRows.filter(r => r.exercise_name !== swapTarget.exercise_name).map(r => r.exercise_name)
     : currentRows.map(r => r.exercise_name)
@@ -282,16 +281,16 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
       >
         {splits.map(split => (
           <button
-            key={split}
-            onClick={() => handleSwitchSplit(split)}
+            key={split.id}
+            onClick={() => handleSwitchSplit(split.id)}
             style={{
               flex: splits.length <= 4 ? 1 : undefined,
               flexShrink: 0,
               background: 'none',
               border: 'none',
-              borderBottom: activeSplit === split ? '2px solid var(--accent)' : '2px solid transparent',
+              borderBottom: activeSplitId === split.id ? '2px solid var(--accent)' : '2px solid transparent',
               padding: '12px 16px 10px',
-              color: activeSplit === split ? 'var(--text-primary)' : 'var(--text-secondary)',
+              color: activeSplitId === split.id ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontFamily: 'Space Mono, monospace',
               fontSize: '0.58rem',
               letterSpacing: '0.1em',
@@ -300,9 +299,9 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
               whiteSpace: 'nowrap',
             }}
           >
-            {split.toUpperCase()}
+            {split.name.toUpperCase()}
             <span style={{ marginLeft: '5px', opacity: 0.5 }}>
-              {(exerciseMap.get(split) ?? []).length}
+              {(exerciseMap.get(split.id) ?? []).length}
             </span>
           </button>
         ))}
@@ -477,10 +476,10 @@ export default function RoutineEditorScreen({ programId, userId, onBack }: Routi
         </div>
       )}
 
-      {pickerOpen && (
+      {pickerOpen && activeSplit && (
         <ExercisePickerSheet
-          split={activeSplit}
-          splitMuscles={program?.splitMuscles[activeSplit] ?? []}
+          split={activeSplit.name}
+          splitMuscles={splitMuscles?.[activeSplit.name] ?? []}
           excludeNames={pickerExcludeNames}
           swapTarget={swapTargetDef}
           onSelect={swapTarget
