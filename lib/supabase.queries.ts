@@ -3,15 +3,6 @@ import type { SessionRecord } from './notion'
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
-export async function getTrainingModeId(supabase: Supabase, splitName: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('training_modes')
-    .select('id')
-    .eq('name', splitName)
-    .single()
-  return data ? (data.id as string) : null
-}
-
 export async function getExerciseId(supabase: Supabase, canonicalName: string): Promise<string | null> {
   const { data } = await supabase
     .from('exercises')
@@ -26,7 +17,6 @@ export async function getOrCreateWorkout(
   userId: string,
   date: string,
   userProgramSplitId: string,
-  trainingModeId: string | null,
   startedAt?: string
 ): Promise<string> {
   const { data: existing } = await supabase
@@ -38,17 +28,14 @@ export async function getOrCreateWorkout(
     .maybeSingle()
   if (existing) return existing.id as string
 
-  const insertPayload: Record<string, unknown> = {
-    user_id: userId,
-    date,
-    user_program_split_id: userProgramSplitId,
-    started_at: startedAt ?? new Date().toISOString(),
-  }
-  if (trainingModeId) insertPayload.training_mode_id = trainingModeId
-
   const { data: inserted, error } = await supabase
     .from('workouts')
-    .insert(insertPayload)
+    .insert({
+      user_id: userId,
+      date,
+      user_program_split_id: userProgramSplitId,
+      started_at: startedAt ?? new Date().toISOString(),
+    })
     .select('id')
     .single()
 
@@ -190,14 +177,3 @@ export async function permanentlySwapExercise(
   if (error) throw error
 }
 
-export async function resolveLegacyTrainingModeId(
-  supabase: Supabase,
-  splitName: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('training_modes')
-    .select('id')
-    .eq('name', splitName)
-    .maybeSingle()
-  return (data?.id as string) ?? null
-}

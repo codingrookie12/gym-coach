@@ -1,13 +1,5 @@
 export type Split = string
 
-export const SPLIT_ORDER = ['Push', 'Pull', 'Legs'] as const
-
-export function getNextSplit(last: Split | null): Split {
-  const order = ['Push', 'Pull', 'Legs']
-  if (!last) return 'Push'
-  return order[(order.indexOf(last) + 1) % order.length]
-}
-
 export interface Exercise {
   name: string
   notionName: string  // Exact name as stored in the Notion DB Exercise select field
@@ -244,27 +236,10 @@ const PROGRAM_ROUTINES: Record<string, Record<string, Exercise[]>> = {
   },
 }
 
-// ─── Program split orders ─────────────────────────────────────────────────────
-
-const PROGRAM_SPLIT_ORDERS: Record<string, string[]> = {
-  'ppl-default':    ['Push', 'Pull', 'Legs'],
-  'wendler-531':    ['OHP Day', 'Deadlift Day', 'Bench Day', 'Squat Day'],
-  'upper-lower':    ['Upper A', 'Lower A', 'Upper B', 'Lower B'],
-  'full-body-3x':   ['Full Body A', 'Full Body B', 'Full Body C'],
-  'stronglifts-5x5': ['Day A', 'Day B'],
-}
-
 // ─── Functions ────────────────────────────────────────────────────────────────
 
 export function getRoutineForProgram(programId: string, splitName: string): Exercise[] {
   return PROGRAM_ROUTINES[programId]?.[splitName] ?? []
-}
-
-export function getNextSplitForProgram(programId: string, lastSplit: string | null): string {
-  const order = PROGRAM_SPLIT_ORDERS[programId] ?? ['Push', 'Pull', 'Legs']
-  if (!lastSplit) return order[0]
-  const idx = order.indexOf(lastSplit)
-  return order[(idx === -1 ? 0 : idx + 1) % order.length]
 }
 
 export function getAllExercisesForProgram(programId: string): Exercise[] {
@@ -273,12 +248,10 @@ export function getAllExercisesForProgram(programId: string): Exercise[] {
   return Object.values(routines).flat()
 }
 
-/** @deprecated use getRoutineForProgram('ppl-default', split) */
 export function getRoutine(split: Split): Exercise[] {
   return getRoutineForProgram('ppl-default', split)
 }
 
-/** @deprecated use getAllExercisesForProgram */
 export function getAllExercises(): Exercise[] {
   return [...PUSH_ROUTINE, ...PULL_ROUTINE, ...LEGS_ROUTINE]
 }

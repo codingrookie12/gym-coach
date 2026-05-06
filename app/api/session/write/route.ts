@@ -4,7 +4,6 @@ import {
   getExerciseId,
   getOrCreateWorkout,
   upsertWeightOverride,
-  resolveLegacyTrainingModeId,
 } from '@/lib/supabase.queries'
 import type { NotionEntry } from '@/lib/notion'
 
@@ -44,8 +43,7 @@ export async function POST(request: NextRequest) {
 
     for (const { date, userProgramSplitId, splitName, entries: groupEntries } of Array.from(groups.values())) {
       if (!userProgramSplitId) continue
-      const legacyModeId = await resolveLegacyTrainingModeId(supabase, splitName)
-      const workoutId = await getOrCreateWorkout(supabase, user.id, date, userProgramSplitId, legacyModeId, startedAt)
+      const workoutId = await getOrCreateWorkout(supabase, user.id, date, userProgramSplitId, startedAt)
 
       type InsertRow = {
         workout_id: string

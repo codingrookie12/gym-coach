@@ -16,23 +16,6 @@ export interface RoutineExerciseRow {
   equipment: string | null
 }
 
-async function resolveModeId(supabase: Supabase, splitName: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('training_modes')
-    .select('id')
-    .eq('name', splitName)
-    .maybeSingle()
-  return (data?.id as string) ?? null
-}
-
-async function resolveSplitName(supabase: Supabase, splitId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from('user_program_splits')
-    .select('name')
-    .eq('id', splitId)
-    .maybeSingle()
-  return (data?.name as string) ?? null
-}
 
 export async function getUserRoutineForSplit(
   supabase: Supabase,
@@ -56,26 +39,20 @@ export async function addExerciseToRoutine(
   exercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' },
   sortOrder: number
 ): Promise<RoutineExerciseRow> {
-  const splitName = await resolveSplitName(supabase, splitId)
-  const legacyModeId = splitName ? await resolveModeId(supabase, splitName) : null
-
-  const insertPayload: Record<string, unknown> = {
-    user_id: userId,
-    user_program_split_id: splitId,
-    exercise_name: exercise.name,
-    notion_name: exercise.name,
-    sets: 3,
-    rep_range_min: 8,
-    rep_range_max: 12,
-    equipment: exercise.equipment ?? null,
-    weight_unit: exercise.weightUnit ?? 'lbs',
-    sort_order: sortOrder,
-  }
-  if (legacyModeId) insertPayload.training_mode_id = legacyModeId
-
   const { data: inserted, error: insertError } = await supabase
     .from('user_routine_exercises')
-    .insert(insertPayload)
+    .insert({
+      user_id: userId,
+      user_program_split_id: splitId,
+      exercise_name: exercise.name,
+      notion_name: exercise.name,
+      sets: 3,
+      rep_range_min: 8,
+      rep_range_max: 12,
+      equipment: exercise.equipment ?? null,
+      weight_unit: exercise.weightUnit ?? 'lbs',
+      sort_order: sortOrder,
+    })
     .select(ROW_COLUMNS)
     .single()
 
