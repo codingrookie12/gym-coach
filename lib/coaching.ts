@@ -68,9 +68,10 @@ export function analyzeCoaching(
   sessions: SessionRecord[],
   today: string,
   unavailableExercises: string[] = [],
-  weightOverrides: Record<string, number> = {}
+  weightOverrides: Record<string, number> = {},
+  routineOverride?: Exercise[]
 ): { context: CoachingContext; plan: ExercisePlan[] } {
-  const routine = getRoutineForProgram(programId, split)
+  const routine = routineOverride?.length ? routineOverride : getRoutineForProgram(programId, split)
   const flags: CoachingFlag[] = []
   const trending: string[] = []
   let deloadRecommended = false

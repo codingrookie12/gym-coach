@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const entries: NotionEntry[] = body.entries
+    const startedAt: string | undefined = body.startedAt
 
     if (!entries || !Array.isArray(entries)) {
       return NextResponse.json({ error: 'Invalid entries' }, { status: 400 })
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     for (const { date, split, entries: groupEntries } of Array.from(groups.values())) {
       const trainingModeId = await getTrainingModeId(supabase, split)
       if (!trainingModeId) continue
-      const workoutId = await getOrCreateWorkout(supabase, user.id, date, trainingModeId)
+      const workoutId = await getOrCreateWorkout(supabase, user.id, date, trainingModeId, startedAt)
 
       type InsertRow = {
         workout_id: string
