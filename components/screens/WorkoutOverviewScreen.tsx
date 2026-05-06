@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
+import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 
 interface WorkoutOverviewScreenProps {
-  split: Split
+  split: string
   plan: ExercisePlan[]
   hasResumable?: boolean
   onBegin: () => void

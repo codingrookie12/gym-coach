@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Split } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
 import { SessionRecord } from '@/lib/notion'
@@ -13,7 +12,7 @@ import {
 } from '@/lib/customExercises'
 
 interface SessionSummaryScreenProps {
-  split: Split
+  split: string
   exerciseLogs: ExerciseLog[]
   plan: ExercisePlan[]
   previousSessions: SessionRecord[]
@@ -30,7 +29,7 @@ const MUSCLE_OPTIONS: Muscle[] = [
   'Middle Back', 'Lower Back', 'Abdominals', 'Quadriceps',
   'Hamstrings', 'Glutes', 'Calves',
 ] as Muscle[]
-const SPLIT_OPTIONS: (Split | 'None')[] = ['Push', 'Pull', 'Legs', 'None']
+const SPLIT_OPTIONS: string[] = ['Push', 'Pull', 'Legs', 'None']
 
 function MetadataSheet({
   exercise,
@@ -38,12 +37,12 @@ function MetadataSheet({
   onSkip,
 }: {
   exercise: PendingExercise
-  onSave: (name: string, equipment: Equipment, muscles: Muscle[], split: Split | null) => void
+  onSave: (name: string, equipment: Equipment, muscles: Muscle[], split: string | null) => void
   onSkip: () => void
 }) {
   const [equipment, setEquipment] = useState<Equipment | ''>('')
   const [muscles, setMuscles] = useState<Muscle[]>([])
-  const [split, setSplit] = useState<Split | 'None'>('None')
+  const [split, setSplit] = useState<string>('None')
 
   const canSave = equipment !== '' && muscles.length > 0
 
@@ -255,7 +254,7 @@ export default function SessionSummaryScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleSaveMetadata(name: string, equipment: Equipment, muscles: Muscle[], s: Split | null) {
+  function handleSaveMetadata(name: string, equipment: Equipment, muscles: Muscle[], s: string | null) {
     completeExerciseMetadata(name, { equipment, primaryMuscles: muscles, split: s })
     const next = metadataIdx + 1
     if (next < pendingForSession.length) {

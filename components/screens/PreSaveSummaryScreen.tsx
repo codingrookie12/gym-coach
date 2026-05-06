@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Split } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/NumberPad'
@@ -9,7 +8,7 @@ import NumberPad from '@/components/NumberPad'
 interface SessionSwap { oldName: string; newName: string }
 
 interface PreSaveSummaryScreenProps {
-  split: Split
+  split: string
   plan: ExercisePlan[]
   logs: ExerciseLog[]
   sessionSwaps?: SessionSwap[]
