@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { PROGRAM_TEMPLATES, type ProgramTemplate } from '@/lib/programTemplates'
 import { t } from '@/lib/translations'
+import { findExerciseByName, type ExerciseDefinition } from '@/lib/exerciseLibrary'
+import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ProgramExplorerScreenProps {
   ownedTemplateIds: Set<string>
@@ -17,6 +19,7 @@ export default function ProgramExplorerScreen({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
   const [error, setError] = useState(false)
+  const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
 
   async function handleAdd(templateId: string) {
     setAdding(templateId)
@@ -79,22 +82,32 @@ export default function ProgramExplorerScreen({
             owned={ownedTemplateIds.has(template.id)}
             onAdd={() => handleAdd(template.id)}
             adding={adding === template.id}
+            onSelectExercise={setSelectedExercise}
           />
         ))}
 
         <div className="safe-bottom" />
       </div>
+
+      {selectedExercise && (
+        <ExerciseDetailSheet
+          exercise={selectedExercise}
+          inProgram={false}
+          onClose={() => setSelectedExercise(null)}
+        />
+      )}
     </div>
   )
 }
 
-function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding }: {
+function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSelectExercise }: {
   template: ProgramTemplate
   expanded: boolean
   onToggle: () => void
   owned: boolean
   onAdd: () => void
   adding: boolean
+  onSelectExercise: (ex: ExerciseDefinition) => void
 }) {
   const p = template.presentation
 
@@ -162,11 +175,25 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding }: {
               <div className="font-sans" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
                 {split.name}
               </div>
-              {split.exercises.map((ex, i) => (
-                <div key={i} className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', letterSpacing: '0.04em', lineHeight: 1.8 }}>
-                  {ex.name} — {ex.sets}x [{ex.repRange[0]}–{ex.repRange[1]}]
-                </div>
-              ))}
+              {split.exercises.map((ex, i) => {
+                const def = findExerciseByName(ex.notionName)
+                return (
+                  <div
+                    key={i}
+                    className="font-mono"
+                    onClick={def ? (e) => { e.stopPropagation(); onSelectExercise(def) } : undefined}
+                    style={{
+                      fontSize: '0.6rem', color: def ? 'var(--text-primary)' : 'var(--text-mid)',
+                      letterSpacing: '0.04em', lineHeight: 1.8,
+                      cursor: def ? 'pointer' : 'default',
+                      textDecoration: def ? 'underline' : 'none',
+                      textDecorationColor: 'var(--border)',
+                    }}
+                  >
+                    {ex.name} — {ex.sets}x [{ex.repRange[0]}–{ex.repRange[1]}]
+                  </div>
+                )
+              })}
             </div>
           ))}
 

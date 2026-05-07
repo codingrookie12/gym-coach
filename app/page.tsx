@@ -586,6 +586,7 @@ export default function App() {
             <ExerciseLibraryScreen
               lastSplit={appState.lastSplit}
               activeProgramId={appState.userProgramId ?? appState.programId}
+              activeProgram={appState.activeProgram}
               onOpenProgramLibrary={() => setShowProgramLibrary(true)}
               onEditRoutine={() => setScreen('routine-editor')}
             />

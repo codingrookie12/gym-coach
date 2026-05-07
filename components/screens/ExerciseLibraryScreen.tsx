@@ -11,7 +11,7 @@ import {
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
 import { getAllExercisesForProgram, getRoutine, Split } from '@/lib/routines'
-import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import { ACTIVE_PROGRAM, type Program } from '@/lib/programs'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
@@ -21,6 +21,7 @@ interface ExerciseLibraryScreenProps {
   activeSplit?: Split
   lastSplit?: Split | null
   activeProgramId?: string
+  activeProgram?: Program | null
   onOpenProgramLibrary?: () => void
   onEditRoutine?: () => void
 }
@@ -456,6 +457,7 @@ export default function ExerciseLibraryScreen({
   activeSplit,
   lastSplit,
   activeProgramId = 'ppl-default',
+  activeProgram,
   onOpenProgramLibrary,
   onEditRoutine,
 }: ExerciseLibraryScreenProps) {
@@ -503,74 +505,38 @@ export default function ExerciseLibraryScreen({
           <span className="section-label">MY PROGRAM</span>
         </div>
 
-        {/* Horizontal scroll — active program first, then others */}
-        <div style={{ display: 'flex', gap: '10px', padding: '10px 16px 14px', overflowX: 'auto' }}>
-          {[
-            ...(getProgramById(activeProgramId) ? [getProgramById(activeProgramId)!] : [ACTIVE_PROGRAM]),
-            ...PROGRAM_LIBRARY.filter(p => p.id !== activeProgramId),
-          ].map(program => {
-            const isActive = program.id === activeProgramId
-            const nextSplit = null as string | null // Computed by async resolver in page.tsx now
+        {/* Single active program card */}
+        <div style={{ padding: '10px 16px 14px' }}>
+          {(() => {
+            const program = activeProgram ?? ACTIVE_PROGRAM
+            const styleColor: Record<string, string> = { hypertrophy: 'var(--accent)', strength: 'var(--rust)', powerlifting: 'var(--rust)', endurance: 'var(--text-mid)' }
+            const levelColor: Record<string, string> = { beginner: 'var(--text-secondary)', intermediate: 'var(--text-mid)', advanced: 'var(--text-primary)' }
             return (
               <button
-                key={program.id}
                 onClick={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '5px',
-                  minWidth: isActive ? '220px' : '170px',
-                  padding: '12px 14px',
-                  background: 'var(--surface)',
-                  border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                  borderRadius: '2px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  transition: 'border-color 0.12s',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px',
+                  width: '100%', padding: '12px 14px',
+                  background: 'var(--surface)', border: '1px solid var(--accent)',
+                  borderRadius: '2px', textAlign: 'left', cursor: 'pointer',
                 }}
               >
-                {/* Active badge */}
-                {isActive && (
-                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                    ACTIVE
-                  </span>
-                )}
-
-                {/* Program name */}
-                <span className="font-display" style={{ fontSize: isActive ? '1rem' : '0.8rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
+                <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>ACTIVE</span>
+                <span className="font-display" style={{ fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
                   {program.name}
                 </span>
-
-                {/* Style + level — each color-coded */}
-                <span className="font-mono" style={{
-                  fontSize: '0.5rem', letterSpacing: '0.08em',
-                  color: ({ hypertrophy: 'var(--accent)', strength: 'var(--rust)', powerlifting: 'var(--rust)', endurance: 'var(--text-mid)' } as Record<string, string>)[program.style] ?? 'var(--text-secondary)',
-                }}>
+                <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: styleColor[program.style] ?? 'var(--text-secondary)' }}>
                   {program.style.toUpperCase()}
                 </span>
-                <span className="font-mono" style={{
-                  fontSize: '0.5rem', letterSpacing: '0.08em',
-                  color: ({ beginner: 'var(--text-secondary)', intermediate: 'var(--text-mid)', advanced: 'var(--text-primary)' } as Record<string, string>)[program.level] ?? 'var(--text-secondary)',
-                }}>
+                <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: levelColor[program.level] ?? 'var(--text-secondary)' }}>
                   {program.level.toUpperCase()}
                 </span>
-
-                {/* Next split hint for active program */}
-                {nextSplit && (
-                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.08em', marginTop: '2px' }}>
-                    NEXT: {nextSplit.toUpperCase()}
-                  </span>
-                )}
-
-                {/* Arrow hint for inactive */}
-                {!isActive && (
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginTop: '2px' }}>›</span>
-                )}
+                <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '2px' }}>
+                  TAP TO MANAGE →
+                </span>
               </button>
             )
-          })}
+          })()}
         </div>
 
         {/* Edit Routine link */}
