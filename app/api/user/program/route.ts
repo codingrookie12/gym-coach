@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('users')
-    .select('active_program_id, active_user_program_id')
+    .select('active_user_program_id')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -18,7 +18,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    programId: data?.active_program_id ?? null,
+    programId: null,
     userProgramId: data?.active_user_program_id ?? null,
   })
 }
@@ -43,17 +43,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   }
 
-  if (programId && typeof programId === 'string') {
-    const { error } = await supabase
-      .from('users')
-      .update({ active_program_id: programId })
-      .eq('id', user.id)
-    if (error) {
-      console.error('Failed to write active_program_id:', error.message)
-      return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
-    }
-    return NextResponse.json({ success: true })
-  }
-
-  return NextResponse.json({ error: 'Missing programId or userProgramId' }, { status: 400 })
+  return NextResponse.json({ error: 'Missing userProgramId' }, { status: 400 })
 }
