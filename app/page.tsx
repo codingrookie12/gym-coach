@@ -587,6 +587,7 @@ export default function App() {
               lastSplit={appState.lastSplit}
               activeProgramId={appState.userProgramId ?? appState.programId}
               activeProgram={appState.activeProgram}
+              onSelectProgram={() => { clearSessionFromStorage(); window.location.reload() }}
               onOpenProgramLibrary={() => setShowProgramLibrary(true)}
               onEditRoutine={() => setScreen('routine-editor')}
             />
