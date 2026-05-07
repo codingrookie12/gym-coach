@@ -1,6 +1,6 @@
 /**
- * GYM-25: RLS isolation test
- * Proves user A cannot read user B's workout data.
+ * GYM-25 / GYM-79: RLS isolation tests
+ * Proves user A cannot read user B's data across all core tables.
  * Requires NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
  * and SUPABASE_SERVICE_ROLE_KEY in .env.local.
  */
@@ -28,8 +28,11 @@ const testPassword = 'TestPass123!'
 let userAId: string
 let userBId: string
 let workoutId: string
+let programId: string
+let splitId: string
+let routineExerciseId: string
 
-describe('RLS isolation — workouts table', () => {
+describe('RLS isolation', () => {
   it('sets up: creates two test users via service role', async () => {
     const { data: a, error: errA } = await serviceClient.auth.admin.createUser({
       email: emailA,
@@ -54,54 +57,131 @@ describe('RLS isolation — workouts table', () => {
     ])
   })
 
-  it('user A inserts a workout row', async () => {
-    const clientA = createClient(url, anon)
-    const { error: signInErr } = await clientA.auth.signInWithPassword({
-      email: emailA,
-      password: testPassword,
-    })
-    expect(signInErr).toBeNull()
+  it('sets up: creates user A program, split, routine exercise, and workout via service role', async () => {
+    // Create a user_program for user A
+    const { data: prog, error: progErr } = await serviceClient
+      .from('user_programs')
+      .insert({
+        user_id: userAId,
+        name: 'Test Program A',
+      })
+      .select('id')
+      .single()
+    expect(progErr).toBeNull()
+    programId = prog!.id
 
-    // Fetch a training_mode_id to satisfy FK
-    const { data: modes } = await clientA.from('training_modes').select('id').limit(1)
-    const trainingModeId = modes?.[0]?.id
+    // Create a split
+    const { data: split, error: splitErr } = await serviceClient
+      .from('user_program_splits')
+      .insert({
+        user_program_id: programId,
+        name: 'Push',
+        sort_order: 0,
+      })
+      .select('id')
+      .single()
+    expect(splitErr).toBeNull()
+    splitId = split!.id
 
-    const { data, error } = await clientA
+    // Create a routine exercise
+    const { data: re, error: reErr } = await serviceClient
+      .from('user_routine_exercises')
+      .insert({
+        user_id: userAId,
+        user_program_split_id: splitId,
+        exercise_name: 'Barbell Bench Press',
+        notion_name: 'Barbell Bench Press',
+        sets: 3,
+        rep_range_min: 8,
+        rep_range_max: 12,
+        weight_unit: 'lbs',
+        sort_order: 0,
+      })
+      .select('id')
+      .single()
+    expect(reErr).toBeNull()
+    routineExerciseId = re!.id
+
+    // Create a workout
+    const { data: w, error: wErr } = await serviceClient
       .from('workouts')
       .insert({
         user_id: userAId,
-        training_mode_id: trainingModeId ?? null,
+        user_program_split_id: splitId,
         date: new Date().toISOString().split('T')[0],
+        started_at: new Date().toISOString(),
       })
-      .select()
+      .select('id')
       .single()
+    expect(wErr).toBeNull()
+    workoutId = w!.id
+  })
+
+  it('user B cannot read user A\'s user_programs', async () => {
+    const clientB = createClient(url, anon)
+    await clientB.auth.signInWithPassword({ email: emailB, password: testPassword })
+
+    const { data, error } = await clientB
+      .from('user_programs')
+      .select('*')
+      .eq('id', programId)
 
     expect(error).toBeNull()
-    expect(data).not.toBeNull()
-    workoutId = data!.id
+    expect(data).toHaveLength(0)
+  })
+
+  it('user B cannot read user A\'s user_program_splits', async () => {
+    const clientB = createClient(url, anon)
+    await clientB.auth.signInWithPassword({ email: emailB, password: testPassword })
+
+    const { data, error } = await clientB
+      .from('user_program_splits')
+      .select('*')
+      .eq('id', splitId)
+
+    expect(error).toBeNull()
+    expect(data).toHaveLength(0)
+  })
+
+  it('user B cannot read user A\'s user_routine_exercises', async () => {
+    const clientB = createClient(url, anon)
+    await clientB.auth.signInWithPassword({ email: emailB, password: testPassword })
+
+    const { data, error } = await clientB
+      .from('user_routine_exercises')
+      .select('*')
+      .eq('id', routineExerciseId)
+
+    expect(error).toBeNull()
+    expect(data).toHaveLength(0)
   })
 
   it('user B cannot read user A\'s workout', async () => {
     const clientB = createClient(url, anon)
-    const { error: signInErr } = await clientB.auth.signInWithPassword({
-      email: emailB,
-      password: testPassword,
-    })
-    expect(signInErr).toBeNull()
+    await clientB.auth.signInWithPassword({ email: emailB, password: testPassword })
 
     const { data, error } = await clientB
       .from('workouts')
       .select('*')
       .eq('id', workoutId)
 
-    // RLS returns empty array (not an error) when row is invisible
     expect(error).toBeNull()
     expect(data).toHaveLength(0)
   })
 })
 
 afterAll(async () => {
-  // Cleanup: delete test users (cascades to workouts/sets via FK)
-  if (userAId) await serviceClient.auth.admin.deleteUser(userAId)
-  if (userBId) await serviceClient.auth.admin.deleteUser(userBId)
+  // Cleanup: delete test data then test users
+  if (workoutId) await serviceClient.from('workouts').delete().eq('id', workoutId)
+  if (routineExerciseId) await serviceClient.from('user_routine_exercises').delete().eq('id', routineExerciseId)
+  if (splitId) await serviceClient.from('user_program_splits').delete().eq('id', splitId)
+  if (programId) await serviceClient.from('user_programs').delete().eq('id', programId)
+  if (userAId) {
+    await serviceClient.from('users').delete().eq('id', userAId)
+    await serviceClient.auth.admin.deleteUser(userAId)
+  }
+  if (userBId) {
+    await serviceClient.from('users').delete().eq('id', userBId)
+    await serviceClient.auth.admin.deleteUser(userBId)
+  }
 })
