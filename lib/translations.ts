@@ -31,8 +31,9 @@ export const t = {
   library: {
     title: 'PROGRAMS',
     myProgramsHeader: 'MY PROGRAMS',
-    emptyState: 'No custom programs yet — clone a template below or build your own.',
-    templatesHeader: 'TEMPLATES',
+    emptyStateHeading: 'GET STARTED',
+    emptyStateBody: 'Explore curated programs or build your own from scratch.',
+    exploreProgramsCta: '+ EXPLORE PROGRAMS',
     buildMyOwnCta: '+ BUILD MY OWN',
     editButton: 'EDIT',
     deleteButton: 'DELETE',
@@ -40,10 +41,20 @@ export const t = {
     deleteCancelButton: 'CANCEL',
     selectButton: 'SELECT',
     activeBadge: 'ACTIVE',
-    useTemplateButton: 'USE THIS TEMPLATE',
     confirmButton: 'CONFIRM',
     cancelButton: 'CANCEL',
     loading: 'LOADING...',
+  },
+
+  // Program Explorer
+  explorer: {
+    title: 'EXPLORE PROGRAMS',
+    backButton: '← PROGRAMS',
+    addButton: 'ADD TO MY PROGRAMS',
+    ownedButton: 'IN YOUR PROGRAMS',
+    addingButton: 'ADDING...',
+    splitsHeader: 'SPLITS & EXERCISES',
+    errorGeneric: 'Something went wrong. Try again.',
   },
 
   // Onboarding

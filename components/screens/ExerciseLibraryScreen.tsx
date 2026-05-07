@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   ALL_EXERCISES,
   ExerciseDefinition,
@@ -11,16 +11,31 @@ import {
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
 import { getAllExercisesForProgram, getRoutine, Split } from '@/lib/routines'
-import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import { ACTIVE_PROGRAM, type Program } from '@/lib/programs'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
+
+interface UserProgramSummary {
+  id: string
+  name: string
+  sourceTemplateId: string | null
+  style: string | null
+  level: string | null
+  splitCount: number
+  exerciseCount: number
+}
 
 interface ExerciseLibraryScreenProps {
   onBack?: () => void
   activeSplit?: Split
   lastSplit?: Split | null
   activeProgramId?: string
+  activeProgram?: Program | null
+  onSelectProgram?: (programId: string) => void
+  onOpenMyPrograms?: () => void
+  onOpenExplorer?: () => void
+  onOpenBuilder?: () => void
   onOpenProgramLibrary?: () => void
   onEditRoutine?: () => void
 }
@@ -456,12 +471,26 @@ export default function ExerciseLibraryScreen({
   activeSplit,
   lastSplit,
   activeProgramId = 'ppl-default',
+  activeProgram,
+  onSelectProgram,
+  onOpenMyPrograms,
+  onOpenExplorer,
+  onOpenBuilder,
   onOpenProgramLibrary,
   onEditRoutine,
 }: ExerciseLibraryScreenProps) {
   const [tab, setTab] = useState<Tab>('browse')
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
   const [showProgramDetail, setShowProgramDetail] = useState(false)
+  const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
+  const [switching, setSwitching] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/user/programs')
+      .then(r => r.json())
+      .then(d => setUserPrograms(d.programs ?? []))
+      .catch(() => {})
+  }, [])
 
   const totalCount = ALL_EXERCISES.length
   const customExercises = ALL_EXERCISES.filter(e => e.isCustom)
@@ -503,74 +532,112 @@ export default function ExerciseLibraryScreen({
           <span className="section-label">MY PROGRAM</span>
         </div>
 
-        {/* Horizontal scroll — active program first, then others */}
+        {/* Carousel: user programs + action cards */}
         <div style={{ display: 'flex', gap: '10px', padding: '10px 16px 14px', overflowX: 'auto' }}>
-          {[
-            ...(getProgramById(activeProgramId) ? [getProgramById(activeProgramId)!] : [ACTIVE_PROGRAM]),
-            ...PROGRAM_LIBRARY.filter(p => p.id !== activeProgramId),
-          ].map(program => {
+          {/* User program cards */}
+          {userPrograms.map(program => {
             const isActive = program.id === activeProgramId
-            const nextSplit = null as string | null // Computed by async resolver in page.tsx now
+            const style = isActive ? (activeProgram?.style ?? program.style) : program.style
+            const level = isActive ? (activeProgram?.level ?? program.level) : program.level
+            const styleColor: Record<string, string> = { hypertrophy: 'var(--accent)', strength: 'var(--rust)', powerlifting: 'var(--rust)', endurance: 'var(--text-mid)' }
+            const levelColor: Record<string, string> = { beginner: 'var(--text-secondary)', intermediate: 'var(--text-mid)', advanced: 'var(--text-primary)' }
             return (
               <button
                 key={program.id}
-                onClick={() => onOpenProgramLibrary ? onOpenProgramLibrary() : setShowProgramDetail(true)}
+                disabled={switching !== null}
+                onClick={async () => {
+                  if (isActive) return
+                  setSwitching(program.id)
+                  try {
+                    await fetch('/api/user/program', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userProgramId: program.id }),
+                    })
+                    onSelectProgram?.(program.id)
+                  } catch {
+                    setSwitching(null)
+                  }
+                }}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '5px',
-                  minWidth: isActive ? '220px' : '170px',
-                  padding: '12px 14px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px',
+                  minWidth: '170px', padding: '12px 14px', flexShrink: 0,
                   background: 'var(--surface)',
                   border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                  borderRadius: '2px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  transition: 'border-color 0.12s',
+                  borderRadius: '2px', textAlign: 'left',
+                  cursor: isActive ? 'default' : 'pointer',
+                  opacity: switching && switching !== program.id ? 0.5 : 1,
                 }}
               >
-                {/* Active badge */}
                 {isActive && (
-                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                    ACTIVE
-                  </span>
+                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>ACTIVE</span>
                 )}
-
-                {/* Program name */}
-                <span className="font-display" style={{ fontSize: isActive ? '1rem' : '0.8rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
+                {switching === program.id && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>SWITCHING...</span>
+                )}
+                <span className="font-display" style={{ fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
                   {program.name}
                 </span>
-
-                {/* Style + level — each color-coded */}
-                <span className="font-mono" style={{
-                  fontSize: '0.5rem', letterSpacing: '0.08em',
-                  color: ({ hypertrophy: 'var(--accent)', strength: 'var(--rust)', powerlifting: 'var(--rust)', endurance: 'var(--text-mid)' } as Record<string, string>)[program.style] ?? 'var(--text-secondary)',
-                }}>
-                  {program.style.toUpperCase()}
-                </span>
-                <span className="font-mono" style={{
-                  fontSize: '0.5rem', letterSpacing: '0.08em',
-                  color: ({ beginner: 'var(--text-secondary)', intermediate: 'var(--text-mid)', advanced: 'var(--text-primary)' } as Record<string, string>)[program.level] ?? 'var(--text-secondary)',
-                }}>
-                  {program.level.toUpperCase()}
-                </span>
-
-                {/* Next split hint for active program */}
-                {nextSplit && (
-                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.08em', marginTop: '2px' }}>
-                    NEXT: {nextSplit.toUpperCase()}
+                {style && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: styleColor[style] ?? 'var(--text-secondary)' }}>
+                    {style.toUpperCase()}
                   </span>
                 )}
-
-                {/* Arrow hint for inactive */}
-                {!isActive && (
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginTop: '2px' }}>›</span>
+                {level && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: levelColor[level] ?? 'var(--text-secondary)' }}>
+                    {level.toUpperCase()}
+                  </span>
+                )}
+                {!isActive && switching !== program.id && (
+                  <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '2px' }}>SELECT →</span>
                 )}
               </button>
             )
           })}
+
+          {/* MY PROGRAMS card — only when user has 2+ programs */}
+          {userPrograms.length >= 2 && (
+            <button
+              onClick={() => (onOpenMyPrograms ?? onOpenProgramLibrary)?.()}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '6px',
+                minWidth: '130px', padding: '12px 14px', flexShrink: 0,
+                background: 'var(--surface)', border: '1px solid var(--border-2)',
+                borderRadius: '2px', textAlign: 'left', cursor: 'pointer',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4 }}>MY{'\n'}PROGRAMS</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>›</span>
+            </button>
+          )}
+
+          {/* EXPLORE PROGRAMS action card */}
+          <button
+            onClick={() => (onOpenExplorer ?? onOpenProgramLibrary)?.()}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '6px',
+              minWidth: '130px', padding: '12px 14px', flexShrink: 0,
+              background: 'none', border: '2px dashed var(--accent)',
+              borderRadius: '2px', textAlign: 'left', cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>+</span>
+            <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.08em', lineHeight: 1.4 }}>EXPLORE{'\n'}PROGRAMS</span>
+          </button>
+
+          {/* BUILD MY OWN action card */}
+          <button
+            onClick={() => (onOpenBuilder ?? onOpenProgramLibrary)?.()}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '6px',
+              minWidth: '130px', padding: '12px 14px', flexShrink: 0,
+              background: 'none', border: '2px dashed var(--border)',
+              borderRadius: '2px', textAlign: 'left', cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: '1.2rem', color: 'var(--text-mid)' }}>+</span>
+            <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4 }}>BUILD{'\n'}MY OWN</span>
+          </button>
         </div>
 
         {/* Edit Routine link */}
