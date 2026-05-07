@@ -1,12 +1,11 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { Split } from '@/lib/routines'
 import { Program, ACTIVE_PROGRAM } from '@/lib/programs'
 
 interface PreSessionScreenProps {
-  initialSplit: Split
-  onSelectSplit: (split: Split) => void
+  initialSplit: string
+  onSelectSplit: (split: string) => void
   onSettings: () => void
   onEquipment: () => void
   unavailableCount: number
@@ -63,7 +62,7 @@ export default function PreSessionScreen({
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v6.7
+            v7.1
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>

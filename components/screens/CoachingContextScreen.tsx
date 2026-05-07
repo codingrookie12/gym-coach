@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Split } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
 import { SessionRecord } from '@/lib/notion'
 import LoadingScreen from '@/components/LoadingScreen'
 
 interface CoachingContextScreenProps {
-  split: Split
+  split: string
   programId?: string
+  userProgramSplitId?: string
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
   unavailableExercises: string[]
@@ -18,7 +18,7 @@ interface CoachingContextScreenProps {
 }
 
 export default function CoachingContextScreen({
-  split, programId = 'ppl-default', coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
+  split, programId = 'ppl-default', userProgramSplitId, coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +29,10 @@ export default function CoachingContextScreen({
     const unavailableParam = unavailableExercises.length > 0
       ? `&unavailable=${encodeURIComponent(unavailableExercises.join(','))}`
       : ''
-    fetch(`/api/notion?split=${split}&programId=${programId}${unavailableParam}`)
+    const params = new URLSearchParams({ split, programId })
+    if (userProgramSplitId) params.set('userProgramSplitId', userProgramSplitId)
+    if (unavailableExercises.length > 0) params.set('unavailable', unavailableExercises.join(','))
+    fetch(`/api/notion?${params}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error)
@@ -40,7 +43,7 @@ export default function CoachingContextScreen({
         setError(err.message)
         setLoading(false)
       })
-  }, [split, programId, coachingContext, unavailableExercises, onDataLoaded])
+  }, [split, programId, userProgramSplitId, coachingContext, unavailableExercises, onDataLoaded])
 
   if (loading) return <LoadingScreen message={`Analyzing ${split} history...`} />
   if (error) return (

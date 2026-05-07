@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Split, CARDIO_RECOMMENDATION } from '@/lib/routines'
+import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
@@ -12,7 +12,7 @@ import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquip
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ActiveSessionScreenProps {
-  split: Split
+  split: string
   plan: ExercisePlan[]
   initialLogs?: ExerciseLog[]
   initialExIdx?: number
@@ -182,7 +182,7 @@ function WorkoutOverviewModal({
   plan: ExercisePlan[]
   logs: ExerciseLog[]
   currentExIdx: number
-  split: Split
+  split: string
   onNavigate: (idx: number) => void
   onClose: () => void
   onAddExercise: () => void

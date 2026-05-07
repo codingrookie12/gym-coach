@@ -15,11 +15,11 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-import { Split, getNextSplitForProgram } from '@/lib/routines'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
-import { getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
+import { type Program } from '@/lib/programs'
 import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
-import { getOrSeedRoutine, permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
+import CustomProgramBuilderScreen from '@/components/screens/CustomProgramBuilderScreen'
+import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { SessionRecord } from '@/lib/notion'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
@@ -49,13 +49,18 @@ export type Screen =
   | 'session-summary'
   | 'manage-weights'
   | 'routine-editor'
+  | 'program-builder'
+  | 'program-editor'
 
 export interface SessionSwap { oldName: string; newName: string }
 
 export interface AppState {
   user: User | null
   programId: string
-  split: Split | null
+  userProgramId: string | null
+  activeProgram: Program | null
+  userProgramSplitId: string | null
+  split: string | null
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
   sessions: SessionRecord[] | null
@@ -66,10 +71,29 @@ export interface AppState {
   sessionSwaps: SessionSwap[]
   sessionSyncStatus: 'confirmed' | 'partial' | null
   workoutStartedAt: string | null
-  // From resume detection
   detectedSession: PersistedSession | null
-  detectedSplit: Split | null  // from Notion fallback (no full log data)
-  lastSplit: Split | null      // most recently completed split (for carousel default)
+  detectedSplit: string | null
+  lastSplit: string | null
+}
+
+function computeNextSplit(splits: string[], lastSplit: string | null): string {
+  if (!splits.length) return ''
+  if (!lastSplit) return splits[0]
+  const idx = splits.indexOf(lastSplit)
+  if (idx === -1) return splits[0]
+  return splits[(idx + 1) % splits.length]
+}
+
+async function resolveSplitIdByName(userProgramId: string | null, splitName: string): Promise<string | null> {
+  if (!userProgramId) return null
+  try {
+    const res = await fetch(`/api/user/programs/${userProgramId}`)
+    const data = await res.json()
+    const split = data.program?.splits?.find((s: any) => s.name === splitName && !s.archivedAt)
+    return split?.id ?? null
+  } catch {
+    return null
+  }
 }
 
 export default function App() {
@@ -80,9 +104,13 @@ export default function App() {
   const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
+  const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
   const [appState, setAppState] = useState<AppState>({
     user: null,
     programId: 'ppl-default',
+    userProgramId: null,
+    activeProgram: null,
+    userProgramSplitId: null,
     split: null,
     coachingContext: null,
     plan: null,
@@ -147,26 +175,52 @@ export default function App() {
       // 0. Auth — middleware guarantees we're authenticated, but store user for Supabase writes
       const { data: { user } } = await supabase.auth.getUser()
 
-      // Resolve program ID: localStorage (instant) → server API (authoritative, guaranteed auth)
-      let resolvedProgramId: string | null = localStorage.getItem('active_program_id')
-      if (resolvedProgramId) {
-        setAppState(prev => ({ ...prev, programId: resolvedProgramId! }))
-      }
+      // Resolve program: server API returns both legacy programId and new userProgramId
+      let resolvedProgramId: string | null = null
+      let resolvedUserProgramId: string | null = null
+      let resolvedProgram: Program | null = null
 
       try {
         const res = await fetch('/api/user/program')
         const data = await res.json()
-        if (data.programId) {
-          resolvedProgramId = data.programId
-          localStorage.setItem('active_program_id', data.programId)
-          setAppState(prev => ({ ...prev, programId: data.programId }))
-        }
-      } catch {
-        // Network error — localStorage cache is the fallback
+        resolvedProgramId = data.programId ?? null
+        resolvedUserProgramId = data.userProgramId ?? null
+      } catch {}
+
+      // Resolve the active program via async hydration
+      if (resolvedUserProgramId) {
+        try {
+          const res = await fetch(`/api/user/programs/${resolvedUserProgramId}`)
+          const data = await res.json()
+          if (data.program) {
+            const p = data.program
+            const activeSplits = (p.splits ?? []).filter((s: any) => !s.archivedAt)
+            setProgramSplits(activeSplits.map((s: any) => ({ id: s.id, name: s.name })))
+            resolvedProgram = {
+              id: p.id,
+              name: p.name,
+              shortName: p.name.slice(0, 8).toUpperCase(),
+              splits: activeSplits.map((s: any) => s.name),
+              splitMuscles: {},
+              tier: 1,
+              style: 'hypertrophy',
+              level: 'intermediate',
+              daysPerWeek: activeSplits.length,
+              source: p.sourceTemplateId ? 'curated' : 'user-created',
+              presentation: { tagline: '', overview: '', whatToExpect: [], daysLabel: '', sessionLength: '', periodization: '', attribution: null },
+            } as Program
+          }
+        } catch {}
       }
 
       if (user) {
-        setAppState(prev => ({ ...prev, user }))
+        setAppState(prev => ({
+          ...prev,
+          user,
+          programId: resolvedProgramId ?? prev.programId,
+          userProgramId: resolvedUserProgramId,
+          activeProgram: resolvedProgram,
+        }))
 
         // Check onboarding status — new users pick a program before first session
         try {
@@ -176,8 +230,12 @@ export default function App() {
             setScreen('onboarding')
             return
           }
-        } catch {
-          // Network error — proceed normally (user can switch program via Library tab)
+        } catch {}
+
+        // If no active program after onboarding, route to onboarding
+        if (!resolvedUserProgramId) {
+          setScreen('onboarding')
+          return
         }
 
         // Silently retry any partial syncs from previous sessions
@@ -194,10 +252,7 @@ export default function App() {
         }
       }
 
-      // Resolve active program for filtering session detection
-      const activeProgramId = resolvedProgramId ?? 'ppl-default'
-      const activeProgram = getProgramById(activeProgramId)
-      const activeSplits = activeProgram?.splits ?? []
+      const activeSplits = resolvedProgram?.splits ?? []
 
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
@@ -213,22 +268,18 @@ export default function App() {
         const res = await fetch('/api/session/today')
         const data = await res.json()
         if (data.found && activeSplits.includes(data.split)) {
-          setAppState(prev => ({ ...prev, detectedSplit: data.split }))
+          setAppState(prev => ({ ...prev, detectedSplit: data.split, userProgramSplitId: data.userProgramSplitId ?? null }))
           setScreen('resume-prompt')
           return
         }
-      } catch {
-        // Unreachable — proceed normally
-      }
+      } catch {}
 
       // 3. Fetch last completed split to pre-select the carousel default
       try {
         const res = await fetch('/api/session/last-split')
         const data = await res.json()
-        if (data.split) setAppState(prev => ({ ...prev, lastSplit: data.split }))
-      } catch {
-        // Non-blocking — defaults to Push
-      }
+        if (data.split) setAppState(prev => ({ ...prev, lastSplit: data.split, userProgramSplitId: data.userProgramSplitId ?? prev.userProgramSplitId }))
+      } catch {}
 
       setScreen('home')
     }
@@ -293,6 +344,7 @@ export default function App() {
             entry: `${exLog.exerciseName} — Set ${si + 1}`,
             notes: exLog.notes || undefined,
             unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
+            userProgramSplitId: appState.userProgramSplitId ?? undefined,
           })
         }
       }
@@ -321,7 +373,7 @@ export default function App() {
     fetch('/api/session/finish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: today, split: appState.split }),
+      body: JSON.stringify({ date: today, userProgramSplitId: appState.userProgramSplitId }),
     }).catch(() => {})
 
     updateState({
@@ -377,16 +429,17 @@ export default function App() {
 
           {screen === 'onboarding' && (
             <ProgramLibraryScreen
-              onSelect={async (id) => {
-                updateState({ programId: id })
-                localStorage.setItem('active_program_id', id)
+              userId={appState.user?.id}
+              onSelect={async (userProgramId) => {
+                updateState({ userProgramId })
                 await fetch('/api/user/program', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ programId: id }),
+                  body: JSON.stringify({ userProgramId }),
                 })
                 await fetch('/api/user/onboarding', { method: 'POST' })
-                goHome()
+                // Reload to re-resolve the program
+                window.location.reload()
               }}
             />
           )}
@@ -401,16 +454,14 @@ export default function App() {
             />
           )}
 
-          {screen === 'home' && (
+          {screen === 'home' && appState.activeProgram && (
             <PreSessionScreen
-              initialSplit={getNextSplitForProgram(appState.programId, appState.lastSplit)}
-              activeProgram={getProgramById(appState.programId) ?? ACTIVE_PROGRAM}
-              onSelectSplit={async (split) => {
-                updateState({ split, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
-                if (appState.user) {
-                  const supabase = createSupabaseBrowserClient()
-                  await getOrSeedRoutine(supabase, appState.user.id, appState.programId).catch(() => {})
-                }
+              initialSplit={computeNextSplit(appState.activeProgram.splits, appState.lastSplit)}
+              activeProgram={appState.activeProgram}
+              onSelectSplit={async (splitName) => {
+                // Resolve the split's UUID from the hydrated program
+                const splitId = await resolveSplitIdByName(appState.userProgramId, splitName)
+                updateState({ split: splitName, userProgramSplitId: splitId, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
                 navigate('coaching-context')
               }}
               onSettings={() => navigate('manage-weights')}
@@ -419,11 +470,15 @@ export default function App() {
               pendingCustomCount={pendingCustomCount}
             />
           )}
+          {screen === 'home' && !appState.activeProgram && (
+            <LoadingScreen message="Loading program..." />
+          )}
 
           {screen === 'coaching-context' && appState.split && (
             <CoachingContextScreen
               split={appState.split}
               programId={appState.programId}
+              userProgramSplitId={appState.userProgramSplitId ?? undefined}
               unavailableExercises={getUnavailableExercises(exerciseAvailability)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
@@ -487,9 +542,9 @@ export default function App() {
               sessionSwaps={appState.sessionSwaps}
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
-              onSetDefault={appState.user ? async (oldName, newName) => {
+              onSetDefault={appState.user && appState.userProgramSplitId ? async (oldName, newName) => {
                 const supabase = createSupabaseBrowserClient()
-                await permanentlySwapExercise(supabase, appState.user!.id, appState.split!, oldName, newName).catch(() => {})
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.userProgramSplitId!, oldName, newName).catch(() => {})
               } : undefined}
             />
           )}
@@ -516,24 +571,21 @@ export default function App() {
         <div style={{ height: '100%', display: activeTab === 'library' ? 'flex' : 'none', flexDirection: 'column' }}>
           {showProgramLibrary ? (
             <ProgramLibraryScreen
-              selectedId={appState.programId}
+              selectedId={appState.userProgramId ?? appState.programId}
+              userId={appState.user?.id}
+              activeSession={appState.split !== null}
               onBack={() => setShowProgramLibrary(false)}
-              onSelect={async (id) => {
-                updateState({ programId: id, coachingContext: null, plan: null, lastSplit: null })
-                localStorage.setItem('active_program_id', id)
+              onSelect={async (userProgramId) => {
                 clearSessionFromStorage()
                 setShowProgramLibrary(false)
-                fetch('/api/user/program', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ programId: id }),
-                }).catch(() => {})
+                // Reload to re-resolve the new active program
+                window.location.reload()
               }}
             />
           ) : (
             <ExerciseLibraryScreen
               lastSplit={appState.lastSplit}
-              activeProgramId={appState.programId}
+              activeProgramId={appState.userProgramId ?? appState.programId}
               onOpenProgramLibrary={() => setShowProgramLibrary(true)}
               onEditRoutine={() => setScreen('routine-editor')}
             />
@@ -554,7 +606,7 @@ export default function App() {
       {screen === 'routine-editor' && appState.user && (
         <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'var(--bg)' }}>
           <RoutineEditorScreen
-            programId={appState.programId}
+            splits={programSplits}
             userId={appState.user.id}
             onBack={goHome}
           />

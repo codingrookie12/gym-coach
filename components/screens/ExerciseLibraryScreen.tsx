@@ -10,7 +10,7 @@ import {
   getUniqueEquipment,
   getUniqueMuscles,
 } from '@/lib/exerciseLibrary'
-import { getAllExercisesForProgram, getRoutine, getNextSplitForProgram, Split } from '@/lib/routines'
+import { getAllExercisesForProgram, getRoutine, Split } from '@/lib/routines'
 import { PROGRAM_LIBRARY, getProgramById, ACTIVE_PROGRAM } from '@/lib/programs'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
@@ -510,7 +510,7 @@ export default function ExerciseLibraryScreen({
             ...PROGRAM_LIBRARY.filter(p => p.id !== activeProgramId),
           ].map(program => {
             const isActive = program.id === activeProgramId
-            const nextSplit = isActive && lastSplit ? getNextSplitForProgram(program.id, lastSplit) : null
+            const nextSplit = null as string | null // Computed by async resolver in page.tsx now
             return (
               <button
                 key={program.id}

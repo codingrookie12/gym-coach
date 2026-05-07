@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase.server'
 import { fetchLastSessionsFromSupabase, fetchWeightOverrides } from '@/lib/supabase.queries'
 import { analyzeCoaching } from '@/lib/coaching'
-import { Split } from '@/lib/routines'
-import { getUserRoutineAsExercises } from '@/lib/userRoutine'
+import { getRoutineAsExercises } from '@/lib/userProgram'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const split = searchParams.get('split') as Split
+  const userProgramSplitId = searchParams.get('userProgramSplitId')
 
-  if (!split) {
-    return NextResponse.json({ error: 'Missing split' }, { status: 400 })
+  if (!userProgramSplitId) {
+    return NextResponse.json({ error: 'Missing userProgramSplitId' }, { status: 400 })
   }
 
   const supabase = await createSupabaseServerClient()
@@ -18,19 +17,20 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const programId = searchParams.get('programId') ?? 'ppl-default'
+    const programId = searchParams.get('programId') ?? 'custom'
+    const split = searchParams.get('split') ?? ''
     const unavailableParam = searchParams.get('unavailable') ?? ''
     const unavailableExercises = unavailableParam
       ? unavailableParam.split(',').map(s => s.trim()).filter(Boolean)
       : []
 
-    const [sessions, weightOverrides, userRoutineExercises] = await Promise.all([
-      fetchLastSessionsFromSupabase(supabase, split, 5),
+    const [sessions, weightOverrides, routine] = await Promise.all([
+      fetchLastSessionsFromSupabase(supabase, userProgramSplitId, 5),
       fetchWeightOverrides(supabase, user.id),
-      getUserRoutineAsExercises(supabase as any, user.id, split),
+      getRoutineAsExercises(supabase, userProgramSplitId),
     ])
     const today = new Date().toISOString().split('T')[0]
-    const { context, plan } = analyzeCoaching(programId, split, sessions, today, unavailableExercises, weightOverrides, userRoutineExercises)
+    const { context, plan } = analyzeCoaching(programId, split, sessions, today, unavailableExercises, weightOverrides, routine)
     return NextResponse.json({ context, plan, sessions })
   } catch (error) {
     console.error('Session history fetch error:', error)

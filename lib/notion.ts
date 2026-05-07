@@ -7,13 +7,14 @@ const DATABASE_ID = process.env.NOTION_DATABASE_ID!
 export interface NotionEntry {
   exercise: string
   date: string
-  split: Split
+  split: string
   weight: number
   set: number
   reps: number
   entry: string
   notes?: string
   unit?: 'Lbs' | 'Pins'
+  userProgramSplitId?: string
 }
 
 export interface SessionRecord {
