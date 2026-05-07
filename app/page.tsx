@@ -102,6 +102,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('train')
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [showProgramLibrary, setShowProgramLibrary] = useState(false)
+  const [programLibraryInitialMode, setProgramLibraryInitialMode] = useState<'explorer' | 'builder' | undefined>(undefined)
   const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
@@ -574,11 +575,12 @@ export default function App() {
               selectedId={appState.userProgramId ?? appState.programId}
               userId={appState.user?.id}
               activeSession={appState.split !== null}
-              onBack={() => setShowProgramLibrary(false)}
+              initialMode={programLibraryInitialMode}
+              onBack={() => { setShowProgramLibrary(false); setProgramLibraryInitialMode(undefined) }}
               onSelect={async (userProgramId) => {
                 clearSessionFromStorage()
                 setShowProgramLibrary(false)
-                // Reload to re-resolve the new active program
+                setProgramLibraryInitialMode(undefined)
                 window.location.reload()
               }}
             />
@@ -588,7 +590,9 @@ export default function App() {
               activeProgramId={appState.userProgramId ?? appState.programId}
               activeProgram={appState.activeProgram}
               onSelectProgram={() => { clearSessionFromStorage(); window.location.reload() }}
-              onOpenProgramLibrary={() => setShowProgramLibrary(true)}
+              onOpenMyPrograms={() => { setProgramLibraryInitialMode(undefined); setShowProgramLibrary(true) }}
+              onOpenExplorer={() => { setProgramLibraryInitialMode('explorer'); setShowProgramLibrary(true) }}
+              onOpenBuilder={() => { setProgramLibraryInitialMode('builder'); setShowProgramLibrary(true) }}
               onEditRoutine={() => setScreen('routine-editor')}
             />
           )}

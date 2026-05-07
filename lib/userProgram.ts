@@ -11,7 +11,7 @@
 // shapes a stored program back into the runtime `Program` type the UI uses.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Program, ProgramPresentation } from './programs'
+import type { Program, ProgramPresentation, ProgramStyle } from './programs'
 import type { Exercise } from './routines'
 import type { ProgramTemplate, TemplateExercise } from './programTemplates'
 import { getTemplateById } from './programTemplates'
@@ -24,6 +24,8 @@ export interface UserProgramSummary {
   id: string
   name: string
   sourceTemplateId: string | null
+  style: ProgramStyle | null
+  level: 'beginner' | 'intermediate' | 'advanced' | null
   splitCount: number
   exerciseCount: number
   createdAt: string
@@ -107,15 +109,21 @@ export async function listUserPrograms(
     exerciseCountByProgram.set(pid, (exerciseCountByProgram.get(pid) ?? 0) + 1)
   }
 
-  return programs.map(p => ({
-    id: p.id as string,
-    name: p.name as string,
-    sourceTemplateId: (p.source_template_id as string | null) ?? null,
-    splitCount: splitCountByProgram.get(p.id as string) ?? 0,
-    exerciseCount: exerciseCountByProgram.get(p.id as string) ?? 0,
-    createdAt: p.created_at as string,
-    updatedAt: p.updated_at as string,
-  }))
+  return programs.map(p => {
+    const templateId = (p.source_template_id as string | null) ?? null
+    const template = templateId ? getTemplateById(templateId) : undefined
+    return {
+      id: p.id as string,
+      name: p.name as string,
+      sourceTemplateId: templateId,
+      style: template?.style ?? null,
+      level: template?.level ?? null,
+      splitCount: splitCountByProgram.get(p.id as string) ?? 0,
+      exerciseCount: exerciseCountByProgram.get(p.id as string) ?? 0,
+      createdAt: p.created_at as string,
+      updatedAt: p.updated_at as string,
+    }
+  })
 }
 
 export async function getUserProgram(

@@ -19,18 +19,19 @@ interface ProgramLibraryScreenProps {
   onBack?: () => void
   userId?: string
   activeSession?: boolean
+  initialMode?: 'explorer' | 'builder'
 }
 
 export default function ProgramLibraryScreen({
-  onSelect, selectedId, onBack, userId, activeSession,
+  onSelect, selectedId, onBack, userId, activeSession, initialMode,
 }: ProgramLibraryScreenProps) {
   const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [builderMode, setBuilderMode] = useState<'create' | 'edit' | null>(null)
+  const [builderMode, setBuilderMode] = useState<'create' | 'edit' | null>(initialMode === 'builder' ? 'create' : null)
   const [editProgramId, setEditProgramId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [explorerMode, setExplorerMode] = useState(false)
+  const [explorerMode, setExplorerMode] = useState(initialMode === 'explorer')
 
   const ownedTemplateIds = new Set(
     userPrograms.map(p => p.sourceTemplateId).filter((id): id is string => id !== null)
