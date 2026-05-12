@@ -13,15 +13,17 @@ interface CoachingContextScreenProps {
   plan: ExercisePlan[] | null
   unavailableExercises: string[]
   onDataLoaded: (context: CoachingContext, plan: ExercisePlan[], sessions: SessionRecord[]) => void
+  onWeightDecision?: (exerciseName: string, accepted: boolean) => void
   onViewPlan: () => void
   onBack: () => void
 }
 
 export default function CoachingContextScreen({
-  split, programId = 'ppl-default', userProgramSplitId, coachingContext, plan, unavailableExercises, onDataLoaded, onViewPlan, onBack,
+  split, programId = 'ppl-default', userProgramSplitId, coachingContext, plan, unavailableExercises, onDataLoaded, onWeightDecision, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
+  const [weightDecisions, setWeightDecisions] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (coachingContext) return
@@ -141,6 +143,37 @@ export default function CoachingContextScreen({
                     <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--rust)', margin: 0 }}>
                       {f.message}
                     </p>
+                    {f.type === 'weight-too-heavy' && f.originalWeight != null && f.suggestedWeight != null && (
+                      weightDecisions[f.exercise] != null ? (
+                        <p className="font-mono" style={{ fontSize: '0.6rem', color: weightDecisions[f.exercise] ? 'var(--accent)' : 'var(--text-mid)', margin: '6px 0 0 0' }}>
+                          {weightDecisions[f.exercise]
+                            ? `✓ Dropping to ${f.suggestedWeight} ${f.suggestedWeight === f.originalWeight ? '' : 'lbs'}`
+                            : `✓ Keeping ${f.originalWeight} lbs`}
+                        </p>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                          <button
+                            onClick={() => {
+                              setWeightDecisions(prev => ({ ...prev, [f.exercise]: true }))
+                              onWeightDecision?.(f.exercise, true)
+                            }}
+                            className="btn-primary"
+                            style={{ flex: 1, fontSize: '0.6rem', padding: '7px 10px', letterSpacing: '0.08em' }}
+                          >
+                            ACCEPT {f.originalWeight} → {f.suggestedWeight}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setWeightDecisions(prev => ({ ...prev, [f.exercise]: false }))
+                              onWeightDecision?.(f.exercise, false)
+                            }}
+                            style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.08em', padding: '7px 10px', cursor: 'pointer' }}
+                          >
+                            KEEP WEIGHT
+                          </button>
+                        </div>
+                      )
+                    )}
                   </div>
                 ))}
               </div>

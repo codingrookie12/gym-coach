@@ -484,6 +484,19 @@ export default function App() {
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
+              onWeightDecision={(exerciseName, accepted) => {
+                if (accepted || !appState.plan) return
+                const flag = appState.coachingContext?.watchFlags.find(
+                  f => f.exercise === exerciseName && f.type === 'weight-too-heavy'
+                )
+                if (!flag?.originalWeight) return
+                const updatedPlan = appState.plan.map(p =>
+                  p.exercise.name === exerciseName
+                    ? { ...p, targetWeight: flag.originalWeight!, coachingNote: null }
+                    : p
+                )
+                updateState({ plan: updatedPlan })
+              }}
               onViewPlan={() => navigate('workout-overview')}
               onBack={goHome}
             />
