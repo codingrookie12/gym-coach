@@ -83,6 +83,33 @@ export async function addExerciseToRoutine(
   throw new Error(`addExerciseToRoutine: insert returned no row for "${exercise.name}"`)
 }
 
+export async function reorderExercisesInSplit(
+  supabase: Supabase,
+  userId: string,
+  splitId: string,
+  orderedIds: string[],
+  currentRows: Array<{ id: string; sort_order: number }>
+): Promise<void> {
+  const currentById = new Map(currentRows.map(r => [r.id, r.sort_order]))
+  const updates: Array<Promise<void>> = []
+  orderedIds.forEach((id, newIndex) => {
+    if (currentById.get(id) === newIndex) return
+    updates.push(
+      Promise.resolve(
+        supabase
+          .from('user_routine_exercises')
+          .update({ sort_order: newIndex })
+          .eq('id', id)
+          .eq('user_id', userId)
+          .eq('user_program_split_id', splitId)
+      ).then(({ error }) => {
+        if (error) throw error
+      })
+    )
+  })
+  await Promise.all(updates)
+}
+
 export async function removeExerciseFromRoutine(
   supabase: Supabase,
   userId: string,

@@ -1,15 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import {
   getUserRoutineForSplit,
   addExerciseToRoutine,
   removeExerciseFromRoutine,
+  reorderExercisesInSplit,
   type RoutineExerciseRow,
 } from '@/lib/userRoutine'
 import { type ExerciseDefinition, findExerciseByName } from '@/lib/exerciseLibrary'
 import ExercisePickerSheet from '@/components/ExercisePickerSheet'
+import { usePointerReorder } from '@/components/hooks/usePointerReorder'
 
 interface SplitInfo {
   id: string
@@ -39,6 +41,8 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   const [swapTarget, setSwapTarget] = useState<RoutineExerciseRow | null>(null)
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
   const pendingDeleteRef = useRef<PendingDelete | null>(null)
+  const [reorderPending, setReorderPending] = useState(false)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const activeSplit = splits.find(s => s.id === activeSplitId)
@@ -226,7 +230,70 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     }
   }
 
-  const currentRows = exerciseMap.get(activeSplitId) ?? []
+  const currentRows = useMemo(
+    () => exerciseMap.get(activeSplitId) ?? [],
+    [exerciseMap, activeSplitId]
+  )
+
+  const applyReorder = useCallback(async (newOrder: RoutineExerciseRow[]) => {
+    const snapshot = currentRows
+    if (newOrder.length !== snapshot.length) return
+    if (newOrder.every((r, i) => r.id === snapshot[i].id)) return
+
+    flushPendingDelete()
+    setReorderPending(true)
+    setExerciseMap(prev => {
+      const next = new Map(prev)
+      next.set(activeSplitId, newOrder.map((r, i) => ({ ...r, sort_order: i })))
+      return next
+    })
+
+    try {
+      await reorderExercisesInSplit(
+        supabase,
+        userId,
+        activeSplitId,
+        newOrder.map(r => r.id),
+        snapshot.map(r => ({ id: r.id, sort_order: r.sort_order }))
+      )
+    } catch (err) {
+      console.error('reorderExercisesInSplit failed:', err)
+      setReorderError(err instanceof Error ? err.message : 'Reorder failed')
+      try {
+        const refreshed = await getUserRoutineForSplit(supabase, activeSplitId)
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(activeSplitId, refreshed)
+          return next
+        })
+      } catch {
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(activeSplitId, snapshot)
+          return next
+        })
+      }
+    } finally {
+      setReorderPending(false)
+    }
+  }, [activeSplitId, currentRows, flushPendingDelete, supabase, userId])
+
+  const move = useCallback((index: number, delta: -1 | 1) => {
+    const target = index + delta
+    if (target < 0 || target >= currentRows.length) return
+    const next = currentRows.slice()
+    const [moved] = next.splice(index, 1)
+    next.splice(target, 0, moved)
+    applyReorder(next)
+  }, [currentRows, applyReorder])
+
+  const reorder = usePointerReorder<RoutineExerciseRow>({
+    items: currentRows,
+    getId: row => row.id,
+    onReorder: applyReorder,
+    disabled: reorderPending || pendingDelete !== null,
+  })
+
   const pickerExcludeNames = swapTarget
     ? currentRows.filter(r => r.exercise_name !== swapTarget.exercise_name).map(r => r.exercise_name)
     : currentRows.map(r => r.exercise_name)
@@ -319,20 +386,59 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
             </div>
           </div>
         ) : (
-          currentRows.map((row, i) => (
+          currentRows.map((row, i) => {
+            const isDragging = reorder.dragId === row.id
+            const offset = reorder.getRowOffset(i)
+            const upDisabled = i === 0 || reorderPending
+            const downDisabled = i === currentRows.length - 1 || reorderPending
+            return (
             <div
               key={row.id}
+              ref={reorder.registerRow(row.id)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 borderBottom: '1px solid var(--border)',
-                transition: 'opacity 0.15s',
+                transition: isDragging ? 'none' : 'transform 0.15s, opacity 0.15s',
+                transform: `translateY(${offset}px)`,
+                zIndex: isDragging ? 10 : undefined,
+                position: 'relative',
+                background: isDragging ? 'var(--surface)' : undefined,
+                boxShadow: isDragging ? '0 4px 16px rgba(0,0,0,0.4)' : undefined,
+                opacity: reorderPending && !isDragging ? 0.55 : 1,
+                pointerEvents: reorderPending ? 'none' : undefined,
+                touchAction: 'pan-y',
               }}
             >
+              {/* Drag handle */}
+              <button
+                type="button"
+                aria-label="Drag to reorder"
+                onPointerDown={reorder.handlePointerDown(row.id)}
+                disabled={reorderPending || pendingDelete !== null}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                  padding: '14px 6px 14px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                  touchAction: 'none',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="4" y1="7" x2="20" y2="7" />
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <line x1="4" y1="17" x2="20" y2="17" />
+                </svg>
+              </button>
+
               {/* Index */}
               <span
                 className="font-mono"
-                style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', flexShrink: 0, width: '20px', paddingLeft: '20px' }}
+                style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', flexShrink: 0, width: '20px' }}
               >
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -368,6 +474,50 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                 </span>
               </button>
 
+              {/* Move up */}
+              <button
+                type="button"
+                aria-label="Move up"
+                onClick={e => { e.stopPropagation(); move(i, -1) }}
+                disabled={upDisabled}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: upDisabled ? 'var(--border-2)' : 'var(--text-secondary)',
+                  cursor: upDisabled ? 'default' : 'pointer',
+                  padding: '14px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="6 14 12 8 18 14" />
+                </svg>
+              </button>
+
+              {/* Move down */}
+              <button
+                type="button"
+                aria-label="Move down"
+                onClick={e => { e.stopPropagation(); move(i, 1) }}
+                disabled={downDisabled}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: downDisabled ? 'var(--border-2)' : 'var(--text-secondary)',
+                  cursor: downDisabled ? 'default' : 'pointer',
+                  padding: '14px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="6 10 12 16 18 10" />
+                </svg>
+              </button>
+
               {/* Remove */}
               <button
                 onClick={e => { e.stopPropagation(); handleRemove(row.exercise_name) }}
@@ -392,7 +542,8 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                 </svg>
               </button>
             </div>
-          ))
+            )
+          })
         )}
 
         {/* Add exercise button */}
@@ -472,6 +623,47 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
             }}
           >
             UNDO
+          </button>
+        </div>
+      )}
+
+      {reorderError && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 16px',
+            background: 'var(--surface)',
+            border: '1px solid var(--rust)',
+            borderRadius: '4px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            zIndex: 20,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', letterSpacing: '0.06em' }}>
+            Reorder failed
+          </span>
+          <button
+            onClick={() => setReorderError(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-mid)',
+              fontFamily: 'Space Mono, monospace',
+              fontSize: '0.65rem',
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              padding: '0',
+              fontWeight: 700,
+            }}
+          >
+            DISMISS
           </button>
         </div>
       )}
