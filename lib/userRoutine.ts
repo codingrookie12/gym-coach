@@ -95,16 +95,15 @@ export async function reorderExercisesInSplit(
   orderedIds.forEach((id, newIndex) => {
     if (currentById.get(id) === newIndex) return
     updates.push(
-      Promise.resolve(
-        supabase
+      (async () => {
+        const { error } = await supabase
           .from('user_routine_exercises')
           .update({ sort_order: newIndex })
           .eq('id', id)
           .eq('user_id', userId)
           .eq('user_program_split_id', splitId)
-      ).then(({ error }) => {
         if (error) throw error
-      })
+      })()
     )
   })
   await Promise.all(updates)
