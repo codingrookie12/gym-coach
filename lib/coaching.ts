@@ -35,8 +35,10 @@ function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], r
 
 export interface CoachingFlag {
   exercise: string
-  type: 'progress' | 'stall' | 'fatigue' | 'deload' | 'no-history' | 'recovery-hold'
+  type: 'progress' | 'stall' | 'fatigue' | 'deload' | 'no-history' | 'recovery-hold' | 'weight-too-heavy'
   message: string
+  originalWeight?: number
+  suggestedWeight?: number
 }
 
 export interface CoachingContext {
@@ -155,6 +157,24 @@ export function analyzeCoaching(
     const shouldProgress = consecutiveFullSessions >= 2
     const recoveryHold = recoveryGap !== null && recoveryGap < 3
 
+    // Reverse rule: 2 consecutive sessions with any set below bottom of range
+    const bottomOfRange = exercise.repRange[0]
+    let hasWeightTooHeavy = false
+    if (exerciseSessions.length >= 2) {
+      const belowBottom = exerciseSessions.slice(0, 2).every(es =>
+        es.sets.some(s => s.reps < bottomOfRange)
+      )
+      if (belowBottom) {
+        hasWeightTooHeavy = true
+        flags.push({
+          exercise: exerciseName,
+          type: 'weight-too-heavy',
+          message: `Below target range (${bottomOfRange} reps) 2 sessions in a row — let's find your right working weight`,
+          originalWeight: latestMaxWeight,
+        })
+      }
+    }
+
     // Stall check: no progression in 3+ sessions
     const noProgressCount = exerciseSessions.filter(es => es.sets[0]?.weight === latestWeight).length
     if (noProgressCount >= 3 && !shouldProgress) {
@@ -195,6 +215,18 @@ export function analyzeCoaching(
       }
       targetWeight = Math.max(reducedWeight, 0)
       coachingNote = `Reps dropped last session — reducing to ${targetWeight} lbs to recover form`
+    } else if (hasWeightTooHeavy) {
+      let reducedWeight: number
+      if (exercise.availableWeights && exercise.availableWeights.length > 0) {
+        const prevAvailable = [...exercise.availableWeights].reverse().find(w => w < latestMaxWeight)
+        reducedWeight = prevAvailable ?? latestMaxWeight
+      } else {
+        reducedWeight = latestMaxWeight - (increment ?? 5)
+      }
+      targetWeight = Math.max(reducedWeight, 0)
+      const flag = flags.find(f => f.exercise === exerciseName && f.type === 'weight-too-heavy')
+      if (flag) flag.suggestedWeight = targetWeight
+      coachingNote = `Below rep range 2 sessions in a row — dropping to ${targetWeight} ${exercise.weightUnit === 'pins' ? 'pins' : 'lbs'} to find your working weight`
     } else if (shouldProgress && !recoveryHold) {
       // Suggest weight increase — snap to next available weight if defined, else +increment
       let nextWeight: number
