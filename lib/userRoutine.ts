@@ -85,28 +85,15 @@ export async function addExerciseToRoutine(
 
 export async function reorderExercisesInSplit(
   supabase: Supabase,
-  userId: string,
   splitId: string,
-  orderedIds: string[],
-  currentRows: Array<{ id: string; sort_order: number }>
+  orderedIds: string[]
 ): Promise<void> {
-  const currentById = new Map(currentRows.map(r => [r.id, r.sort_order]))
-  const updates: Array<Promise<void>> = []
-  orderedIds.forEach((id, newIndex) => {
-    if (currentById.get(id) === newIndex) return
-    updates.push(
-      (async () => {
-        const { error } = await supabase
-          .from('user_routine_exercises')
-          .update({ sort_order: newIndex })
-          .eq('id', id)
-          .eq('user_id', userId)
-          .eq('user_program_split_id', splitId)
-        if (error) throw error
-      })()
-    )
+  if (orderedIds.length === 0) return
+  const { error } = await supabase.rpc('reorder_routine_exercises', {
+    p_split_id: splitId,
+    p_ordered_ids: orderedIds,
   })
-  await Promise.all(updates)
+  if (error) throw error
 }
 
 export async function removeExerciseFromRoutine(

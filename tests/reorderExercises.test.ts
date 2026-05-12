@@ -47,100 +47,38 @@ describe('reorderDragOffset', () => {
 })
 
 describe('reorderExercisesInSplit', () => {
-  function makeSupabase(captureUpdate: (id: string, sortOrder: number) => void) {
+  function makeSupabase(captureRpc: (name: string, args: Record<string, unknown>) => void, error: Error | null = null) {
     return {
-      from() {
-        return {
-          update(payload: { sort_order: number }) {
-            let capturedId = ''
-            const chain = {
-              eq(col: string, val: string) {
-                if (col === 'id') capturedId = val
-                return chain
-              },
-              then(resolve: (r: { error: null }) => unknown) {
-                captureUpdate(capturedId, payload.sort_order)
-                return Promise.resolve({ error: null }).then(resolve)
-              },
-            }
-            return chain
-          },
-        }
+      rpc(name: string, args: Record<string, unknown>) {
+        captureRpc(name, args)
+        return Promise.resolve({ error })
       },
     } as never
   }
 
-  it('only updates rows whose sort_order changed', async () => {
-    const updates: Array<{ id: string; sortOrder: number }> = []
-    const supabase = makeSupabase((id, sortOrder) => updates.push({ id, sortOrder }))
+  it('calls reorder_routine_exercises RPC with the ordered ids', async () => {
+    const calls: Array<{ name: string; args: Record<string, unknown> }> = []
+    const supabase = makeSupabase((name, args) => calls.push({ name, args }))
 
-    const current = [
-      { id: 'a', sort_order: 0 },
-      { id: 'b', sort_order: 1 },
-      { id: 'c', sort_order: 2 },
-    ]
-    // Move 'a' to the end → b:0, c:1, a:2. b and c changed; a's sort_order also changed (0→2).
-    await reorderExercisesInSplit(supabase, 'user-1', 'split-1', ['b', 'c', 'a'], current)
+    await reorderExercisesInSplit(supabase, 'split-1', ['b', 'c', 'a'])
 
-    expect(updates).toHaveLength(3)
-    expect(updates).toContainEqual({ id: 'b', sortOrder: 0 })
-    expect(updates).toContainEqual({ id: 'c', sortOrder: 1 })
-    expect(updates).toContainEqual({ id: 'a', sortOrder: 2 })
+    expect(calls).toHaveLength(1)
+    expect(calls[0].name).toBe('reorder_routine_exercises')
+    expect(calls[0].args).toEqual({ p_split_id: 'split-1', p_ordered_ids: ['b', 'c', 'a'] })
   })
 
-  it('writes zero rows when order is unchanged', async () => {
-    const updates: Array<{ id: string; sortOrder: number }> = []
-    const supabase = makeSupabase((id, sortOrder) => updates.push({ id, sortOrder }))
+  it('skips the RPC when the order is empty', async () => {
+    const calls: Array<{ name: string; args: Record<string, unknown> }> = []
+    const supabase = makeSupabase((name, args) => calls.push({ name, args }))
 
-    const current = [
-      { id: 'a', sort_order: 0 },
-      { id: 'b', sort_order: 1 },
-    ]
-    await reorderExercisesInSplit(supabase, 'user-1', 'split-1', ['a', 'b'], current)
-    expect(updates).toEqual([])
+    await reorderExercisesInSplit(supabase, 'split-1', [])
+
+    expect(calls).toEqual([])
   })
 
-  it('writes only the moved subset for an adjacent swap', async () => {
-    const updates: Array<{ id: string; sortOrder: number }> = []
-    const supabase = makeSupabase((id, sortOrder) => updates.push({ id, sortOrder }))
-
-    const current = [
-      { id: 'a', sort_order: 0 },
-      { id: 'b', sort_order: 1 },
-      { id: 'c', sort_order: 2 },
-    ]
-    // Swap a and b → b:0, a:1, c:2. Only a and b change.
-    await reorderExercisesInSplit(supabase, 'user-1', 'split-1', ['b', 'a', 'c'], current)
-    expect(updates).toHaveLength(2)
-    expect(updates).toContainEqual({ id: 'b', sortOrder: 0 })
-    expect(updates).toContainEqual({ id: 'a', sortOrder: 1 })
-  })
-
-  it('rejects when a supabase update returns an error', async () => {
-    const supabase = {
-      from() {
-        return {
-          update() {
-            const chain = {
-              eq() {
-                return chain
-              },
-              then(resolve: (r: { error: Error }) => unknown) {
-                return Promise.resolve({ error: new Error('boom') }).then(resolve)
-              },
-            }
-            return chain
-          },
-        }
-      },
-    } as never
-
-    await expect(
-      reorderExercisesInSplit(supabase, 'u', 's', ['b', 'a'], [
-        { id: 'a', sort_order: 0 },
-        { id: 'b', sort_order: 1 },
-      ])
-    ).rejects.toThrow('boom')
+  it('rejects when the RPC returns an error', async () => {
+    const supabase = makeSupabase(() => {}, new Error('boom'))
+    await expect(reorderExercisesInSplit(supabase, 'split-1', ['a', 'b'])).rejects.toThrow('boom')
   })
 })
 

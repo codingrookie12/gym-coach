@@ -43,6 +43,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   const pendingDeleteRef = useRef<PendingDelete | null>(null)
   const [reorderPending, setReorderPending] = useState(false)
   const [reorderError, setReorderError] = useState<string | null>(null)
+  const [reorderSaved, setReorderSaved] = useState(false)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const activeSplit = splits.find(s => s.id === activeSplitId)
@@ -50,6 +51,12 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   useEffect(() => {
     pendingDeleteRef.current = pendingDelete
   }, [pendingDelete])
+
+  useEffect(() => {
+    if (!reorderSaved) return
+    const t = setTimeout(() => setReorderSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [reorderSaved])
 
   useEffect(() => {
     async function load() {
@@ -242,41 +249,47 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
     flushPendingDelete()
     setReorderPending(true)
+    // Optimistic: flip the visual order immediately, but keep original sort_order
+    // values on the rows. The refetch below is the source of truth.
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplitId, newOrder.map((r, i) => ({ ...r, sort_order: i })))
+      next.set(activeSplitId, newOrder.slice())
       return next
     })
 
+    let rpcError: unknown = null
     try {
-      await reorderExercisesInSplit(
-        supabase,
-        userId,
-        activeSplitId,
-        newOrder.map(r => r.id),
-        snapshot.map(r => ({ id: r.id, sort_order: r.sort_order }))
-      )
+      await reorderExercisesInSplit(supabase, activeSplitId, newOrder.map(r => r.id))
     } catch (err) {
+      rpcError = err
       console.error('reorderExercisesInSplit failed:', err)
-      setReorderError(err instanceof Error ? err.message : 'Reorder failed')
-      try {
-        const refreshed = await getUserRoutineForSplit(supabase, activeSplitId)
-        setExerciseMap(prev => {
-          const next = new Map(prev)
-          next.set(activeSplitId, refreshed)
-          return next
-        })
-      } catch {
-        setExerciseMap(prev => {
-          const next = new Map(prev)
-          next.set(activeSplitId, snapshot)
-          return next
-        })
-      }
-    } finally {
-      setReorderPending(false)
     }
-  }, [activeSplitId, currentRows, flushPendingDelete, supabase, userId])
+
+    try {
+      const refreshed = await getUserRoutineForSplit(supabase, activeSplitId)
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(activeSplitId, refreshed)
+        return next
+      })
+    } catch (refetchErr) {
+      if (!rpcError) rpcError = refetchErr
+      // If refetch fails too, fall back to the pre-reorder snapshot so the
+      // UI doesn't get stuck displaying a state we can't verify.
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(activeSplitId, snapshot)
+        return next
+      })
+    }
+
+    if (rpcError) {
+      setReorderError(rpcError instanceof Error ? rpcError.message : 'Reorder failed')
+    } else {
+      setReorderSaved(true)
+    }
+    setReorderPending(false)
+  }, [activeSplitId, currentRows, flushPendingDelete, supabase])
 
   const move = useCallback((index: number, delta: -1 | 1) => {
     const target = index + delta
@@ -624,6 +637,32 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           >
             UNDO
           </button>
+        </div>
+      )}
+
+      {reorderSaved && !reorderError && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 16px',
+            background: 'var(--surface)',
+            border: '1px solid var(--accent)',
+            borderRadius: '4px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            zIndex: 20,
+            animation: 'slideUp 0.2s ease',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--accent)', letterSpacing: '0.08em' }}>
+            ORDER SAVED
+          </span>
         </div>
       )}
 
