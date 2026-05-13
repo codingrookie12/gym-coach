@@ -43,7 +43,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   const pendingDeleteRef = useRef<PendingDelete | null>(null)
   const [reorderPending, setReorderPending] = useState(false)
   const [reorderError, setReorderError] = useState<string | null>(null)
-  const [reorderSaved, setReorderSaved] = useState(false)
+  const [reorderSaved, setReorderSaved] = useState<{ name: string; from: number; to: number } | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const activeSplit = splits.find(s => s.id === activeSplitId)
@@ -54,7 +54,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
   useEffect(() => {
     if (!reorderSaved) return
-    const t = setTimeout(() => setReorderSaved(false), 1500)
+    const t = setTimeout(() => setReorderSaved(null), 2500)
     return () => clearTimeout(t)
   }, [reorderSaved])
 
@@ -247,6 +247,24 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     if (newOrder.length !== snapshot.length) return
     if (newOrder.every((r, i) => r.id === snapshot[i].id)) return
 
+    // Identify the primary moved exercise (first index where order differs).
+    let movedInfo: { name: string; from: number; to: number } | null = null
+    for (let i = 0; i < newOrder.length; i++) {
+      if (newOrder[i].id !== snapshot[i].id) {
+        const movedId = newOrder[i].id
+        const oldIndex = snapshot.findIndex(r => r.id === movedId)
+        movedInfo = { name: newOrder[i].exercise_name, from: oldIndex + 1, to: i + 1 }
+        break
+      }
+    }
+
+    // Diagnostic — captures intent vs result so we can spot client-side bugs.
+    console.log('[reorder]', {
+      moved: movedInfo,
+      snapshot: snapshot.map((r, i) => `${i + 1}:${r.exercise_name}`),
+      newOrder: newOrder.map((r, i) => `${i + 1}:${r.exercise_name}`),
+    })
+
     flushPendingDelete()
     setReorderPending(true)
     // Optimistic: flip the visual order immediately, but keep original sort_order
@@ -267,6 +285,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
     try {
       const refreshed = await getUserRoutineForSplit(supabase, activeSplitId)
+      console.log('[refetch]', refreshed.map((r, i) => `${i + 1}:${r.exercise_name}`))
       setExerciseMap(prev => {
         const next = new Map(prev)
         next.set(activeSplitId, refreshed)
@@ -285,14 +304,15 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
     if (rpcError) {
       setReorderError(rpcError instanceof Error ? rpcError.message : 'Reorder failed')
-    } else {
-      setReorderSaved(true)
+    } else if (movedInfo) {
+      setReorderSaved(movedInfo)
     }
     setReorderPending(false)
   }, [activeSplitId, currentRows, flushPendingDelete, supabase])
 
   const move = useCallback((index: number, delta: -1 | 1) => {
     const target = index + delta
+    console.log('[move]', { index, delta, target, name: currentRows[index]?.exercise_name, total: currentRows.length })
     if (target < 0 || target >= currentRows.length) return
     const next = currentRows.slice()
     const [moved] = next.splice(index, 1)
@@ -661,7 +681,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           }}
         >
           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--accent)', letterSpacing: '0.08em' }}>
-            ORDER SAVED
+            SAVED · {reorderSaved.name.toUpperCase()} {reorderSaved.from}→{reorderSaved.to}
           </span>
         </div>
       )}

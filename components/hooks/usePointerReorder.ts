@@ -67,6 +67,8 @@ export function usePointerReorder<T>({
     e.preventDefault()
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
 
+    console.log('[drag-start]', { id, fromIndex, startY: e.clientY })
+
     setDrag({
       id,
       fromIndex,
@@ -88,6 +90,11 @@ export function usePointerReorder<T>({
 
     function onEnd() {
       const finalTarget = drag ? computeTargetIndex(drag) : null
+      console.log('[drag-end]', {
+        fromIndex: drag?.fromIndex,
+        finalTarget,
+        pointerDelta: drag ? drag.pointerY - drag.startY : null,
+      })
       setDrag(null)
       if (finalTarget !== null && drag && finalTarget !== drag.fromIndex) {
         const next = itemsRef.current.slice()
