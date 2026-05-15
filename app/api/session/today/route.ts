@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase.server'
 
 export async function GET() {
@@ -49,5 +49,37 @@ export async function GET() {
   } catch (error) {
     console.error('Today check error:', error)
     return NextResponse.json({ found: false })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const userProgramSplitId = searchParams.get('userProgramSplitId')
+  if (!userProgramSplitId) {
+    return NextResponse.json({ error: 'userProgramSplitId required' }, { status: 400 })
+  }
+
+  const today = new Date().toISOString().split('T')[0]
+
+  try {
+    const { data: deleted, error } = await supabase
+      .from('workouts')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .eq('user_program_split_id', userProgramSplitId)
+      .is('finished_at', null)
+      .select('id')
+
+    if (error) throw error
+
+    return NextResponse.json({ deleted: { workouts: deleted?.length ?? 0 } })
+  } catch (error) {
+    console.error('Today discard error:', error)
+    return NextResponse.json({ error: 'Failed to discard today' }, { status: 500 })
   }
 }

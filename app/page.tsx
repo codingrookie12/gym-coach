@@ -74,6 +74,7 @@ export interface AppState {
   detectedSession: PersistedSession | null
   detectedSplit: string | null
   lastSplit: string | null
+  showStartFreshConfirm: boolean
 }
 
 function computeNextSplit(splits: string[], lastSplit: string | null): string {
@@ -126,6 +127,7 @@ export default function App() {
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
+    showStartFreshConfirm: false,
   })
 
   const navigate = useCallback((to: Screen) => setScreen(to), [])
@@ -400,11 +402,33 @@ export default function App() {
     navigate('coaching-context')
   }
 
-  // Start fresh — clear stored session, go to split selection
+  // Start fresh — if today has DB-saved exercises, prompt for confirmation
   function handleStartFresh() {
+    if (appState.userProgramSplitId) {
+      updateState({ showStartFreshConfirm: true })
+      return
+    }
     clearSessionFromStorage()
     updateState({ detectedSession: null, detectedSplit: null })
     navigate('home')
+  }
+
+  async function confirmStartFresh() {
+    const splitId = appState.userProgramSplitId
+    if (splitId) {
+      try {
+        await fetch(`/api/session/today?userProgramSplitId=${encodeURIComponent(splitId)}`, { method: 'DELETE' })
+      } catch (err) {
+        console.error('Failed to discard today on Start Fresh:', err)
+      }
+    }
+    clearSessionFromStorage()
+    updateState({ detectedSession: null, detectedSplit: null, showStartFreshConfirm: false })
+    navigate('home')
+  }
+
+  function cancelStartFresh() {
+    updateState({ showStartFreshConfirm: false })
   }
 
   async function handleLogout() {
@@ -453,6 +477,9 @@ export default function App() {
               onResume={handleResume}
               onFresh={handleStartFresh}
               onSettings={() => navigate('manage-weights')}
+              showStartFreshConfirm={appState.showStartFreshConfirm}
+              onConfirmStartFresh={confirmStartFresh}
+              onCancelStartFresh={cancelStartFresh}
             />
           )}
 

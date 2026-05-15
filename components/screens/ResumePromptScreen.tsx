@@ -5,14 +5,18 @@ import { PersistedSession } from '@/lib/sessionStorage'
 
 interface ResumePromptScreenProps {
   detectedSession: PersistedSession | null  // full local data
-  detectedSplit: Split | null              // Notion fallback (split only)
+  detectedSplit: Split | null              // DB fallback (split only)
   onResume: () => void
   onFresh: () => void
   onSettings: () => void
+  showStartFreshConfirm: boolean
+  onConfirmStartFresh: () => void
+  onCancelStartFresh: () => void
 }
 
 export default function ResumePromptScreen({
   detectedSession, detectedSplit, onResume, onFresh, onSettings,
+  showStartFreshConfirm, onConfirmStartFresh, onCancelStartFresh,
 }: ResumePromptScreenProps) {
   const split = detectedSession?.split ?? detectedSplit
   const hasFullData = !!detectedSession
@@ -107,7 +111,7 @@ export default function ResumePromptScreen({
           </div>
         )}
 
-        {/* Notion-only fallback message */}
+        {/* DB-only fallback message */}
         {!hasFullData && (
           <div style={{
             background: 'var(--surface)', border: '1px solid var(--rust-border)',
@@ -143,6 +147,22 @@ export default function ResumePromptScreen({
           PUSH · PULL · LEGS
         </span>
       </div>
+
+      {showStartFreshConfirm && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+          <p className="section-label" style={{ margin: '0 0 10px 0' }}>DISCARD TODAY&apos;S SESSION?</p>
+          <h2 className="font-display" style={{ fontSize: '2.5rem', fontWeight: 400, color: 'var(--text-primary)', margin: '0 0 8px 0', textAlign: 'center', letterSpacing: '0.04em' }}>
+            Start Fresh?
+          </h2>
+          <p className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-mid)', margin: '0 0 32px 0', textAlign: 'center', lineHeight: 1.7, maxWidth: '280px' }}>
+            This will permanently delete the exercises you&apos;ve already logged today for this split.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
+            <button className="btn-secondary" onClick={onCancelStartFresh}>CANCEL</button>
+            <button className="btn-primary" onClick={onConfirmStartFresh}>DISCARD &amp; START FRESH</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
