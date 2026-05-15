@@ -258,7 +258,8 @@ export default function App() {
       // 1. localStorage — fast, full data
       const stored = loadSessionFromStorage()
       if (stored && activeSplits.includes(stored.split)) {
-        setAppState(prev => ({ ...prev, detectedSession: stored }))
+        const splitId = await resolveSplitIdByName(resolvedUserProgramId, stored.split)
+        setAppState(prev => ({ ...prev, detectedSession: stored, userProgramSplitId: splitId }))
         setScreen('resume-prompt')
         return
       }
