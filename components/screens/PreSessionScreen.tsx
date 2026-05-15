@@ -62,7 +62,7 @@ export default function PreSessionScreen({
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v7.3
+            v7.4
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>

@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# one-shot enrichment dataset (yuhonas/free-exercise-db) — re-download if needed
+/free-exercise-db-main/
