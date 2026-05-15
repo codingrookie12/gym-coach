@@ -9,10 +9,24 @@ interface ManageWeightsScreenProps {
   onBack: () => void
 }
 
+interface WeightEntry {
+  override: number | null
+  lastUsed: number | null
+  lastUsedAt: string | null
+}
+
 type SplitFilter = Split | 'All'
 
+const EMPTY_ENTRY: WeightEntry = { override: null, lastUsed: null, lastUsedAt: null }
+
+function formatLastUsedDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps) {
-  const [weights, setWeights] = useState<Record<string, number | null>>({})
+  const [weights, setWeights] = useState<Record<string, WeightEntry>>({})
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null)
@@ -140,7 +154,9 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {group.exercises.map((ex, i) => {
-                const w = weights[ex.name]
+                const entry = weights[ex.name] ?? EMPTY_ENTRY
+                const displayWeight = entry.override ?? entry.lastUsed
+                const isOverride = entry.override !== null
                 const isSaving = saving === ex.name
                 return (
                   <div
@@ -157,9 +173,13 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                       <p className="font-sans" style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
                         {ex.name}
                       </p>
-                      {ex.weightConvention && (
+                      {ex.weightConvention ? (
                         <p className="section-label" style={{ margin: 0 }}>{ex.weightConvention}</p>
-                      )}
+                      ) : !isOverride && entry.lastUsed !== null ? (
+                        <p className="font-mono" style={{ fontSize: '0.58rem', color: 'var(--text-mid)', margin: 0, letterSpacing: '0.04em' }}>
+                          last: {entry.lastUsed} · {formatLastUsedDate(entry.lastUsedAt)}
+                        </p>
+                      ) : null}
                     </div>
 
                     <button
@@ -181,13 +201,17 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                         <>
                           <span className="font-display" style={{
                             fontSize: '1.2rem',
-                            color: w !== null && w !== undefined ? 'var(--accent)' : 'var(--text-secondary)',
+                            color: isOverride
+                              ? 'var(--accent)'
+                              : displayWeight !== null
+                                ? 'var(--text-mid)'
+                                : 'var(--text-secondary)',
                             letterSpacing: '0.02em',
                             lineHeight: 1,
                           }}>
-                            {w !== null && w !== undefined ? `${w}` : '—'}
+                            {displayWeight !== null ? `${displayWeight}` : '—'}
                           </span>
-                          {w !== null && w !== undefined && (
+                          {displayWeight !== null && (
                             <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{ex.weightUnit === 'pins' ? 'pins' : 'lbs'}</span>
                           )}
                           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--border-2)', marginLeft: '6px' }}>
@@ -204,10 +228,14 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
         ))}
       </div>
 
-      {/* Number pad */}
+      {/* Number pad — pre-fills with override, falling back to last-used weight */}
       {editingExercise && (
         <NumberPad
-          initialValue={weights[editingExercise.name] ?? null}
+          initialValue={
+            weights[editingExercise.name]?.override
+            ?? weights[editingExercise.name]?.lastUsed
+            ?? null
+          }
           onConfirm={handleSetWeight}
           onCancel={() => setEditingExercise(null)}
           label={editingExercise.name}

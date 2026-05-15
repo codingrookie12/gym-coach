@@ -12,6 +12,7 @@ import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquip
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ActiveSessionScreenProps {
+  userId: string
   split: string
   plan: ExercisePlan[]
   initialLogs?: ExerciseLog[]
@@ -453,7 +454,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, onFinish, onBack, onSessionSwap,
+  userId, split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, onFinish, onBack, onSessionSwap,
 }: ActiveSessionScreenProps) {
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
@@ -518,7 +519,7 @@ export default function ActiveSessionScreen({
   // Persist session to localStorage on every change for resume detection
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
-    saveSessionToStorage({
+    saveSessionToStorage(userId, {
       date: today,
       split,
       exIdx: currentExIdx,
@@ -718,7 +719,7 @@ export default function ActiveSessionScreen({
       notes: '',
       isCustom: matched === null,
     }
-    if (matched === null) savePendingExercise(name)
+    if (matched === null) savePendingExercise(userId, name)
     setLogs(prev => [...prev, newLog])
     setShowAddSheet(false)
   }

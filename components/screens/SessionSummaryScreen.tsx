@@ -12,6 +12,7 @@ import {
 } from '@/lib/customExercises'
 
 interface SessionSummaryScreenProps {
+  userId: string
   split: string
   exerciseLogs: ExerciseLog[]
   plan: ExercisePlan[]
@@ -213,7 +214,7 @@ function MetadataSheet({
 }
 
 export default function SessionSummaryScreen({
-  split, exerciseLogs, plan, previousSessions, syncStatus, onDone,
+  userId, split, exerciseLogs, plan, previousSessions, syncStatus, onDone,
 }: SessionSummaryScreenProps) {
   const progressFlags: string[] = []
   const stallFlags: string[] = []
@@ -248,14 +249,14 @@ export default function SessionSummaryScreen({
 
   useEffect(() => {
     if (customNames.length === 0) return
-    const all = getPendingExercises()
+    const all = getPendingExercises(userId)
     const relevant = all.filter(e => !e.metadataComplete && customNames.includes(e.name))
     setPendingForSession(relevant)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleSaveMetadata(name: string, equipment: Equipment, muscles: Muscle[], s: string | null) {
-    completeExerciseMetadata(name, { equipment, primaryMuscles: muscles, split: s })
+    completeExerciseMetadata(userId, name, { equipment, primaryMuscles: muscles, split: s })
     const next = metadataIdx + 1
     if (next < pendingForSession.length) {
       setMetadataIdx(next)

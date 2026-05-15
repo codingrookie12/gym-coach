@@ -29,8 +29,9 @@ import {
   PersistedSession,
 } from '@/lib/sessionStorage'
 import {
-  getExerciseAvailability,
-  getUnavailableExercises,
+  fetchAvailability,
+  emptyAvailability,
+  AvailabilityState,
 } from '@/lib/exerciseAvailability'
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
@@ -104,7 +105,7 @@ export default function App() {
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [programLibraryInitialMode, setProgramLibraryInitialMode] = useState<'explorer' | 'builder' | undefined>(undefined)
-  const [exerciseAvailability, setExerciseAvailability] = useState<Record<string, boolean>>({})
+  const [availability, setAvailability] = useState<AvailabilityState>(emptyAvailability)
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
   const [appState, setAppState] = useState<AppState>({
@@ -145,10 +146,12 @@ export default function App() {
       detectedSession: null, detectedSplit: null,
       // programId preserved intentionally
     }))
-    setPendingCustomCount(getIncompletePendingExercises().length)
+    if (appState.user) {
+      setPendingCustomCount(getIncompletePendingExercises(appState.user.id).length)
+    }
     setScreen('home')
     setActiveTab('train')
-  }, [])
+  }, [appState.user])
 
   function handleSessionSwap(oldName: string, newName: string) {
     setAppState(prev => ({
@@ -164,10 +167,15 @@ export default function App() {
     }))
   }
 
-  // On mount: load equipment availability + pending custom exercise count
+  // On mount: discard any legacy global-keyed localStorage from pre-GYM-89 builds.
+  // Delete-first migration — we do not move that data into the current user's slot
+  // because the device may be shared.
   useEffect(() => {
-    setExerciseAvailability(getExerciseAvailability())
-    setPendingCustomCount(getIncompletePendingExercises().length)
+    try {
+      localStorage.removeItem('gym_coach_exercise_availability')
+      localStorage.removeItem('gym_coach_session')
+      localStorage.removeItem('gym_coach_custom_exercises')
+    } catch {}
   }, [])
 
   // On mount: check localStorage → then Notion fallback
@@ -225,6 +233,11 @@ export default function App() {
           activeProgram: resolvedProgram,
         }))
 
+        // Per-user state hydration. Fire-and-forget: the home screen renders
+        // while these resolve; badges update when they land.
+        fetchAvailability().then(setAvailability).catch(() => {})
+        setPendingCustomCount(getIncompletePendingExercises(user.id).length)
+
         // Check onboarding status — new users pick a program before first session
         try {
           const obRes = await fetch('/api/user/onboarding')
@@ -257,15 +270,15 @@ export default function App() {
 
       const activeSplits = resolvedProgram?.splits ?? []
 
-      // 1. localStorage — fast, full data
-      const stored = loadSessionFromStorage()
+      // 1. localStorage — fast, full data (per-user keyed)
+      const stored = user ? loadSessionFromStorage(user.id) : null
       if (stored && activeSplits.includes(stored.split)) {
         const splitId = await resolveSplitIdByName(resolvedUserProgramId, stored.split)
         setAppState(prev => ({ ...prev, detectedSession: stored, userProgramSplitId: splitId }))
         setScreen('resume-prompt')
         return
       }
-      if (stored) clearSessionFromStorage()
+      if (stored && user) clearSessionFromStorage(user.id)
 
       // 2. DB fallback — check for today's workout in the active program
       try {
@@ -372,7 +385,7 @@ export default function App() {
       syncStatus = data.skipped?.length > 0 ? 'partial' : 'confirmed'
     }
 
-    if (syncStatus === 'confirmed') clearSessionFromStorage()
+    if (syncStatus === 'confirmed' && appState.user) clearSessionFromStorage(appState.user.id)
 
     fetch('/api/session/finish', {
       method: 'POST',
@@ -408,7 +421,7 @@ export default function App() {
       updateState({ showStartFreshConfirm: true })
       return
     }
-    clearSessionFromStorage()
+    if (appState.user) clearSessionFromStorage(appState.user.id)
     updateState({ detectedSession: null, detectedSplit: null })
     navigate('home')
   }
@@ -422,7 +435,7 @@ export default function App() {
         console.error('Failed to discard today on Start Fresh:', err)
       }
     }
-    clearSessionFromStorage()
+    if (appState.user) clearSessionFromStorage(appState.user.id)
     updateState({ detectedSession: null, detectedSplit: null, showStartFreshConfirm: false })
     navigate('home')
   }
@@ -495,7 +508,7 @@ export default function App() {
               }}
               onSettings={() => navigate('manage-weights')}
               onEquipment={() => setShowEquipmentPanel(true)}
-              unavailableCount={getUnavailableExercises(exerciseAvailability).length}
+              unavailableCount={availability.unavailable.size}
               pendingCustomCount={pendingCustomCount}
             />
           )}
@@ -508,7 +521,7 @@ export default function App() {
               split={appState.split}
               programId={appState.programId}
               userProgramSplitId={appState.userProgramSplitId ?? undefined}
-              unavailableExercises={getUnavailableExercises(exerciseAvailability)}
+              unavailableExercises={Array.from(availability.unavailable)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
@@ -556,14 +569,15 @@ export default function App() {
                   coachingNote: null,
                 }
                 updateState({ plan: [...currentPlan, newEntry] })
-                if (!matched) savePendingExercise(name)
+                if (!matched && appState.user) savePendingExercise(appState.user.id, name)
               }}
               onSessionSwap={handleSessionSwap}
             />
           )}
 
-          {screen === 'active-session' && appState.plan && appState.split && (
+          {screen === 'active-session' && appState.plan && appState.split && appState.user && (
             <ActiveSessionScreen
+              userId={appState.user.id}
               split={appState.split}
               plan={appState.plan}
               initialLogs={appState.savedLogs ?? undefined}
@@ -591,8 +605,9 @@ export default function App() {
             />
           )}
 
-          {screen === 'session-summary' && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
+          {screen === 'session-summary' && appState.user && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
             <SessionSummaryScreen
+              userId={appState.user.id}
               split={appState.split}
               exerciseLogs={appState.exerciseLogs}
               plan={appState.plan}
@@ -619,7 +634,7 @@ export default function App() {
               initialMode={programLibraryInitialMode}
               onBack={() => { setShowProgramLibrary(false); setProgramLibraryInitialMode(undefined) }}
               onSelect={async (userProgramId) => {
-                clearSessionFromStorage()
+                if (appState.user) clearSessionFromStorage(appState.user.id)
                 setShowProgramLibrary(false)
                 setProgramLibraryInitialMode(undefined)
                 window.location.reload()
@@ -630,7 +645,7 @@ export default function App() {
               lastSplit={appState.lastSplit}
               activeProgramId={appState.userProgramId ?? appState.programId}
               activeProgram={appState.activeProgram}
-              onSelectProgram={() => { clearSessionFromStorage(); window.location.reload() }}
+              onSelectProgram={() => { if (appState.user) clearSessionFromStorage(appState.user.id); window.location.reload() }}
               onOpenMyPrograms={() => { setProgramLibraryInitialMode(undefined); setShowProgramLibrary(true) }}
               onOpenExplorer={() => { setProgramLibraryInitialMode('explorer'); setShowProgramLibrary(true) }}
               onOpenBuilder={() => { setProgramLibraryInitialMode('builder'); setShowProgramLibrary(true) }}
@@ -662,19 +677,19 @@ export default function App() {
 
       {showEquipmentPanel && (
         <ExerciseAvailabilityPanel
-          availability={exerciseAvailability}
+          availability={availability}
           onToggle={(name, available) => {
-            setExerciseAvailability(prev => {
-              const next = { ...prev }
-              if (available) delete next[name]
-              else next[name] = false
-              return next
+            setAvailability(prev => {
+              const nextUnavailable = new Set(prev.unavailable)
+              if (available) nextUnavailable.delete(name)
+              else nextUnavailable.add(name)
+              return { ...prev, unavailable: nextUnavailable }
             })
             // Clear cached plan so it rebuilds with updated availability on next navigation
             updateState({ coachingContext: null, plan: null })
           }}
           onReset={() => {
-            setExerciseAvailability({})
+            setAvailability(prev => ({ ...prev, unavailable: new Set() }))
             updateState({ coachingContext: null, plan: null })
           }}
           onClose={() => setShowEquipmentPanel(false)}

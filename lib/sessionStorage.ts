@@ -1,10 +1,12 @@
 // Persists active session to localStorage so the app can detect
-// an unfinished session on reopen (same day).
+// an unfinished session on reopen (same day). Keyed by userId so a shared
+// browser does not surface user A's in-progress workout to user B.
 
 import { Split } from './routines'
 import { ExerciseLog, SavedSnapshot } from './store'
 
-const KEY = 'gym_coach_session'
+const BASE_KEY = 'gym_coach_session'
+const keyFor = (userId: string) => `${BASE_KEY}:${userId}`
 
 export interface PersistedSession {
   date: string          // ISO date string YYYY-MM-DD
@@ -15,23 +17,22 @@ export interface PersistedSession {
   startedAt?: string    // ISO timestamp captured when BEGIN WORKOUT was clicked
 }
 
-export function saveSessionToStorage(session: PersistedSession): void {
+export function saveSessionToStorage(userId: string, session: PersistedSession): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(session))
+    localStorage.setItem(keyFor(userId), JSON.stringify(session))
   } catch {
     // Storage full or unavailable — ignore
   }
 }
 
-export function loadSessionFromStorage(): PersistedSession | null {
+export function loadSessionFromStorage(userId: string): PersistedSession | null {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(keyFor(userId))
     if (!raw) return null
     const parsed: PersistedSession = JSON.parse(raw)
-    // Only return if it's from today
     const today = new Date().toISOString().split('T')[0]
     if (parsed.date !== today) {
-      localStorage.removeItem(KEY)
+      localStorage.removeItem(keyFor(userId))
       return null
     }
     return parsed
@@ -40,9 +41,9 @@ export function loadSessionFromStorage(): PersistedSession | null {
   }
 }
 
-export function clearSessionFromStorage(): void {
+export function clearSessionFromStorage(userId: string): void {
   try {
-    localStorage.removeItem(KEY)
+    localStorage.removeItem(keyFor(userId))
   } catch {
     // ignore
   }

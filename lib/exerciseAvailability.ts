@@ -1,44 +1,51 @@
-// Persists exercise availability state to localStorage.
-// An exercise absent from this map is considered available (default true).
-// Phase 1 migration: swap internals to Supabase user_exercise_availability table;
-// all callers remain unchanged.
+// Per-user equipment availability — backed by Supabase `exercise_availability`
+// (sparse: row present = exercise marked unavailable). RLS enforces user scoping.
+// Replaces the old localStorage-only store; cross-user leak on shared devices
+// was the reason for the migration.
 
-const KEY = 'gym_coach_exercise_availability'
-
-export function getExerciseAvailability(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return {}
-    return JSON.parse(raw) as Record<string, boolean>
-  } catch {
-    return {}
-  }
+export interface AvailabilityState {
+  unavailable: Set<string>
+  trainedEquipment: Set<string>
+  trainedExercises: Set<string>
 }
 
-export function setExerciseAvailable(exerciseName: string, available: boolean): void {
+export async function fetchAvailability(): Promise<AvailabilityState> {
   try {
-    const current = getExerciseAvailability()
-    if (available) {
-      delete current[exerciseName]
-    } else {
-      current[exerciseName] = false
+    const res = await fetch('/api/availability')
+    if (!res.ok) return emptyState()
+    const data = await res.json()
+    return {
+      unavailable: new Set(data.unavailable ?? []),
+      trainedEquipment: new Set(data.trainedEquipment ?? []),
+      trainedExercises: new Set(data.trainedExercises ?? []),
     }
-    localStorage.setItem(KEY, JSON.stringify(current))
   } catch {
-    // Storage full or unavailable — ignore
+    return emptyState()
   }
 }
 
-export function resetExerciseAvailability(): void {
-  try {
-    localStorage.removeItem(KEY)
-  } catch {
-    // ignore
-  }
+export async function setExerciseAvailable(name: string, available: boolean): Promise<void> {
+  const res = await fetch('/api/availability', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ exercise: name, available }),
+  })
+  if (!res.ok) throw new Error(`Failed to update availability (${res.status})`)
 }
 
-export function getUnavailableExercises(availability: Record<string, boolean>): string[] {
-  return Object.entries(availability)
-    .filter(([, available]) => !available)
-    .map(([name]) => name)
+export async function resetExerciseAvailability(): Promise<void> {
+  const res = await fetch('/api/availability', { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Failed to reset availability (${res.status})`)
+}
+
+export function emptyAvailability(): AvailabilityState {
+  return emptyState()
+}
+
+function emptyState(): AvailabilityState {
+  return {
+    unavailable: new Set(),
+    trainedEquipment: new Set(),
+    trainedExercises: new Set(),
+  }
 }
