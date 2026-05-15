@@ -1,6 +1,7 @@
 import { Equipment, Muscle, Split } from './exerciseLibrary'
 
-const STORAGE_KEY = 'gym_coach_custom_exercises'
+const BASE_KEY = 'gym_coach_custom_exercises'
+const keyFor = (userId: string) => `${BASE_KEY}:${userId}`
 
 export interface PendingExercise {
   name: string
@@ -11,35 +12,36 @@ export interface PendingExercise {
   split?: Split | null
 }
 
-export function getPendingExercises(): PendingExercise[] {
+export function getPendingExercises(userId: string): PendingExercise[] {
   if (typeof window === 'undefined') return []
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(keyFor(userId))
     return raw ? (JSON.parse(raw) as PendingExercise[]) : []
   } catch {
     return []
   }
 }
 
-export function savePendingExercise(name: string): void {
-  const all = getPendingExercises()
+export function savePendingExercise(userId: string, name: string): void {
+  const all = getPendingExercises(userId)
   if (all.some(e => e.name.toLowerCase() === name.toLowerCase())) return
   all.push({ name, addedAt: new Date().toISOString(), metadataComplete: false })
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  localStorage.setItem(keyFor(userId), JSON.stringify(all))
 }
 
 export function completeExerciseMetadata(
+  userId: string,
   name: string,
   metadata: { equipment: Equipment; primaryMuscles: Muscle[]; split: Split | null }
 ): void {
-  const all = getPendingExercises().map(e =>
+  const all = getPendingExercises(userId).map(e =>
     e.name.toLowerCase() === name.toLowerCase()
       ? { ...e, ...metadata, metadataComplete: true }
       : e
   )
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  localStorage.setItem(keyFor(userId), JSON.stringify(all))
 }
 
-export function getIncompletePendingExercises(): PendingExercise[] {
-  return getPendingExercises().filter(e => !e.metadataComplete)
+export function getIncompletePendingExercises(userId: string): PendingExercise[] {
+  return getPendingExercises(userId).filter(e => !e.metadataComplete)
 }
