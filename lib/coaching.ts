@@ -1,36 +1,8 @@
 import { Exercise } from './routines'
-import { SessionRecord } from './notion'
-import { findExerciseByName, getAlternatives, getUniqueEquipment } from './exerciseLibrary'
+import { SessionRecord } from './supabase.queries'
 
-function matchesExercise(notionName: string, routineName: string): boolean {
-  return notionName.toLowerCase() === routineName.toLowerCase()
-}
-
-// Resolves the best substitute for an unavailable exercise.
-// Filters: same primary muscles, not unavailable, not the original.
-// Falls back to null if no substitute found.
-function resolveSubstitute(exercise: Exercise, unavailableExercises: string[], routine: Exercise[]): Exercise | null {
-  const def = findExerciseByName(exercise.name)
-  if (!def) return null
-
-  const alternatives = getAlternatives(def, {
-    availableEquipment: getUniqueEquipment(),
-    excludeNames: [exercise.name, ...unavailableExercises],
-    limit: 1,
-  })
-
-  if (alternatives.length === 0) return null
-
-  const altName = alternatives[0].name
-  const altInRoutine = routine.find(e => e.name === altName)
-  if (altInRoutine) return altInRoutine
-
-  return {
-    ...exercise,
-    name: altName,
-    notionName: altName,
-    backup: null,
-  }
+function matchesExercise(canonicalName: string, routineName: string): boolean {
+  return canonicalName.toLowerCase() === routineName.toLowerCase()
 }
 
 export interface CoachingFlag {
@@ -69,7 +41,6 @@ export function analyzeCoaching(
   split: string,
   sessions: SessionRecord[],
   today: string,
-  unavailableExercises: string[] = [],
   weightOverrides: Record<string, number> = {},
   routine: Exercise[] = []
 ): { context: CoachingContext; plan: ExercisePlan[] } {
@@ -84,20 +55,7 @@ export function analyzeCoaching(
     recoveryGap = daysBetween(today, lastSession.date)
   }
 
-  const plan: ExercisePlan[] = routine.map(originalExercise => {
-    let exercise = originalExercise
-    let substitutionNote: string | null = null
-
-    if (unavailableExercises.includes(exercise.name)) {
-      const substitute = resolveSubstitute(exercise, unavailableExercises, routine)
-      if (substitute) {
-        substitutionNote = `${exercise.name} unavailable — substituting ${substitute.name}`
-        exercise = substitute
-      } else {
-        substitutionNote = 'No available substitute found — using original exercise'
-      }
-    }
-
+  const plan: ExercisePlan[] = routine.map(exercise => {
     const exerciseName = exercise.name
 
     // Gather per-exercise history across sessions
@@ -120,9 +78,9 @@ export function analyzeCoaching(
       return {
         exercise: { ...exercise, name: exerciseName },
         targetWeight: overrideWeight,
-        coachingNote: substitutionNote ?? (overrideWeight !== null
+        coachingNote: overrideWeight !== null
           ? 'Start weight carried from your history — adjust as needed'
-          : exercise.programNote ?? 'No weight logged — set your working weight today'),
+          : exercise.programNote ?? 'No weight logged — set your working weight today',
       }
     }
 
@@ -251,7 +209,7 @@ export function analyzeCoaching(
     return {
       exercise: { ...exercise, name: exerciseName },
       targetWeight,
-      coachingNote: substitutionNote ?? coachingNote ?? exercise.programNote ?? null,
+      coachingNote: coachingNote ?? exercise.programNote ?? null,
     }
   })
 

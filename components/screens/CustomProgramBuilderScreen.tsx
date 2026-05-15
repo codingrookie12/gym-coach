@@ -59,7 +59,7 @@ export default function CustomProgramBuilderScreen({
             exercises: s.exercises.map((e: any) => ({
               id: e.id,
               exercise_name: e.exerciseName,
-              notion_name: e.notionName,
+              canonical_name: e.canonicalName,
               sets: e.sets,
               rep_range_min: e.repRangeMin,
               rep_range_max: e.repRangeMax,
@@ -183,7 +183,7 @@ export default function CustomProgramBuilderScreen({
     const tempRow: RoutineExerciseRow = {
       id: `temp-${Date.now()}`,
       exercise_name: def.name,
-      notion_name: def.name,
+      canonical_name: def.name,
       sets: 3,
       rep_range_min: 8,
       rep_range_max: 12,

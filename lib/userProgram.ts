@@ -43,7 +43,7 @@ export interface UserProgramSplit {
 export interface UserRoutineExercise {
   id: string
   exerciseName: string
-  notionName: string
+  canonicalName: string
   sets: number
   repRangeMin: number
   repRangeMax: number
@@ -150,7 +150,7 @@ export async function getUserProgram(
   if (splitIds.length) {
     const { data: exRows, error: exErr } = await supabase
       .from('user_routine_exercises')
-      .select('id, user_program_split_id, exercise_name, notion_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, equipment, program_note, sort_order')
+      .select('id, user_program_split_id, exercise_name, canonical_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, equipment, program_note, sort_order')
       .in('user_program_split_id', splitIds)
       .order('sort_order', { ascending: true })
     if (exErr) throw exErr
@@ -163,7 +163,7 @@ export async function getUserProgram(
     arr.push({
       id: ex.id as string,
       exerciseName: ex.exercise_name as string,
-      notionName: ex.notion_name as string,
+      canonicalName: ex.canonical_name as string,
       sets: ex.sets as number,
       repRangeMin: ex.rep_range_min as number,
       repRangeMax: ex.rep_range_max as number,
@@ -213,7 +213,7 @@ export async function getProgramByIdAsync(
   const activeSplits = hydrated.splits.filter(s => s.archivedAt == null)
   const splitMuscles: Record<string, string[]> = {}
   for (const split of activeSplits) {
-    splitMuscles[split.name] = inferSplitMuscles(split.exercises.map(e => e.notionName))
+    splitMuscles[split.name] = inferSplitMuscles(split.exercises.map(e => e.canonicalName))
   }
 
   // If the program was cloned from a curated template, preserve that template's
@@ -291,7 +291,7 @@ export async function cloneTemplate(
         user_id: userId,
         user_program_split_id: splitId,
         exercise_name: ex.name,
-        notion_name: ex.notionName,
+        canonical_name: ex.canonicalName,
         sets: ex.sets,
         rep_range_min: ex.repRange[0],
         rep_range_max: ex.repRange[1],
@@ -314,7 +314,7 @@ export async function cloneTemplate(
 }
 
 function equipmentFromExercise(ex: TemplateExercise): string | null {
-  const def = findExerciseByName(ex.notionName)
+  const def = findExerciseByName(ex.canonicalName)
   return def?.equipment ?? null
 }
 
@@ -373,7 +373,7 @@ export async function createBlankProgram(
         user_id: userId,
         user_program_split_id: splitId,
         exercise_name: ex.name,
-        notion_name: ex.name,
+        canonical_name: ex.name,
         sets: ex.sets,
         rep_range_min: ex.repRange[0],
         rep_range_max: ex.repRange[1],
@@ -539,7 +539,7 @@ export async function getRoutineAsExercises(
     supabase.from('user_program_splits').select('name').eq('id', splitId).maybeSingle(),
     supabase
       .from('user_routine_exercises')
-      .select('exercise_name, notion_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, equipment, program_note')
+      .select('exercise_name, canonical_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, equipment, program_note')
       .eq('user_program_split_id', splitId)
       .order('sort_order', { ascending: true }),
   ])
@@ -549,7 +549,7 @@ export async function getRoutineAsExercises(
 
   return (exRes.data ?? []).map(row => ({
     name: row.exercise_name as string,
-    notionName: row.notion_name as string,
+    canonicalName: row.canonical_name as string,
     sets: row.sets as number,
     repRange: [row.rep_range_min as number, row.rep_range_max as number] as [number, number],
     backup: (row.backup_name as string | null) ?? null,

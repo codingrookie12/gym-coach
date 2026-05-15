@@ -140,7 +140,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     const tempRow: RoutineExerciseRow = {
       id: tempId,
       exercise_name: def.name,
-      notion_name: def.name,
+      canonical_name: def.name,
       sets: 3,
       rep_range_min: 8,
       rep_range_max: 12,
@@ -184,7 +184,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     const tempRow: RoutineExerciseRow = {
       id: tempId,
       exercise_name: newDef.name,
-      notion_name: newDef.name,
+      canonical_name: newDef.name,
       sets: target.sets,
       rep_range_min: target.rep_range_min,
       rep_range_max: target.rep_range_max,

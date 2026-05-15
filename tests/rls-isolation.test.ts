@@ -90,7 +90,7 @@ describe('RLS isolation', () => {
         user_id: userAId,
         user_program_split_id: splitId,
         exercise_name: 'Barbell Bench Press',
-        notion_name: 'Barbell Bench Press',
+        canonical_name: 'Barbell Bench Press',
         sets: 3,
         rep_range_min: 8,
         rep_range_max: 12,

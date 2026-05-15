@@ -5,7 +5,19 @@ import {
   getOrCreateWorkout,
   upsertWeightOverride,
 } from '@/lib/supabase.queries'
-import type { NotionEntry } from '@/lib/notion'
+
+interface SessionEntry {
+  exercise: string
+  date: string
+  split: string
+  weight: number
+  set: number
+  reps: number
+  entry: string
+  notes?: string
+  unit?: 'Lbs' | 'Pins'
+  userProgramSplitId?: string
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient()
@@ -14,14 +26,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const entries: NotionEntry[] = body.entries
+    const entries: SessionEntry[] = body.entries
     const startedAt: string | undefined = body.startedAt
 
     if (!entries || !Array.isArray(entries)) {
       return NextResponse.json({ error: 'Invalid entries' }, { status: 400 })
     }
 
-    const groups = new Map<string, { date: string; userProgramSplitId: string; splitName: string; entries: NotionEntry[] }>()
+    const groups = new Map<string, { date: string; userProgramSplitId: string; splitName: string; entries: SessionEntry[] }>()
     for (const entry of entries) {
       const key = `${entry.date}::${entry.userProgramSplitId ?? entry.split}`
       if (!groups.has(key)) {
@@ -36,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const pageIds: string[] = new Array(entries.length).fill('')
-    const entryIndexMap = new Map<NotionEntry, number>()
+    const entryIndexMap = new Map<SessionEntry, number>()
     entries.forEach((e, i) => entryIndexMap.set(e, i))
 
     const skipped: string[] = []
@@ -53,7 +65,7 @@ export async function POST(request: NextRequest) {
         reps: number
         unit: string
         notes?: string
-        _entry: NotionEntry
+        _entry: SessionEntry
       }
 
       const inserts: InsertRow[] = []
@@ -108,7 +120,7 @@ export async function POST(request: NextRequest) {
         try {
           await supabase.from('failed_syncs').insert({
             user_id: user.id,
-            payload: { entries: entries.filter((e: NotionEntry) => skipped.includes(e.exercise)), skippedNames: skipped },
+            payload: { entries: entries.filter((e: SessionEntry) => skipped.includes(e.exercise)), skippedNames: skipped },
             error_message: `Exercises not found in library: ${skipped.join(', ')}`,
           })
         } catch {}

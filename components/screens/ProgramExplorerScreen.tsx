@@ -176,7 +176,7 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
                 {split.name}
               </div>
               {split.exercises.map((ex, i) => {
-                const def = findExerciseByName(ex.notionName)
+                const def = findExerciseByName(ex.canonicalName)
                 return (
                   <div
                     key={i}

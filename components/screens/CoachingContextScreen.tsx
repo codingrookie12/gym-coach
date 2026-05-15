@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CoachingContext, ExercisePlan } from '@/lib/coaching'
-import { SessionRecord } from '@/lib/notion'
+import { analyzeCoaching, CoachingContext, ExercisePlan } from '@/lib/coaching'
+import { SessionRecord, fetchLastSessionsFromSupabase, fetchWeightOverrides } from '@/lib/supabase.queries'
+import { getRoutineAsExercises } from '@/lib/userProgram'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import LoadingScreen from '@/components/LoadingScreen'
 
 interface CoachingContextScreenProps {
@@ -11,7 +13,6 @@ interface CoachingContextScreenProps {
   userProgramSplitId?: string
   coachingContext: CoachingContext | null
   plan: ExercisePlan[] | null
-  unavailableExercises: string[]
   onDataLoaded: (context: CoachingContext, plan: ExercisePlan[], sessions: SessionRecord[]) => void
   onWeightDecision?: (exerciseName: string, accepted: boolean) => void
   onViewPlan: () => void
@@ -19,7 +20,7 @@ interface CoachingContextScreenProps {
 }
 
 export default function CoachingContextScreen({
-  split, programId = 'ppl-default', userProgramSplitId, coachingContext, plan, unavailableExercises, onDataLoaded, onWeightDecision, onViewPlan, onBack,
+  split, programId = 'ppl-default', userProgramSplitId, coachingContext, plan, onDataLoaded, onWeightDecision, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
@@ -27,25 +28,28 @@ export default function CoachingContextScreen({
 
   useEffect(() => {
     if (coachingContext) return
+    if (!userProgramSplitId) return
     setLoading(true)
-    const unavailableParam = unavailableExercises.length > 0
-      ? `&unavailable=${encodeURIComponent(unavailableExercises.join(','))}`
-      : ''
-    const params = new URLSearchParams({ split, programId })
-    if (userProgramSplitId) params.set('userProgramSplitId', userProgramSplitId)
-    if (unavailableExercises.length > 0) params.set('unavailable', unavailableExercises.join(','))
-    fetch(`/api/notion?${params}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) throw new Error(data.error)
-        onDataLoaded(data.context, data.plan, data.sessions)
+    const supabase = createSupabaseBrowserClient()
+    ;(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+        const [sessions, weightOverrides, routine] = await Promise.all([
+          fetchLastSessionsFromSupabase(supabase, userProgramSplitId, 5),
+          fetchWeightOverrides(supabase, user.id),
+          getRoutineAsExercises(supabase, userProgramSplitId),
+        ])
+        const today = new Date().toISOString().split('T')[0]
+        const { context, plan } = analyzeCoaching(programId, split, sessions, today, weightOverrides, routine)
+        onDataLoaded(context, plan, sessions)
         setLoading(false)
-      })
-      .catch(err => {
-        setError(err.message)
+      } catch (err: any) {
+        setError(err.message ?? 'Failed to load')
         setLoading(false)
-      })
-  }, [split, programId, userProgramSplitId, coachingContext, unavailableExercises, onDataLoaded])
+      }
+    })()
+  }, [split, programId, userProgramSplitId, coachingContext, onDataLoaded])
 
   if (loading) return <LoadingScreen message={`Analyzing ${split} history...`} />
   if (error) return (

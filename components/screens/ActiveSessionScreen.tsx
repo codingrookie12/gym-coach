@@ -460,7 +460,7 @@ export default function ActiveSessionScreen({
     initialLogs ??
     plan.map(item => ({
       exerciseName: item.exercise.name,
-      notionName: item.exercise.notionName,
+      canonicalName: item.exercise.canonicalName,
       backupName: item.exercise.backup,
       sets: Array.from({ length: item.exercise.sets }, () => ({
         weight: item.targetWeight ?? 0,
@@ -491,8 +491,8 @@ export default function ActiveSessionScreen({
     initialSnapshot
       ? Object.keys(initialSnapshot).map(k => {
           // Recover which exercise indices were already saved
-          const notionName = k.split(':')[0]
-          return plan.findIndex(p => p.exercise.notionName === notionName)
+          const canonicalName = k.split(':')[0]
+          return plan.findIndex(p => p.exercise.canonicalName === canonicalName)
         }).filter(i => i >= 0)
       : []
   ))
@@ -501,7 +501,7 @@ export default function ActiveSessionScreen({
   const currentPlan = currentExIdx < plan.length ? plan[currentExIdx] : {
     exercise: {
       name: currentEx.exerciseName,
-      notionName: currentEx.exerciseName,
+      canonicalName: currentEx.exerciseName,
       sets: 1,
       repRange: [1, 20] as [number, number],
       backup: null,
@@ -708,7 +708,7 @@ export default function ActiveSessionScreen({
       : 3
     const newLog: ExerciseLog = {
       exerciseName: name,
-      notionName: name,
+      canonicalName: name,
       backupName: null,
       sets: Array.from({ length: avgSets }, () => ({
         weight: prefillWeight ?? 0,
