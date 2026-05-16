@@ -64,7 +64,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 const pageStyle: React.CSSProperties = {
-  minHeight: '100dvh',
+  height: '100dvh',
+  overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
   background: '#0C0B09',
   color: '#E8E4DC',
   padding: '48px 20px 80px',

@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 
-// Isolated component so useSearchParams gets its own Suspense boundary
 function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams()
   useEffect(() => {
@@ -16,168 +14,270 @@ function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
   return null
 }
 
+type Step = 'email' | 'verify'
+
+const RESEND_SECONDS = 30
+
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const supabase = createSupabaseBrowserClient()
 
-  async function handleSignIn(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+  const [step, setStep] = useState<Step>('email')
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [resendIn, setResendIn] = useState(0)
+  const codeInputRef = useRef<HTMLInputElement>(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError(error.message)
-      setLoading(false)
+  useEffect(() => {
+    if (resendIn <= 0) return
+    const t = setTimeout(() => setResendIn(s => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [resendIn])
+
+  const normalizedEmail = () => email.trim().toLowerCase()
+
+  function mapError(message: string): string {
+    const m = message.toLowerCase()
+    if (m.includes('rate') || m.includes('too many') || m.includes('429')) {
+      return 'Too many attempts — try Google sign-in or wait a few minutes.'
+    }
+    if (m.includes('invalid') || m.includes('expired')) {
+      return 'Code is invalid or expired — request a new one.'
+    }
+    return message
+  }
+
+  async function sendOtp(): Promise<boolean> {
+    setError(null)
+    const target = normalizedEmail()
+    if (!target) {
+      setError('Enter your email.')
+      return false
+    }
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: target,
+      options: { shouldCreateUser: true },
+    })
+    if (err) {
+      setError(mapError(err.message))
+      return false
+    }
+    setResendIn(RESEND_SECONDS)
+    return true
+  }
+
+  async function handleContinue(e: React.FormEvent) {
+    e.preventDefault()
+    setSending(true)
+    const ok = await sendOtp()
+    setSending(false)
+    if (ok) {
+      setStep('verify')
+      setCode('')
+      setTimeout(() => codeInputRef.current?.focus(), 50)
+    }
+  }
+
+  async function verifyCode(token: string) {
+    setVerifying(true)
+    setError(null)
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: normalizedEmail(),
+      token,
+      type: 'email',
+    })
+    if (err) {
+      setError(mapError(err.message))
+      setCode('')
+      setVerifying(false)
+      codeInputRef.current?.focus()
       return
     }
     router.replace('/')
   }
 
+  function handleCodeChange(value: string) {
+    const digits = value.replace(/\D/g, '').slice(0, 6)
+    setCode(digits)
+    if (digits.length === 6 && !verifying) {
+      void verifyCode(digits)
+    }
+  }
+
+  async function handleVerifySubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (code.length !== 6 || verifying) return
+    await verifyCode(code)
+  }
+
+  async function handleResend() {
+    if (resendIn > 0 || sending) return
+    setSending(true)
+    await sendOtp()
+    setSending(false)
+  }
+
+  function handleBack() {
+    setStep('email')
+    setCode('')
+    setError(null)
+  }
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
     setError(null)
-
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
-    if (error) {
-      setError(error.message)
+    if (err) {
+      setError(err.message)
       setGoogleLoading(false)
     }
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        background: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 20px',
-      }}
-    >
+    <div style={layoutStyle}>
       <Suspense>
         <ErrorFromParams onError={setError} />
       </Suspense>
       <div style={{ width: '100%', maxWidth: '360px' }}>
-        {/* Wordmark */}
         <div style={{ marginBottom: '40px', textAlign: 'center' }}>
-          <span
-            className="font-display"
-            style={{
-              fontSize: '2rem',
-              color: 'var(--text-primary)',
-              letterSpacing: '0.08em',
-            }}
-          >
+          <span className="font-display" style={wordmarkStyle}>
             GYM COACH
           </span>
-          <div
-            style={{
-              marginTop: '6px',
-              fontSize: '0.7rem',
-              color: 'var(--text-secondary)',
-              letterSpacing: '0.15em',
-              fontFamily: "'Space Mono', monospace",
-            }}
-          >
-            SIGN IN
+          <div style={subWordmarkStyle}>
+            {step === 'email' ? 'SIGN IN' : 'VERIFY'}
           </div>
         </div>
 
-        {/* Email/password form */}
-        <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            style={inputStyle}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            style={inputStyle}
-          />
+        {step === 'email' ? (
+          <>
+            <form
+              onSubmit={handleContinue}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                autoFocus
+                autoComplete="email"
+                inputMode="email"
+                style={inputStyle}
+              />
 
-          {error && (
-            <div style={{ color: 'var(--rust)', fontSize: '0.8rem', letterSpacing: '0.03em' }}>
-              {error}
+              {error && <div style={errorStyle}>{error}</div>}
+
+              <button type="submit" disabled={sending} style={primaryButtonStyle}>
+                {sending ? 'SENDING…' : 'CONTINUE'}
+              </button>
+            </form>
+
+            <div style={dividerStyle}>
+              <div style={dividerLineStyle} />
+              <span style={dividerLabelStyle}>OR</span>
+              <div style={dividerLineStyle} />
             </div>
-          )}
 
-          <button type="submit" disabled={loading} style={primaryButtonStyle}>
-            {loading ? 'SIGNING IN…' : 'SIGN IN'}
-          </button>
-        </form>
+            <button
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              style={secondaryButtonStyle}
+            >
+              <GoogleIcon />
+              {googleLoading ? 'REDIRECTING…' : 'CONTINUE WITH GOOGLE'}
+            </button>
 
-        {/* Divider */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            margin: '20px 0',
-          }}
-        >
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', letterSpacing: '0.1em' }}>OR</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-        </div>
+            <p style={consentNoticeStyle}>
+              By continuing, you agree to our{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={consentLinkStyle}>
+                Privacy Policy
+              </a>
+              .
+            </p>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-primary)', fontSize: '1rem', marginBottom: '6px' }}>
+                Check your email
+              </div>
+              <div style={{ color: 'var(--text-mid)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                We sent a 6-digit code to{' '}
+                <span style={{ color: 'var(--text-primary)' }}>{normalizedEmail()}</span>
+              </div>
+            </div>
 
-        {/* Google OAuth */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={googleLoading}
-          style={secondaryButtonStyle}
-        >
-          <GoogleIcon />
-          {googleLoading ? 'REDIRECTING…' : 'CONTINUE WITH GOOGLE'}
-        </button>
+            <form
+              onSubmit={handleVerifySubmit}
+              style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+            >
+              <input
+                ref={codeInputRef}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="\d{6}"
+                maxLength={6}
+                placeholder="123456"
+                value={code}
+                onChange={e => handleCodeChange(e.target.value)}
+                required
+                style={{
+                  ...inputStyle,
+                  textAlign: 'center',
+                  letterSpacing: '0.5em',
+                  fontSize: '1.2rem',
+                }}
+              />
 
-        {/* Consent notice */}
-        <p style={consentNoticeStyle}>
-          By continuing, you agree to our{' '}
-          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={consentLinkStyle}>
-            Privacy Policy
-          </a>
-          .
-        </p>
+              {error && <div style={errorStyle}>{error}</div>}
 
-        {/* Footer links */}
-        <div
-          style={{
-            marginTop: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <Link href="/login/signup" style={linkStyle}>
-            CREATE ACCOUNT
-          </Link>
-          <Link href="/login/reset" style={{ ...linkStyle, color: 'var(--text-secondary)' }}>
-            FORGOT PASSWORD
-          </Link>
-        </div>
+              <button
+                type="submit"
+                disabled={code.length !== 6 || verifying}
+                style={{
+                  ...primaryButtonStyle,
+                  opacity: code.length !== 6 || verifying ? 0.5 : 1,
+                  cursor: code.length !== 6 || verifying ? 'default' : 'pointer',
+                }}
+              >
+                {verifying ? 'VERIFYING…' : 'VERIFY'}
+              </button>
+            </form>
+
+            <div
+              style={{
+                marginTop: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <button onClick={handleBack} style={textButtonStyle}>
+                ← BACK
+              </button>
+              <button
+                onClick={handleResend}
+                disabled={resendIn > 0 || sending}
+                style={{
+                  ...textButtonStyle,
+                  opacity: resendIn > 0 || sending ? 0.4 : 1,
+                  cursor: resendIn > 0 || sending ? 'default' : 'pointer',
+                }}
+              >
+                {resendIn > 0 ? `RESEND IN ${resendIn}s` : 'RESEND CODE'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -204,6 +304,30 @@ function GoogleIcon() {
       />
     </svg>
   )
+}
+
+const layoutStyle: React.CSSProperties = {
+  minHeight: '100dvh',
+  background: 'var(--bg)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px 20px',
+}
+
+const wordmarkStyle: React.CSSProperties = {
+  fontSize: '2rem',
+  color: 'var(--text-primary)',
+  letterSpacing: '0.08em',
+}
+
+const subWordmarkStyle: React.CSSProperties = {
+  marginTop: '6px',
+  fontSize: '0.7rem',
+  color: 'var(--text-secondary)',
+  letterSpacing: '0.15em',
+  fontFamily: "'Space Mono', monospace",
 }
 
 const inputStyle: React.CSSProperties = {
@@ -250,12 +374,40 @@ const secondaryButtonStyle: React.CSSProperties = {
   gap: '10px',
 }
 
-const linkStyle: React.CSSProperties = {
+const textButtonStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: 'none',
   color: 'var(--text-mid)',
   fontSize: '0.75rem',
   letterSpacing: '0.12em',
   fontFamily: "'Bebas Neue', sans-serif",
-  textDecoration: 'none',
+  cursor: 'pointer',
+  padding: 0,
+}
+
+const dividerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  margin: '20px 0',
+}
+
+const dividerLineStyle: React.CSSProperties = {
+  flex: 1,
+  height: '1px',
+  background: 'var(--border)',
+}
+
+const dividerLabelStyle: React.CSSProperties = {
+  color: 'var(--text-secondary)',
+  fontSize: '0.7rem',
+  letterSpacing: '0.1em',
+}
+
+const errorStyle: React.CSSProperties = {
+  color: 'var(--rust)',
+  fontSize: '0.8rem',
+  letterSpacing: '0.03em',
 }
 
 const consentNoticeStyle: React.CSSProperties = {
