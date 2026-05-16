@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { ALL_EXERCISES } from '@/lib/exerciseLibrary'
 import { type Split } from '@/lib/routines'
 import { type Program } from '@/lib/programs'
-import WeightProgressChart from '@/components/charts/WeightProgressChart'
 import type { HistorySummary } from '@/lib/supabase.queries'
 
 interface UserProgramSummary {
@@ -63,14 +62,15 @@ export default function ExerciseLibraryScreen({
     fetch('/api/history/summary')
       .then(r => r.json())
       .then((d: HistorySummary) => setHistorySummary(d))
-      .catch(() => setHistorySummary({ sessionsThisWeek: 0, volumeTrend: [], recentPR: null, recentExerciseNames: [] }))
+      .catch(() => setHistorySummary({ trainedLast7Days: 0, currentStreak: 0, last7Dots: Array(7).fill(false), recentPR: null, recentExerciseNames: [] }))
   }, [])
 
   const totalCount = ALL_EXERCISES.length
   const customCount = ALL_EXERCISES.filter(e => e.isCustom).length
 
-  const sparklineData = (historySummary?.volumeTrend ?? []).map((v, i) => ({ x: i, y: v }))
-  const hasSparkline = sparklineData.length >= 2 && sparklineData.some(p => p.y > 0)
+  const dots = historySummary?.last7Dots ?? Array(7).fill(false)
+  const trainedOf7 = historySummary?.trainedLast7Days ?? 0
+  const streak = historySummary?.currentStreak ?? 0
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
@@ -257,20 +257,37 @@ export default function ExerciseLibraryScreen({
             }}
           >
             <div className="card-accent" style={{ padding: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="font-display" style={{ fontSize: '1.4rem', color: 'var(--text-primary)', letterSpacing: '0.04em', lineHeight: 1 }}>
-                    {historySummary?.sessionsThisWeek ?? 0}
-                  </div>
-                  <div className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginTop: '4px' }}>
-                    SESSION{historySummary?.sessionsThisWeek === 1 ? '' : 'S'} THIS WEEK
-                  </div>
-                </div>
-                {hasSparkline && (
-                  <div style={{ width: '110px', height: '36px', flexShrink: 0 }}>
-                    <WeightProgressChart data={sparklineData} width={110} height={36} showAxis={false} />
-                  </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                <span className="font-display" style={{ fontSize: '1.8rem', color: 'var(--accent)', letterSpacing: '0.04em', lineHeight: 0.9 }}>
+                  {trainedOf7}<span style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>/7</span>
+                </span>
+                <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
+                  DAYS TRAINED
+                </span>
+                <div style={{ flex: 1 }} />
+                {streak >= 2 && (
+                  <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', letterSpacing: '0.08em' }}>
+                    🔥 {streak}D
+                  </span>
                 )}
+              </div>
+
+              {/* Mini 7-day dot row */}
+              <div style={{ display: 'flex', gap: '4px', marginTop: '12px' }}>
+                {dots.map((trained, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: '6px',
+                      background: trained ? 'var(--accent)' : 'var(--surface-2)',
+                      border: `1px solid ${trained ? 'var(--accent)' : 'var(--border)'}`,
+                      borderRadius: '1px',
+                      outline: i === dots.length - 1 ? '1px solid var(--text-mid)' : 'none',
+                      outlineOffset: '1px',
+                    }}
+                  />
+                ))}
               </div>
 
               {historySummary?.recentPR && (
@@ -287,8 +304,8 @@ export default function ExerciseLibraryScreen({
                 </div>
               )}
 
-              {!historySummary?.recentPR && historySummary?.sessionsThisWeek === 0 && (
-                <div style={{ marginTop: '8px' }}>
+              {trainedOf7 === 0 && !historySummary?.recentPR && (
+                <div style={{ marginTop: '10px' }}>
                   <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
                     NO SESSIONS LOGGED YET
                   </span>

@@ -170,15 +170,15 @@ export async function retryFailedSyncs(
 }
 
 export interface HistorySummary {
-  sessionsThisWeek: number
-  volumeTrend: number[] // last 4 weeks, oldest → newest
+  trainedLast7Days: number // count of unique workout days in last 7 days
+  currentStreak: number // consecutive trained days (with today-or-yesterday tolerance)
+  last7Dots: boolean[] // length 7, oldest → today, true = trained
   recentPR: { exerciseName: string; weight: number; unit: string; date: string } | null
   recentExerciseNames: string[] // up to 5 most-recently-trained, deduped
 }
 
 export interface HistoryProgress {
   exercises: { name: string; sets: { date: string; weight: number; reps: number; unit: string }[] }[]
-  weeks: { label: string; volume: number }[]
   days: { date: string; count: number }[]
 }
 
@@ -186,45 +186,49 @@ function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-function weekKey(d: Date): string {
-  const sunday = new Date(d)
-  sunday.setHours(0, 0, 0, 0)
-  sunday.setDate(sunday.getDate() - sunday.getDay())
-  return isoDay(sunday)
-}
-
-function build12WeekLabels(startSunday: Date): { label: string }[] {
-  const out: { label: string }[] = []
-  const cur = new Date(startSunday)
-  for (let i = 0; i < 12; i++) {
-    out.push({ label: weekKey(cur) })
-    cur.setDate(cur.getDate() + 7)
-  }
-  return out
-}
-
 export async function fetchHistorySummary(supabase: Supabase, userId: string): Promise<HistorySummary> {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const startOfWeek = new Date(now)
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-  const fourWeeksAgo = new Date(now)
-  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28)
+  const sevenDaysAgo = new Date(now)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6) // last 7 inclusive of today
+  // For streak: we look back up to 60 days
+  const sixtyDaysAgo = new Date(now)
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
   const { data: workouts } = await supabase
     .from('workouts')
     .select('id, date')
     .eq('user_id', userId)
-    .gte('date', isoDay(fourWeeksAgo))
+    .gte('date', isoDay(sixtyDaysAgo))
     .order('date', { ascending: false })
 
   const workoutIds = workouts?.map(w => w.id as string) ?? []
+  const emptyDots = Array(7).fill(false) as boolean[]
+
   if (!workoutIds.length) {
-    return { sessionsThisWeek: 0, volumeTrend: [0, 0, 0, 0], recentPR: null, recentExerciseNames: [] }
+    return { trainedLast7Days: 0, currentStreak: 0, last7Dots: emptyDots, recentPR: null, recentExerciseNames: [] }
   }
 
-  const workoutDateMap = new Map(workouts!.map(w => [w.id as string, w.date as string]))
-  const sessionsThisWeek = workouts!.filter(w => (w.date as string) >= isoDay(startOfWeek)).length
+  // Unique trained-day set
+  const trainedDays = new Set<string>(workouts!.map(w => w.date as string))
+
+  // last7Dots: 7 booleans, oldest → today
+  const last7Dots: boolean[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    last7Dots.push(trainedDays.has(isoDay(d)))
+  }
+  const trainedLast7Days = last7Dots.filter(Boolean).length
+
+  // Streak: count consecutive days going back from today (or yesterday if no workout today)
+  let currentStreak = 0
+  const streakStart = new Date(now)
+  if (!trainedDays.has(isoDay(streakStart))) streakStart.setDate(streakStart.getDate() - 1)
+  while (trainedDays.has(isoDay(streakStart))) {
+    currentStreak++
+    streakStart.setDate(streakStart.getDate() - 1)
+  }
 
   const { data: sets } = await supabase
     .from('sets')
@@ -233,12 +237,7 @@ export async function fetchHistorySummary(supabase: Supabase, userId: string): P
     .eq('completed', true)
     .eq('skipped', false)
 
-  const weekBuckets = new Map<string, number>()
-  for (let i = 0; i < 4; i++) {
-    const d = new Date(startOfWeek)
-    d.setDate(d.getDate() - i * 7)
-    weekBuckets.set(weekKey(d), 0)
-  }
+  const workoutDateMap = new Map(workouts!.map(w => [w.id as string, w.date as string]))
   const recentExerciseSeen = new Set<string>()
   const recentExerciseNames: string[] = []
   let pr: HistorySummary['recentPR'] = null
@@ -250,14 +249,6 @@ export async function fetchHistorySummary(supabase: Supabase, userId: string): P
   })
 
   for (const row of orderedSets) {
-    const date = workoutDateMap.get(row.workout_id as string)
-    if (!date) continue
-    const wk = weekKey(new Date(date))
-    if (weekBuckets.has(wk)) {
-      const w = Number(row.weight) || 0
-      const reps = Number(row.reps) || 0
-      weekBuckets.set(wk, (weekBuckets.get(wk) ?? 0) + w * reps)
-    }
     const exName = (row.exercises as any)?.name as string | undefined
     if (exName && !recentExerciseSeen.has(exName) && recentExerciseNames.length < 5) {
       recentExerciseSeen.add(exName)
@@ -265,41 +256,32 @@ export async function fetchHistorySummary(supabase: Supabase, userId: string): P
     }
     if (exName) {
       const w = Number(row.weight) || 0
+      const date = workoutDateMap.get(row.workout_id as string) ?? ''
       if (!pr || w > pr.weight) {
         pr = { exerciseName: exName, weight: w, unit: (row.unit as string) ?? 'Lbs', date }
       }
     }
   }
 
-  const volumeTrend = Array.from(weekBuckets.entries())
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([, v]) => v)
-
-  return { sessionsThisWeek, volumeTrend, recentPR: pr, recentExerciseNames }
+  return { trainedLast7Days, currentStreak, last7Dots, recentPR: pr, recentExerciseNames }
 }
 
 export async function fetchHistoryProgress(supabase: Supabase, userId: string): Promise<HistoryProgress> {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const start12Weeks = new Date(now)
-  start12Weeks.setDate(start12Weeks.getDate() - 12 * 7)
-  start12Weeks.setDate(start12Weeks.getDate() - start12Weeks.getDay())
   const start90Days = new Date(now)
   start90Days.setDate(start90Days.getDate() - 90)
-  const earliest = start12Weeks < start90Days ? start12Weeks : start90Days
 
   const { data: workouts } = await supabase
     .from('workouts')
     .select('id, date')
     .eq('user_id', userId)
-    .gte('date', isoDay(earliest))
+    .gte('date', isoDay(start90Days))
     .order('date', { ascending: true })
 
   const workoutIds = workouts?.map(w => w.id as string) ?? []
-  const weekLabels = build12WeekLabels(start12Weeks)
-  if (!workoutIds.length) {
-    return { exercises: [], weeks: weekLabels.map(({ label }) => ({ label, volume: 0 })), days: [] }
-  }
+  if (!workoutIds.length) return { exercises: [], days: [] }
+
   const workoutDateMap = new Map(workouts!.map(w => [w.id as string, w.date as string]))
 
   const { data: sets } = await supabase
@@ -310,9 +292,7 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
     .eq('skipped', false)
 
   const byExercise = new Map<string, HistoryProgress['exercises'][number]>()
-  const weeks = new Map<string, number>()
   const days = new Map<string, number>()
-  for (const w of weekLabels) weeks.set(w.label, 0)
 
   for (const row of sets ?? []) {
     const date = workoutDateMap.get(row.workout_id as string)
@@ -325,14 +305,10 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
 
     if (!byExercise.has(exName)) byExercise.set(exName, { name: exName, sets: [] })
     byExercise.get(exName)!.sets.push({ date, weight, reps, unit })
-
-    const wk = weekKey(new Date(date))
-    if (weeks.has(wk)) weeks.set(wk, (weeks.get(wk) ?? 0) + weight * reps)
   }
 
   for (const w of workouts ?? []) {
     const date = w.date as string
-    if (date < isoDay(start90Days)) continue
     days.set(date, (days.get(date) ?? 0) + 1)
   }
 
@@ -342,7 +318,6 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
       const bLast = b.sets[b.sets.length - 1]?.date ?? ''
       return aLast < bLast ? 1 : -1
     }),
-    weeks: weekLabels.map(({ label }) => ({ label, volume: weeks.get(label) ?? 0 })),
     days: Array.from(days.entries()).map(([date, count]) => ({ date, count })),
   }
 }
