@@ -12,6 +12,8 @@ import SessionSummaryScreen from '@/components/screens/SessionSummaryScreen'
 import ManageWeightsScreen from '@/components/screens/ManageWeightsScreen'
 import RoutineEditorScreen from '@/components/screens/RoutineEditorScreen'
 import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
+import ProgressHistoryScreen from '@/components/screens/ProgressHistoryScreen'
+import ExerciseBrowserScreen from '@/components/screens/ExerciseBrowserScreen'
 import MeScreen from '@/components/screens/MeScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
@@ -98,6 +100,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('train')
   const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [programLibraryInitialMode, setProgramLibraryInitialMode] = useState<'explorer' | 'builder' | undefined>(undefined)
+  const [showProgressHistory, setShowProgressHistory] = useState(false)
+  const [showExerciseBrowser, setShowExerciseBrowser] = useState(false)
+  const [exerciseBrowserPreselected, setExerciseBrowserPreselected] = useState<string | null>(null)
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
   const [appState, setAppState] = useState<AppState>({
@@ -627,6 +632,14 @@ export default function App() {
                 window.location.reload()
               }}
             />
+          ) : showProgressHistory ? (
+            <ProgressHistoryScreen onBack={() => setShowProgressHistory(false)} />
+          ) : showExerciseBrowser ? (
+            <ExerciseBrowserScreen
+              activeProgramId={appState.userProgramId ?? appState.programId}
+              preselectedExerciseName={exerciseBrowserPreselected}
+              onBack={() => { setShowExerciseBrowser(false); setExerciseBrowserPreselected(null) }}
+            />
           ) : (
             <ExerciseLibraryScreen
               lastSplit={appState.lastSplit}
@@ -637,6 +650,8 @@ export default function App() {
               onOpenExplorer={() => { setProgramLibraryInitialMode('explorer'); setShowProgramLibrary(true) }}
               onOpenBuilder={() => { setProgramLibraryInitialMode('builder'); setShowProgramLibrary(true) }}
               onEditRoutine={() => setScreen('routine-editor')}
+              onOpenHistory={() => setShowProgressHistory(true)}
+              onOpenExercises={(preselectedName) => { setExerciseBrowserPreselected(preselectedName ?? null); setShowExerciseBrowser(true) }}
             />
           )}
         </div>
