@@ -47,7 +47,7 @@ export default function MeScreen({ user, onLogout }: MeScreenProps) {
             </span>
           </div>
 
-          <div style={{ paddingTop: '10px' }}>
+          <div style={{ paddingTop: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={onLogout}
               className="font-mono"
@@ -65,6 +65,24 @@ export default function MeScreen({ user, onLogout }: MeScreenProps) {
             >
               Sign Out
             </button>
+          </div>
+
+          <div style={{ paddingTop: '10px' }}>
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono"
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                letterSpacing: '0.08em',
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+              }}
+            >
+              Privacy Policy
+            </a>
           </div>
         </div>
 

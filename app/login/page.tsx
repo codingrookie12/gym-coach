@@ -194,6 +194,14 @@ export default function LoginPage() {
               <GoogleIcon />
               {googleLoading ? 'REDIRECTING…' : 'CONTINUE WITH GOOGLE'}
             </button>
+
+            <p style={consentNoticeStyle}>
+              By continuing, you agree to our{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" style={consentLinkStyle}>
+                Privacy Policy
+              </a>
+              .
+            </p>
           </>
         ) : (
           <>
@@ -400,4 +408,20 @@ const errorStyle: React.CSSProperties = {
   color: 'var(--rust)',
   fontSize: '0.8rem',
   letterSpacing: '0.03em',
+}
+
+const consentNoticeStyle: React.CSSProperties = {
+  marginTop: '20px',
+  textAlign: 'center',
+  fontSize: '0.72rem',
+  color: 'var(--text-secondary)',
+  fontFamily: "'Barlow Condensed', sans-serif",
+  letterSpacing: '0.02em',
+  lineHeight: 1.5,
+}
+
+const consentLinkStyle: React.CSSProperties = {
+  color: 'var(--text-mid)',
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
 }
