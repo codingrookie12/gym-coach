@@ -64,13 +64,6 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
       }
     }
     load()
-    return () => {
-      const pd = pendingDeleteRef.current
-      if (pd) {
-        clearTimeout(pd.timeoutId)
-        removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName).catch(() => {})
-      }
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -80,7 +73,23 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     clearTimeout(pd.timeoutId)
     removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName).catch(() => {})
     setPendingDelete(null)
+    pendingDeleteRef.current = null
   }, [supabase, userId])
+
+  const handleBack = useCallback(async () => {
+    const pd = pendingDeleteRef.current
+    if (pd) {
+      clearTimeout(pd.timeoutId)
+      setPendingDelete(null)
+      pendingDeleteRef.current = null
+      try {
+        await removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName)
+      } catch {
+        // delete failed — navigate anyway; user will see exercise still present next session
+      }
+    }
+    onBack()
+  }, [supabase, userId, onBack])
 
   function handleRemove(exerciseName: string) {
     const rows = exerciseMap.get(activeSplitId) ?? []
@@ -237,7 +246,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   if (loading) {
     return (
       <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
-        <Header onBack={onBack} />
+        <Header onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
             LOADING...
@@ -250,7 +259,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   if (error) {
     return (
       <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
-        <Header onBack={onBack} />
+        <Header onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '24px' }}>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--rust)', letterSpacing: '0.08em' }}>
             {error}
@@ -268,7 +277,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
-      <Header onBack={() => { flushPendingDelete(); onBack() }} />
+      <Header onBack={handleBack} />
 
       {/* Split tab bar */}
       <div
