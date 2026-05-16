@@ -152,10 +152,19 @@ export default function LoginPage() {
           {googleLoading ? 'REDIRECTING…' : 'CONTINUE WITH GOOGLE'}
         </button>
 
+        {/* Consent notice */}
+        <p style={consentNoticeStyle}>
+          By continuing, you agree to our{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={consentLinkStyle}>
+            Privacy Policy
+          </a>
+          .
+        </p>
+
         {/* Footer links */}
         <div
           style={{
-            marginTop: '28px',
+            marginTop: '20px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -247,4 +256,20 @@ const linkStyle: React.CSSProperties = {
   letterSpacing: '0.12em',
   fontFamily: "'Bebas Neue', sans-serif",
   textDecoration: 'none',
+}
+
+const consentNoticeStyle: React.CSSProperties = {
+  marginTop: '20px',
+  textAlign: 'center',
+  fontSize: '0.72rem',
+  color: 'var(--text-secondary)',
+  fontFamily: "'Barlow Condensed', sans-serif",
+  letterSpacing: '0.02em',
+  lineHeight: 1.5,
+}
+
+const consentLinkStyle: React.CSSProperties = {
+  color: 'var(--text-mid)',
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
 }
