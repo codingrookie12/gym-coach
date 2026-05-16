@@ -10,7 +10,7 @@ export default function PrivacyPage() {
         <p style={metaStyle}>Effective date: May 16, 2026 · Ley 1581 de 2012</p>
 
         <Section title="Who we are">
-          <p>Gym Coach is a personal fitness tracking application operated by Johnatan Sanchez (the "Controller"). Contact: <a href="mailto:sanchez92.j@gmail.com" style={linkStyle}>sanchez92.j@gmail.com</a></p>
+          <p>Gym Coach is a personal fitness tracking application operated by Johnatan Sanchez (the &ldquo;Controller&rdquo;). Contact: <a href="mailto:sanchez92.j@gmail.com" style={linkStyle}>sanchez92.j@gmail.com</a></p>
         </Section>
 
         <Section title="What we collect">
