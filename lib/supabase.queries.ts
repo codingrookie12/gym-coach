@@ -1,7 +1,15 @@
-import { createSupabaseServerClient } from './supabase.server'
-import type { SessionRecord } from './notion'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
+export interface SessionRecord {
+  date: string
+  exercises: {
+    [exerciseName: string]: {
+      sets: { set: number; weight: number; reps: number }[]
+    }
+  }
+}
+
+type Supabase = SupabaseClient<any, any, any>
 
 export async function getExerciseId(supabase: Supabase, canonicalName: string): Promise<string | null> {
   const { data } = await supabase
@@ -170,7 +178,7 @@ export async function permanentlySwapExercise(
 ): Promise<void> {
   const { error } = await supabase
     .from('user_routine_exercises')
-    .update({ exercise_name: newExerciseName, notion_name: newExerciseName })
+    .update({ exercise_name: newExerciseName, canonical_name: newExerciseName })
     .eq('user_id', userId)
     .eq('user_program_split_id', splitId)
     .eq('exercise_name', oldExerciseName)

@@ -139,8 +139,8 @@ export default function PreSaveSummaryScreen({
                           {set.weight}
                           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginLeft: '3px' }}>
                             {(() => {
-                              // Match plan by notionName to handle swapped exercises
-                              const matchedPlan = plan.find(p => p.exercise.notionName === ex.notionName) ?? plan[exIdx]
+                              // Match plan by canonicalName to handle swapped exercises
+                              const matchedPlan = plan.find(p => p.exercise.canonicalName === ex.canonicalName) ?? plan[exIdx]
                               return matchedPlan?.exercise.weightUnit === 'pins' ? 'pin' : 'lbs'
                             })()}
                           </span>

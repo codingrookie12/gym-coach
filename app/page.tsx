@@ -21,25 +21,19 @@ import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
 import CustomProgramBuilderScreen from '@/components/screens/CustomProgramBuilderScreen'
 import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
-import { SessionRecord } from '@/lib/notion'
+import { SessionRecord } from '@/lib/supabase.queries'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import {
   loadSessionFromStorage,
   clearSessionFromStorage,
   PersistedSession,
 } from '@/lib/sessionStorage'
-import {
-  fetchAvailability,
-  emptyAvailability,
-  AvailabilityState,
-} from '@/lib/exerciseAvailability'
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
-import ExerciseAvailabilityPanel from '@/components/ExerciseAvailabilityPanel'
 import type { User } from '@supabase/supabase-js'
 
 export type Screen =
-  | 'detecting'          // checking localStorage + Notion on first load
+  | 'detecting'          // checking localStorage + Supabase on first load
   | 'onboarding'         // new user: pick a program before first session
   | 'resume-prompt'      // found unfinished session → ask resume or fresh
   | 'home'
@@ -102,10 +96,8 @@ export default function App() {
   const router = useRouter()
   const [screen, setScreen] = useState<Screen>('detecting')
   const [activeTab, setActiveTab] = useState<ActiveTab>('train')
-  const [showEquipmentPanel, setShowEquipmentPanel] = useState(false)
   const [showProgramLibrary, setShowProgramLibrary] = useState(false)
   const [programLibraryInitialMode, setProgramLibraryInitialMode] = useState<'explorer' | 'builder' | undefined>(undefined)
-  const [availability, setAvailability] = useState<AvailabilityState>(emptyAvailability)
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
   const [appState, setAppState] = useState<AppState>({
@@ -160,7 +152,7 @@ export default function App() {
       plan: prev.plan
         ? prev.plan.map(p =>
             p.exercise.name === oldName
-              ? { ...p, exercise: { ...p.exercise, name: newName, notionName: newName } }
+              ? { ...p, exercise: { ...p.exercise, name: newName, canonicalName: newName } }
               : p
           )
         : null,
@@ -172,13 +164,12 @@ export default function App() {
   // because the device may be shared.
   useEffect(() => {
     try {
-      localStorage.removeItem('gym_coach_exercise_availability')
       localStorage.removeItem('gym_coach_session')
       localStorage.removeItem('gym_coach_custom_exercises')
     } catch {}
   }, [])
 
-  // On mount: check localStorage → then Notion fallback
+  // On mount: check localStorage → then Supabase fallback
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
 
@@ -235,7 +226,6 @@ export default function App() {
 
         // Per-user state hydration. Fire-and-forget: the home screen renders
         // while these resolve; badges update when they land.
-        fetchAvailability().then(setAvailability).catch(() => {})
         setPendingCustomCount(getIncompletePendingExercises(user.id).length)
 
         // Check onboarding status — new users pick a program before first session
@@ -507,8 +497,6 @@ export default function App() {
                 navigate('coaching-context')
               }}
               onSettings={() => navigate('manage-weights')}
-              onEquipment={() => setShowEquipmentPanel(true)}
-              unavailableCount={availability.unavailable.size}
               pendingCustomCount={pendingCustomCount}
             />
           )}
@@ -521,7 +509,6 @@ export default function App() {
               split={appState.split}
               programId={appState.programId}
               userProgramSplitId={appState.userProgramSplitId ?? undefined}
-              unavailableExercises={Array.from(availability.unavailable)}
               onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
@@ -559,7 +546,7 @@ export default function App() {
                 const newEntry: ExercisePlan = {
                   exercise: {
                     name,
-                    notionName: name,
+                    canonicalName: name,
                     sets: avgSets,
                     repRange: [8, 12],
                     backup: null,
@@ -675,26 +662,6 @@ export default function App() {
         </div>
       )}
 
-      {showEquipmentPanel && (
-        <ExerciseAvailabilityPanel
-          availability={availability}
-          onToggle={(name, available) => {
-            setAvailability(prev => {
-              const nextUnavailable = new Set(prev.unavailable)
-              if (available) nextUnavailable.delete(name)
-              else nextUnavailable.add(name)
-              return { ...prev, unavailable: nextUnavailable }
-            })
-            // Clear cached plan so it rebuilds with updated availability on next navigation
-            updateState({ coachingContext: null, plan: null })
-          }}
-          onReset={() => {
-            setAvailability(prev => ({ ...prev, unavailable: new Set() }))
-            updateState({ coachingContext: null, plan: null })
-          }}
-          onClose={() => setShowEquipmentPanel(false)}
-        />
-      )}
     </div>
   )
 }

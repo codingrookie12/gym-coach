@@ -5,7 +5,7 @@ type Supabase = ReturnType<typeof createSupabaseBrowserClient>
 export interface RoutineExerciseRow {
   id: string
   exercise_name: string
-  notion_name: string
+  canonical_name: string
   sets: number
   rep_range_min: number
   rep_range_max: number
@@ -23,14 +23,14 @@ export async function getUserRoutineForSplit(
 ): Promise<RoutineExerciseRow[]> {
   const { data, error } = await supabase
     .from('user_routine_exercises')
-    .select('id, exercise_name, notion_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, sort_order, equipment')
+    .select('id, exercise_name, canonical_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, sort_order, equipment')
     .eq('user_program_split_id', splitId)
     .order('sort_order', { ascending: true })
   if (error) throw error
   return (data ?? []) as RoutineExerciseRow[]
 }
 
-const ROW_COLUMNS = 'id, exercise_name, notion_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, sort_order, equipment'
+const ROW_COLUMNS = 'id, exercise_name, canonical_name, sets, rep_range_min, rep_range_max, backup_name, weight_unit, weight_convention, sort_order, equipment'
 
 export async function addExerciseToRoutine(
   supabase: Supabase,
@@ -45,7 +45,7 @@ export async function addExerciseToRoutine(
       user_id: userId,
       user_program_split_id: splitId,
       exercise_name: exercise.name,
-      notion_name: exercise.name,
+      canonical_name: exercise.name,
       sets: 3,
       rep_range_min: 8,
       rep_range_max: 12,

@@ -41,7 +41,7 @@ import {
  */
 export interface TemplateExercise {
   name: string                    // UI display name; also used as exercise_name in DB row
-  notionName: string              // Canonical library name (lib/exercises.json)
+  canonicalName: string              // Canonical library name (lib/exercises.json)
   sets: number
   repRange: [number, number]
   backup: string | null
@@ -78,7 +78,7 @@ export interface ProgramTemplate {
 function toTemplateExercise(ex: Exercise): TemplateExercise {
   return {
     name: ex.name,
-    notionName: ex.notionName,
+    canonicalName: ex.canonicalName,
     sets: ex.sets,
     repRange: ex.repRange,
     backup: ex.backup,

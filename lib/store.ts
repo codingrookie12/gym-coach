@@ -1,7 +1,7 @@
 // Simple in-memory session state (no localStorage — all in-session)
 import { Split } from './routines'
 import { CoachingContext, ExercisePlan } from './coaching'
-import { SessionRecord } from './notion'
+import { SessionRecord } from './supabase.queries'
 
 export interface SetLog {
   weight: number
@@ -12,7 +12,7 @@ export interface SetLog {
 
 export interface ExerciseLog {
   exerciseName: string
-  notionName: string  // Exact name used in Notion DB Exercise select field
+  canonicalName: string
   backupName: string | null
   sets: SetLog[]
   notes?: string

@@ -7,8 +7,6 @@ interface PreSessionScreenProps {
   initialSplit: string
   onSelectSplit: (split: string) => void
   onSettings: () => void
-  onEquipment: () => void
-  unavailableCount: number
   pendingCustomCount?: number
   activeProgram?: Program
 }
@@ -17,8 +15,6 @@ export default function PreSessionScreen({
   initialSplit,
   onSelectSplit,
   onSettings,
-  onEquipment,
-  unavailableCount,
   pendingCustomCount = 0,
   activeProgram = ACTIVE_PROGRAM,
 }: PreSessionScreenProps) {
@@ -62,35 +58,10 @@ export default function PreSessionScreen({
             GYM COACH
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v7.7
+            v7.8
           </span>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={onEquipment}
-            style={{
-              background: 'none',
-              border: `1px solid ${unavailableCount > 0 ? 'var(--rust)' : 'var(--border-2)'}`,
-              borderRadius: '2px',
-              padding: '7px 12px',
-              color: unavailableCount > 0 ? 'var(--rust)' : 'var(--text-mid)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontFamily: 'Bebas Neue, sans-serif',
-              fontSize: '0.95rem',
-              letterSpacing: '0.1em',
-              transition: 'border-color 0.12s, color 0.12s',
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <rect x="2" y="7" width="3" height="10" rx="1" />
-              <rect x="19" y="7" width="3" height="10" rx="1" />
-              <rect x="6" y="10" width="12" height="4" rx="1" />
-            </svg>
-            EQUIP{unavailableCount > 0 && <span style={{ marginLeft: '2px' }}>({unavailableCount})</span>}
-          </button>
           <button
             onClick={onSettings}
             style={{

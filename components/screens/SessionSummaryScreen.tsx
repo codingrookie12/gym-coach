@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
-import { SessionRecord } from '@/lib/notion'
+import { SessionRecord } from '@/lib/supabase.queries'
 import { Equipment, Muscle } from '@/lib/exerciseLibrary'
 import {
   getPendingExercises,
