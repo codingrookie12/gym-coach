@@ -5,6 +5,7 @@ import type { ExerciseProgressionStrip as Data } from '@/lib/supabase.queries'
 
 interface Props {
   data: Data | undefined
+  targetWeight?: number | null
 }
 
 const pillStyle: React.CSSProperties = {
@@ -16,16 +17,18 @@ const pillStyle: React.CSSProperties = {
   padding: '3px 7px',
 }
 
-export default function ExerciseProgressionStrip({ data }: Props) {
+export default function ExerciseProgressionStrip({ data, targetWeight }: Props) {
   if (!data) return null
   const { pr, last3, chartPoints } = data
   if (!last3.length) return null
 
   const hasChart = chartPoints.length >= 2
+  const showPr = pr !== null && pr.weight !== targetWeight
+  const pillsOldestFirst = [...last3].reverse()
 
   return (
     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {pr && (
+      {showPr && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
             <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>PR</span>
@@ -45,13 +48,18 @@ export default function ExerciseProgressionStrip({ data }: Props) {
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-          {last3.length === 1 ? 'LAST' : `LAST ${last3.length}`}
+          {pillsOldestFirst.length === 1 ? 'LAST' : `LAST ${pillsOldestFirst.length}`}
         </span>
-        {last3.map((s, i) => (
+        {pillsOldestFirst.map((s, i) => (
           <span key={i} className="font-mono" style={pillStyle}>
             {s.weight}×{s.reps}
           </span>
         ))}
+        {hasChart && !showPr && (
+          <div style={{ width: '60px', height: '20px', flexShrink: 0, opacity: 0.85, marginLeft: 'auto' }}>
+            <WeightProgressChart data={chartPoints} width={60} height={20} showAxis={false} yLabel="weight progression" />
+          </div>
+        )}
       </div>
     </div>
   )

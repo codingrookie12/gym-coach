@@ -173,7 +173,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                     </div>
 
                     {/* Progression strip (PR + last 3 + sparkline) */}
-                    <ExerciseProgressionStrip data={progression[item.exercise.name]} />
+                    <ExerciseProgressionStrip data={progression[item.exercise.name]} targetWeight={item.targetWeight} />
 
                     {/* Coaching note */}
                     {item.coachingNote && (
