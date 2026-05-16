@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
+import ExerciseProgressionStrip from '@/components/ExerciseProgressionStrip'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
+import type { ExerciseProgressionStrip as ProgressionData } from '@/lib/supabase.queries'
 
 interface WorkoutOverviewScreenProps {
   split: string
@@ -25,7 +27,29 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
+  const [progression, setProgression] = useState<Record<string, ProgressionData>>({})
   const cardio = CARDIO_RECOMMENDATION[split]
+
+  useEffect(() => {
+    const names = Array.from(new Set(plan.map(p => p.exercise.name).filter(Boolean)))
+    if (!names.length) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/history/exercise-strip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ names }),
+        })
+        if (!res.ok) return
+        const data = (await res.json()) as Record<string, ProgressionData>
+        if (!cancelled) setProgression(data ?? {})
+      } catch {
+        // enrichment only — silent failure leaves cards unaffected
+      }
+    })()
+    return () => { cancelled = true }
+  }, [plan])
 
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
@@ -147,6 +171,9 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                         </>
                       )}
                     </div>
+
+                    {/* Progression strip (PR + last 3 + sparkline) */}
+                    <ExerciseProgressionStrip data={progression[item.exercise.name]} />
 
                     {/* Coaching note */}
                     {item.coachingNote && (

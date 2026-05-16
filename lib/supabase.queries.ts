@@ -322,6 +322,97 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
   }
 }
 
+export interface ExerciseProgressionStrip {
+  pr: { weight: number; unit: string; date: string } | null
+  last3: { date: string; weight: number; reps: number; unit: string }[]
+  chartPoints: { x: number; y: number }[]
+}
+
+export async function fetchExerciseProgression(
+  supabase: Supabase,
+  userId: string,
+  exerciseNames: string[]
+): Promise<Record<string, ExerciseProgressionStrip>> {
+  if (!exerciseNames.length) return {}
+
+  const { data: exs } = await supabase
+    .from('exercises')
+    .select('id, name')
+    .in('name', exerciseNames)
+
+  const idToName = new Map<string, string>()
+  for (const e of exs ?? []) idToName.set(e.id as string, e.name as string)
+  if (!idToName.size) return {}
+
+  const { data: workouts } = await supabase
+    .from('workouts')
+    .select('id, date')
+    .eq('user_id', userId)
+    .order('date', { ascending: false })
+
+  const workoutDateMap = new Map<string, string>()
+  for (const w of workouts ?? []) workoutDateMap.set(w.id as string, w.date as string)
+  if (!workoutDateMap.size) return {}
+
+  const { data: sets } = await supabase
+    .from('sets')
+    .select('workout_id, exercise_id, weight, reps, unit')
+    .in('workout_id', Array.from(workoutDateMap.keys()))
+    .in('exercise_id', Array.from(idToName.keys()))
+    .eq('completed', true)
+    .eq('skipped', false)
+
+  type Row = { date: string; weight: number; reps: number; unit: string }
+  const byName = new Map<string, Row[]>()
+  for (const r of sets ?? []) {
+    const name = idToName.get(r.exercise_id as string)
+    const date = workoutDateMap.get(r.workout_id as string)
+    if (!name || !date) continue
+    const weight = Number(r.weight) || 0
+    const reps = Number(r.reps) || 0
+    if (!weight || !reps) continue
+    const unit = (r.unit as string) ?? 'Lbs'
+    const list = byName.get(name) ?? []
+    list.push({ date, weight, reps, unit })
+    byName.set(name, list)
+  }
+
+  const out: Record<string, ExerciseProgressionStrip> = {}
+  for (const [name, rows] of Array.from(byName.entries())) {
+    let pr: ExerciseProgressionStrip['pr'] = null
+    for (const r of rows) {
+      if (!pr || r.weight > pr.weight || (r.weight === pr.weight && r.reps > (pr as any).reps)) {
+        pr = { weight: r.weight, unit: r.unit, date: r.date }
+        ;(pr as any).reps = r.reps
+      }
+    }
+    if (pr) delete (pr as any).reps
+
+    const byDate = new Map<string, Row[]>()
+    for (const r of rows) {
+      const list = byDate.get(r.date) ?? []
+      list.push(r)
+      byDate.set(r.date, list)
+    }
+    const sortedDatesDesc = Array.from(byDate.keys()).sort((a, b) => a < b ? 1 : -1)
+
+    const last3: ExerciseProgressionStrip['last3'] = sortedDatesDesc.slice(0, 3).map(date => {
+      const setsOnDate = byDate.get(date)!
+      const top = setsOnDate.reduce((acc, r) => r.weight > acc.weight || (r.weight === acc.weight && r.reps > acc.reps) ? r : acc, setsOnDate[0])
+      return { date, weight: top.weight, reps: top.reps, unit: top.unit }
+    })
+
+    const chartDatesAsc = Array.from(byDate.keys()).sort()
+    const chartPoints: ExerciseProgressionStrip['chartPoints'] = chartDatesAsc
+      .slice(-12)
+      .map((date, i) => ({ x: i, y: Math.max(...byDate.get(date)!.map(r => r.weight)) }))
+
+    out[name] = { pr, last3, chartPoints }
+  }
+
+  return out
+}
+
 export async function permanentlySwapExercise(
   supabase: Supabase,
   userId: string,
