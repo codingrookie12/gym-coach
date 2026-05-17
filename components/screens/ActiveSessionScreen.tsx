@@ -7,6 +7,7 @@ import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/NumberPad'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
+import UndoToast from '@/components/UndoToast'
 import { savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
@@ -178,7 +179,7 @@ function timerActionBtn(bg: string, color: string, isAccent: boolean): React.CSS
 
 // ── Workout Overview Modal ────────────────────────────────────────────────────
 function WorkoutOverviewModal({
-  plan, logs, currentExIdx, split, onNavigate, onClose, onAddExercise,
+  plan, logs, currentExIdx, split, onNavigate, onClose, onAddExercise, onRemoveExercise,
 }: {
   plan: ExercisePlan[]
   logs: ExerciseLog[]
@@ -187,6 +188,7 @@ function WorkoutOverviewModal({
   onNavigate: (idx: number) => void
   onClose: () => void
   onAddExercise: () => void
+  onRemoveExercise: (idx: number) => void
 }) {
   const cardio = CARDIO_RECOMMENDATION[split]
 
@@ -214,33 +216,71 @@ function WorkoutOverviewModal({
           const totalSets = log.sets.length
           const isCurrent = i === currentExIdx
           const isDone = completedSets === totalSets
+          // GYM-95: removal is only safe when no set has been logged.
+          // Once any set is completed, skip is the right tool (preserves data).
+          const canRemove = completedSets === 0
           return (
-            <button
+            <div
               key={i}
-              onClick={() => { onNavigate(i); onClose() }}
               style={{
-                padding: '11px 14px',
-                borderRadius: '2px',
-                textAlign: 'left',
-                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'stretch',
+                gap: '6px',
                 background: isCurrent ? 'var(--accent-dim)' : 'var(--surface)',
                 border: `1px solid ${isCurrent ? 'var(--accent-border)' : isDone ? 'rgba(212,241,58,0.12)' : 'var(--border)'}`,
-                width: '100%',
+                borderRadius: '2px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{String(i + 1).padStart(2, '0')}</span>
-                  <span className="font-sans" style={{ fontSize: '0.9rem', fontWeight: 600, color: isCurrent ? 'var(--accent)' : 'var(--text-primary)' }}>
-                    {log.exerciseName}
-                    {isCurrent && <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', marginLeft: '8px' }}>← NOW</span>}
+              <button
+                onClick={() => { onNavigate(i); onClose() }}
+                style={{
+                  flex: 1,
+                  padding: '11px 14px',
+                  borderRadius: '2px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{String(i + 1).padStart(2, '0')}</span>
+                    <span className="font-sans" style={{ fontSize: '0.9rem', fontWeight: 600, color: isCurrent ? 'var(--accent)' : 'var(--text-primary)' }}>
+                      {log.exerciseName}
+                      {isCurrent && <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', marginLeft: '8px' }}>← NOW</span>}
+                    </span>
+                  </div>
+                  <span className="font-mono" style={{ fontSize: '0.65rem', color: skipped ? 'var(--rust)' : isDone ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                    {skipped ? 'SKIP' : isDone ? '✓' : i <= currentExIdx ? `${completedSets}/${totalSets}` : '—'}
                   </span>
                 </div>
-                <span className="font-mono" style={{ fontSize: '0.65rem', color: skipped ? 'var(--rust)' : isDone ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                  {skipped ? 'SKIP' : isDone ? '✓' : i <= currentExIdx ? `${completedSets}/${totalSets}` : '—'}
-                </span>
-              </div>
-            </button>
+              </button>
+              {canRemove && (
+                <button
+                  onClick={() => onRemoveExercise(i)}
+                  aria-label={`Remove ${log.exerciseName}`}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    padding: '0 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    transition: 'color 0.1s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--rust)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
           )
         })}
 
@@ -484,6 +524,32 @@ export default function ActiveSessionScreen({
   const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
+  // GYM-95: pending in-memory logs op with 3s Undo. Mid-session is today-only;
+  // no routine prompt (per plan). `flush` is a no-op — there's no DB write to
+  // defer for mid-session add/remove.
+  interface PendingLogsOp {
+    message: string
+    undo: () => void
+    timeoutId: ReturnType<typeof setTimeout>
+  }
+  const [pendingLogsOp, setPendingLogsOp] = useState<PendingLogsOp | null>(null)
+  const pendingLogsOpRef = useRef<PendingLogsOp | null>(null)
+  useEffect(() => { pendingLogsOpRef.current = pendingLogsOp }, [pendingLogsOp])
+
+  function startLogsOp(op: PendingLogsOp) {
+    const prev = pendingLogsOpRef.current
+    if (prev) clearTimeout(prev.timeoutId)
+    setPendingLogsOp(op)
+    pendingLogsOpRef.current = op
+  }
+  function handleUndoLogsOp() {
+    const op = pendingLogsOpRef.current
+    if (!op) return
+    clearTimeout(op.timeoutId)
+    op.undo()
+    setPendingLogsOp(null)
+    pendingLogsOpRef.current = null
+  }
   // Snapshot: maps "exerciseName:setNum" -> { pageId (Supabase set UUID), weight, reps, notes }
   const snapshot = useRef<SavedSnapshot>(initialSnapshot ?? {})
   // Track which exercise indices have been auto-saved (to avoid double-fire)
@@ -722,6 +788,46 @@ export default function ActiveSessionScreen({
     if (matched === null) savePendingExercise(userId, name)
     setLogs(prev => [...prev, newLog])
     setShowAddSheet(false)
+
+    const undo = () => {
+      setLogs(prev => prev.filter(l => l !== newLog))
+    }
+    const timeoutId = setTimeout(() => {
+      setPendingLogsOp(null)
+      pendingLogsOpRef.current = null
+    }, 3000)
+    startLogsOp({ message: `${name} added`, undo, timeoutId })
+  }
+
+  function removeExerciseFromSession(index: number) {
+    const entry = logs[index]
+    if (!entry) return
+    const originalCurrentIdx = currentExIdx
+
+    setLogs(prev => prev.filter((_, i) => i !== index))
+
+    // Re-target currentExIdx so the now-vacated slot resolves to a valid
+    // exercise. Removing the last exercise pulls focus back by one.
+    const newLen = logs.length - 1
+    let newCurrentIdx = currentExIdx
+    if (index < currentExIdx) newCurrentIdx = currentExIdx - 1
+    else if (index === currentExIdx) newCurrentIdx = Math.min(currentExIdx, newLen - 1)
+    newCurrentIdx = Math.max(0, newCurrentIdx)
+    if (newCurrentIdx !== currentExIdx) setCurrentExIdx(newCurrentIdx)
+
+    const undo = () => {
+      setLogs(prev => {
+        const next = [...prev]
+        next.splice(index, 0, entry)
+        return next
+      })
+      setCurrentExIdx(originalCurrentIdx)
+    }
+    const timeoutId = setTimeout(() => {
+      setPendingLogsOp(null)
+      pendingLogsOpRef.current = null
+    }, 3000)
+    startLogsOp({ message: `${entry.exerciseName} removed for today`, undo, timeoutId })
   }
 
   const totalSets = logs.reduce((acc, ex) => acc + ex.sets.length, 0)
@@ -770,6 +876,17 @@ export default function ActiveSessionScreen({
           plan={plan} logs={logs} currentExIdx={currentExIdx} split={split}
           onNavigate={navigateToExercise} onClose={() => setOverviewVisible(false)}
           onAddExercise={() => setShowAddSheet(true)}
+          onRemoveExercise={removeExerciseFromSession}
+        />
+      )}
+      {pendingLogsOp && (
+        <UndoToast
+          message={pendingLogsOp.message}
+          onUndo={handleUndoLogsOp}
+          onTimeout={() => {
+            setPendingLogsOp(null)
+            pendingLogsOpRef.current = null
+          }}
         />
       )}
       {showAddSheet && (

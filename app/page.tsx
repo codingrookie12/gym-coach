@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import PreSessionScreen from '@/components/screens/PreSessionScreen'
 import ResumePromptScreen from '@/components/screens/ResumePromptScreen'
@@ -23,8 +23,10 @@ import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
 import CustomProgramBuilderScreen from '@/components/screens/CustomProgramBuilderScreen'
 import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { SessionRecord } from '@/lib/supabase.queries'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
+import UndoToast from '@/components/UndoToast'
 import {
   loadSessionFromStorage,
   clearSessionFromStorage,
@@ -132,6 +134,50 @@ export default function App() {
 
   const updateState = useCallback((partial: Partial<AppState>) => {
     setAppState(prev => ({ ...prev, ...partial }))
+  }, [])
+
+  // GYM-95: pending in-memory plan op (add or remove) with 3s Undo window.
+  // Mirrors GYM-94's PendingOp pattern but for `appState.plan` instead of
+  // `user_routine_exercises`. `flush` is a no-op for in-memory ops and a
+  // deferred DB delete for the "remove from routine" branch.
+  interface PendingPlanOp {
+    message: string
+    flush: () => Promise<void>
+    undo: () => void
+    timeoutId: ReturnType<typeof setTimeout>
+  }
+  const [pendingPlanOp, setPendingPlanOp] = useState<PendingPlanOp | null>(null)
+  const pendingPlanOpRef = useRef<PendingPlanOp | null>(null)
+  const supabaseRef = useRef(createSupabaseBrowserClient())
+
+  useEffect(() => { pendingPlanOpRef.current = pendingPlanOp }, [pendingPlanOp])
+
+  const flushPlanOp = useCallback(async () => {
+    const op = pendingPlanOpRef.current
+    if (!op) return
+    clearTimeout(op.timeoutId)
+    setPendingPlanOp(null)
+    pendingPlanOpRef.current = null
+    try { await op.flush() } catch {}
+  }, [])
+
+  const startPlanOp = useCallback((op: PendingPlanOp) => {
+    const prev = pendingPlanOpRef.current
+    if (prev) {
+      clearTimeout(prev.timeoutId)
+      prev.flush().catch(() => {})
+    }
+    setPendingPlanOp(op)
+    pendingPlanOpRef.current = op
+  }, [])
+
+  const handleUndoPlanOp = useCallback(() => {
+    const op = pendingPlanOpRef.current
+    if (!op) return
+    clearTimeout(op.timeoutId)
+    op.undo()
+    setPendingPlanOp(null)
+    pendingPlanOpRef.current = null
   }, [])
 
   const goHome = useCallback(() => {
@@ -540,9 +586,13 @@ export default function App() {
               split={appState.split}
               plan={appState.plan}
               hasResumable={!!appState.savedLogs}
-              onBegin={() => { updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {}, workoutStartedAt: new Date().toISOString() }); navigate('active-session') }}
-              onResume={() => navigate('active-session')}
-              onBack={() => navigate('coaching-context')}
+              onBegin={async () => {
+                await flushPlanOp()
+                updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {}, workoutStartedAt: new Date().toISOString() })
+                navigate('active-session')
+              }}
+              onResume={async () => { await flushPlanOp(); navigate('active-session') }}
+              onBack={async () => { await flushPlanOp(); navigate('coaching-context') }}
               onAddExercise={(name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => {
                 const currentPlan = appState.plan!
                 const avgSets = currentPlan.length > 0
@@ -562,6 +612,74 @@ export default function App() {
                 }
                 updateState({ plan: [...currentPlan, newEntry] })
                 if (!matched && appState.user) savePendingExercise(appState.user.id, name)
+
+                const undo = () => {
+                  setAppState(prev => prev.plan
+                    ? { ...prev, plan: prev.plan.filter(p => p !== newEntry) }
+                    : prev
+                  )
+                }
+                const timeoutId = setTimeout(() => {
+                  setPendingPlanOp(null)
+                  pendingPlanOpRef.current = null
+                }, 3000)
+                startPlanOp({ message: `${name} added`, flush: async () => {}, undo, timeoutId })
+              }}
+              onRemoveFromSessionOnly={(entry, index) => {
+                setAppState(prev => prev.plan
+                  ? { ...prev, plan: prev.plan.filter(p => p !== entry) }
+                  : prev
+                )
+                const undo = () => {
+                  setAppState(prev => {
+                    if (!prev.plan) return prev
+                    const next = [...prev.plan]
+                    next.splice(index, 0, entry)
+                    return { ...prev, plan: next }
+                  })
+                }
+                const timeoutId = setTimeout(() => {
+                  setPendingPlanOp(null)
+                  pendingPlanOpRef.current = null
+                }, 3000)
+                startPlanOp({ message: `${entry.exercise.name} removed for today`, flush: async () => {}, undo, timeoutId })
+              }}
+              onRemoveFromRoutine={(entry, index) => {
+                const splitId = appState.userProgramSplitId
+                const userId = appState.user?.id
+                setAppState(prev => prev.plan
+                  ? { ...prev, plan: prev.plan.filter(p => p !== entry) }
+                  : prev
+                )
+                const flush = async () => {
+                  if (!splitId || !userId) return
+                  try {
+                    await removeExerciseFromRoutine(supabaseRef.current, userId, splitId, entry.exercise.canonicalName)
+                  } catch (err) {
+                    console.error('removeExerciseFromRoutine failed:', err)
+                    // DB delete failed — restore the entry so plan reflects reality
+                    setAppState(prev => {
+                      if (!prev.plan) return prev
+                      const next = [...prev.plan]
+                      next.splice(index, 0, entry)
+                      return { ...prev, plan: next }
+                    })
+                  }
+                }
+                const undo = () => {
+                  setAppState(prev => {
+                    if (!prev.plan) return prev
+                    const next = [...prev.plan]
+                    next.splice(index, 0, entry)
+                    return { ...prev, plan: next }
+                  })
+                }
+                const timeoutId = setTimeout(() => {
+                  flush()
+                  setPendingPlanOp(null)
+                  pendingPlanOpRef.current = null
+                }, 3000)
+                startPlanOp({ message: `${entry.exercise.name} removed from routine`, flush, undo, timeoutId })
               }}
               onSessionSwap={handleSessionSwap}
             />
@@ -675,6 +793,20 @@ export default function App() {
             onBack={goHome}
           />
         </div>
+      )}
+
+      {pendingPlanOp && (
+        <UndoToast
+          message={pendingPlanOp.message}
+          onUndo={handleUndoPlanOp}
+          onTimeout={() => {
+            // Timer fires inside UndoToast; the op's own timeoutId already
+            // triggered flush+state-clear, so this is a defensive no-op for
+            // the case where state hasn't yet caught up.
+            setPendingPlanOp(null)
+            pendingPlanOpRef.current = null
+          }}
+        />
       )}
 
     </div>
