@@ -99,6 +99,7 @@ describe('RLS isolation', () => {
           rep_range_max: 12,
           weight_unit: 'lbs',
           sort_order: 0,
+          added_via: 'manual-add',
         })
         .select('id')
         .single()

@@ -203,7 +203,7 @@ export default function CustomProgramBuilderScreen({
         const realRow = await addExerciseToRoutine(supabase, userId, split.id, {
           name: def.name,
           equipment: def.equipment ?? undefined,
-        }, sortOrder)
+        }, sortOrder, 'manual-add')
         setSplits(prev => prev.map((s, i) =>
           i === idx ? { ...s, exercises: s.exercises.map(e => e.id === tempRow.id ? realRow : e) } : s
         ))
