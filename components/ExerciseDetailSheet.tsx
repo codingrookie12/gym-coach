@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 
 export const EXERCISE_CDN = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises'
@@ -83,13 +84,14 @@ export default function ExerciseDetailSheet({
                     aspectRatio: '4/3',
                     background: 'var(--surface-2)',
                     overflow: 'hidden',
+                    position: 'relative',
                   }}
                 >
-                  <img
+                  <Image
                     src={`${EXERCISE_CDN}/${path}`}
                     alt={i === 0 ? 'Start position' : 'End position'}
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    fill
+                    style={{ objectFit: 'cover' }}
                     onError={e => {
                       const wrapper = e.currentTarget.parentElement
                       if (wrapper) wrapper.style.display = 'none'
