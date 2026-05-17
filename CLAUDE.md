@@ -69,6 +69,8 @@ Source: [conversation / user / Canny / research]
 
 **Code** — TypeScript strict. `Array.from()` not spread on Set/Map. CSS custom properties only, no hardcoded colors.
 
+**Routine writes** — every INSERT into `user_routine_exercises` must (a) declare an `added_via` value in the union `'template-clone' | 'custom-program-create' | 'manual-add' | 'manual-swap'`, and (b) surface a visible Undo toast in the UI before committing. Picker tap alone never persists — use the deferred-write + Undo pattern in [components/screens/RoutineEditorScreen.tsx](components/screens/RoutineEditorScreen.tsx). Direct SDK inserts that skip the helper functions (`addExerciseToRoutine`, `swapExerciseInRoutine`, `cloneTemplate`, `createBlankProgram`) are forbidden — the helpers are the only legitimate write surface and they encode the provenance contract. GYM-94 rule.
+
 **Supabase migrations** — every new `CREATE TABLE public.*` migration must include `ENABLE ROW LEVEL SECURITY` + policies. Default grants for `anon` / `authenticated` / `service_role` are handled schema-wide by [20260514000000_data_api_default_grants.sql](supabase/migrations/20260514000000_data_api_default_grants.sql), so per-table `GRANT` blocks aren't needed — but if a table needs different access (e.g. `anon` write, or no `authenticated` access), add explicit `GRANT` / `REVOKE` statements in that migration.
 
 **Notion** — update decisions log at end of every working session when schema, naming, or architecture changes. Never update mid-session.

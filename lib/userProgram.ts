@@ -301,6 +301,7 @@ export async function cloneTemplate(
         equipment: equipmentFromExercise(ex),
         program_note: ex.programNote ?? null,
         sort_order: i,
+        added_via: 'template-clone',
       })
     })
   }
@@ -383,6 +384,7 @@ export async function createBlankProgram(
         equipment: def?.equipment ?? null,
         program_note: null,
         sort_order: i,
+        added_via: 'custom-program-create',
       })
     })
   })

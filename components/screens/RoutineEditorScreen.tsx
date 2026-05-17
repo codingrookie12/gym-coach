@@ -6,6 +6,7 @@ import {
   getUserRoutineForSplit,
   addExerciseToRoutine,
   removeExerciseFromRoutine,
+  swapExerciseInRoutine,
   type RoutineExerciseRow,
 } from '@/lib/userRoutine'
 import { type ExerciseDefinition, findExerciseByName } from '@/lib/exerciseLibrary'
@@ -23,11 +24,20 @@ interface RoutineEditorScreenProps {
   onBack: () => void
 }
 
-interface PendingDelete {
-  exerciseName: string
+/**
+ * Pending routine mutation that can be undone within a 3s window.
+ *
+ * GYM-94: Every routine write (add/swap/delete) goes through this pattern.
+ * The UI updates optimistically; the DB write is deferred and only commits
+ * when the timeout fires (or `flush` is called on navigation). `undo`
+ * reverts the optimistic UI and cancels the DB write entirely.
+ */
+interface PendingOp {
   splitId: string
-  row: RoutineExerciseRow
+  message: string
   timeoutId: ReturnType<typeof setTimeout>
+  flush: () => Promise<void>
+  undo: () => void
 }
 
 export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBack }: RoutineEditorScreenProps) {
@@ -37,15 +47,15 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   const [error, setError] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const [swapTarget, setSwapTarget] = useState<RoutineExerciseRow | null>(null)
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
-  const pendingDeleteRef = useRef<PendingDelete | null>(null)
+  const [pendingOp, setPendingOp] = useState<PendingOp | null>(null)
+  const pendingOpRef = useRef<PendingOp | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const activeSplit = splits.find(s => s.id === activeSplitId)
 
   useEffect(() => {
-    pendingDeleteRef.current = pendingDelete
-  }, [pendingDelete])
+    pendingOpRef.current = pendingOp
+  }, [pendingOp])
 
   useEffect(() => {
     async function load() {
@@ -67,83 +77,98 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const flushPendingDelete = useCallback(() => {
-    const pd = pendingDeleteRef.current
-    if (!pd) return
-    clearTimeout(pd.timeoutId)
-    removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName).catch(() => {})
-    setPendingDelete(null)
-    pendingDeleteRef.current = null
-  }, [supabase, userId])
+  const flushPendingOp = useCallback(async () => {
+    const op = pendingOpRef.current
+    if (!op) return
+    clearTimeout(op.timeoutId)
+    setPendingOp(null)
+    pendingOpRef.current = null
+    try {
+      await op.flush()
+    } catch {
+      // op.flush handles its own error recovery (UI rollback)
+    }
+  }, [])
 
   const handleBack = useCallback(async () => {
-    const pd = pendingDeleteRef.current
-    if (pd) {
-      clearTimeout(pd.timeoutId)
-      setPendingDelete(null)
-      pendingDeleteRef.current = null
-      try {
-        await removeExerciseFromRoutine(supabase, userId, pd.splitId, pd.exerciseName)
-      } catch {
-        // delete failed — navigate anyway; user will see exercise still present next session
-      }
-    }
+    await flushPendingOp()
     onBack()
-  }, [supabase, userId, onBack])
+  }, [flushPendingOp, onBack])
+
+  function startPendingOp(op: PendingOp) {
+    // Replace any in-flight op by flushing it first.
+    const prev = pendingOpRef.current
+    if (prev) {
+      clearTimeout(prev.timeoutId)
+      prev.flush().catch(() => {})
+    }
+    setPendingOp(op)
+    pendingOpRef.current = op
+  }
+
+  function handleUndo() {
+    const op = pendingOpRef.current
+    if (!op) return
+    clearTimeout(op.timeoutId)
+    op.undo()
+    setPendingOp(null)
+    pendingOpRef.current = null
+  }
+
+  async function handleSwitchSplit(splitId: string) {
+    await flushPendingOp()
+    setActiveSplitId(splitId)
+  }
 
   function handleRemove(exerciseName: string) {
     const rows = exerciseMap.get(activeSplitId) ?? []
     const row = rows.find(r => r.exercise_name === exerciseName)
     if (!row) return
+    const splitId = activeSplitId
 
-    flushPendingDelete()
-
+    // Optimistic: remove from UI immediately
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplitId, (prev.get(activeSplitId) ?? []).filter(r => r.exercise_name !== exerciseName))
+      next.set(splitId, (prev.get(splitId) ?? []).filter(r => r.exercise_name !== exerciseName))
       return next
     })
 
-    const timeoutId = setTimeout(() => {
-      removeExerciseFromRoutine(supabase, userId, activeSplitId, exerciseName).catch(() => {
+    const flush = async () => {
+      try {
+        await removeExerciseFromRoutine(supabase, userId, splitId, exerciseName)
+      } catch {
+        // DB delete failed — restore row in UI
         setExerciseMap(prev => {
           const next = new Map(prev)
-          const current = prev.get(activeSplitId) ?? []
-          next.set(activeSplitId, [...current, row].sort((a, b) => a.sort_order - b.sort_order))
+          const current = prev.get(splitId) ?? []
+          next.set(splitId, [...current, row].sort((a, b) => a.sort_order - b.sort_order))
           return next
         })
+      }
+    }
+
+    const undo = () => {
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        const current = prev.get(splitId) ?? []
+        next.set(splitId, [...current, row].sort((a, b) => a.sort_order - b.sort_order))
+        return next
       })
-      setPendingDelete(null)
+    }
+
+    const timeoutId = setTimeout(() => {
+      flush()
+      setPendingOp(null)
+      pendingOpRef.current = null
     }, 3000)
 
-    const pd: PendingDelete = { exerciseName, splitId: activeSplitId, row, timeoutId }
-    setPendingDelete(pd)
-    pendingDeleteRef.current = pd
+    startPendingOp({ splitId, message: `${exerciseName} removed`, timeoutId, flush, undo })
   }
 
-  function handleUndo() {
-    const pd = pendingDeleteRef.current
-    if (!pd) return
-    clearTimeout(pd.timeoutId)
-    setExerciseMap(prev => {
-      const next = new Map(prev)
-      const current = prev.get(pd.splitId) ?? []
-      next.set(pd.splitId, [...current, pd.row].sort((a, b) => a.sort_order - b.sort_order))
-      return next
-    })
-    setPendingDelete(null)
-    pendingDeleteRef.current = null
-  }
-
-  function handleSwitchSplit(splitId: string) {
-    flushPendingDelete()
-    setActiveSplitId(splitId)
-  }
-
-  async function handleAddExercise(def: ExerciseDefinition) {
-    flushPendingDelete()
+  function handleAddExercise(def: ExerciseDefinition) {
     setShowPicker(false)
-    const rows = exerciseMap.get(activeSplitId) ?? []
+    const splitId = activeSplitId
+    const rows = exerciseMap.get(splitId) ?? []
     const sortOrder = rows.length ? Math.max(...rows.map(r => r.sort_order)) + 1 : 0
     const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
@@ -160,79 +185,116 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
       equipment: def.equipment ?? null,
     }
 
+    // Optimistic: append to UI immediately
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplitId, [...(prev.get(activeSplitId) ?? []), tempRow])
+      next.set(splitId, [...(prev.get(splitId) ?? []), tempRow])
       return next
     })
 
-    try {
-      const realRow = await addExerciseToRoutine(supabase, userId, activeSplitId, {
-        name: def.name,
-        equipment: def.equipment ?? undefined,
-      }, sortOrder)
+    const flush = async () => {
+      try {
+        const realRow = await addExerciseToRoutine(supabase, userId, splitId, {
+          name: def.name,
+          equipment: def.equipment ?? undefined,
+        }, sortOrder, 'manual-add')
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(splitId, (prev.get(splitId) ?? []).map(r => r.id === tempId ? realRow : r))
+          return next
+        })
+      } catch (err) {
+        console.error('handleAddExercise flush failed:', err)
+        // INSERT failed — remove the optimistic row
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(splitId, (prev.get(splitId) ?? []).filter(r => r.id !== tempId))
+          return next
+        })
+      }
+    }
+
+    const undo = () => {
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r => r.id === tempId ? realRow : r))
-        return next
-      })
-    } catch (err) {
-      console.error('handleAddExercise failed:', err)
-      setExerciseMap(prev => {
-        const next = new Map(prev)
-        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).filter(r => r.id !== tempId))
+        next.set(splitId, (prev.get(splitId) ?? []).filter(r => r.id !== tempId))
         return next
       })
     }
+
+    const splitName = splits.find(s => s.id === splitId)?.name ?? ''
+    const timeoutId = setTimeout(() => {
+      flush()
+      setPendingOp(null)
+      pendingOpRef.current = null
+    }, 3000)
+
+    startPendingOp({ splitId, message: `${def.name} added to ${splitName}`, timeoutId, flush, undo })
   }
 
-  async function handleSwapExercise(target: RoutineExerciseRow, newDef: ExerciseDefinition) {
-    flushPendingDelete()
+  function handleSwapExercise(target: RoutineExerciseRow, newDef: ExerciseDefinition) {
     setSwapTarget(null)
+    const splitId = activeSplitId
+    const originalRow = target
     const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
+      ...target,
       id: tempId,
       exercise_name: newDef.name,
       canonical_name: newDef.name,
-      sets: target.sets,
-      rep_range_min: target.rep_range_min,
-      rep_range_max: target.rep_range_max,
-      backup_name: null,
-      weight_unit: target.weight_unit,
-      weight_convention: target.weight_convention,
-      sort_order: target.sort_order,
       equipment: newDef.equipment ?? null,
     }
 
+    // Optimistic: replace in UI immediately
     setExerciseMap(prev => {
       const next = new Map(prev)
-      next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r =>
-        r.id === target.id ? tempRow : r
-      ))
+      next.set(splitId, (prev.get(splitId) ?? []).map(r => r.id === target.id ? tempRow : r))
       return next
     })
 
-    try {
-      await removeExerciseFromRoutine(supabase, userId, activeSplitId, target.exercise_name)
-      const realRow = await addExerciseToRoutine(supabase, userId, activeSplitId, {
-        name: newDef.name,
-        equipment: newDef.equipment ?? undefined,
-      }, target.sort_order)
+    const flush = async () => {
+      try {
+        const realRow = await swapExerciseInRoutine(supabase, userId, splitId, target.exercise_name, {
+          name: newDef.name,
+          equipment: newDef.equipment ?? undefined,
+        })
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(splitId, (prev.get(splitId) ?? []).map(r => r.id === tempId ? realRow : r))
+          return next
+        })
+      } catch (err) {
+        console.error('handleSwapExercise flush failed:', err)
+        // Swap failed — restore original
+        setExerciseMap(prev => {
+          const next = new Map(prev)
+          next.set(splitId, (prev.get(splitId) ?? []).map(r => r.id === tempId ? originalRow : r))
+          return next
+        })
+      }
+    }
+
+    const undo = () => {
       setExerciseMap(prev => {
         const next = new Map(prev)
-        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r => r.id === tempId ? realRow : r))
-        return next
-      })
-    } catch (err) {
-      console.error('handleSwapExercise failed:', err)
-      setExerciseMap(prev => {
-        const next = new Map(prev)
-        next.set(activeSplitId, (prev.get(activeSplitId) ?? []).map(r =>
-          r.id === tempId ? target : r
-        ))
+        next.set(splitId, (prev.get(splitId) ?? []).map(r => r.id === tempId ? originalRow : r))
         return next
       })
     }
+
+    const timeoutId = setTimeout(() => {
+      flush()
+      setPendingOp(null)
+      pendingOpRef.current = null
+    }, 3000)
+
+    startPendingOp({
+      splitId,
+      message: `${target.exercise_name} → ${newDef.name}`,
+      timeoutId,
+      flush,
+      undo,
+    })
   }
 
   const currentRows = exerciseMap.get(activeSplitId) ?? []
@@ -348,7 +410,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
               {/* Tappable row body — opens swap picker */}
               <button
-                onClick={() => { flushPendingDelete(); setSwapTarget(row) }}
+                onClick={async () => { await flushPendingOp(); setSwapTarget(row) }}
                 style={{
                   flex: 1,
                   display: 'flex',
@@ -442,8 +504,8 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
         </button>
       </div>
 
-      {/* Undo toast */}
-      {pendingDelete && (
+      {/* Undo toast — covers add, swap, delete (GYM-94) */}
+      {pendingOp && (
         <div
           style={{
             position: 'fixed',
@@ -464,7 +526,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           }}
         >
           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
-            {pendingDelete.exerciseName} removed
+            {pendingOp.message}
           </span>
           <button
             onClick={handleUndo}
