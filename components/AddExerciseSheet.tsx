@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import ExerciseNameInput, { ValidationState } from './ExerciseNameInput'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 
@@ -45,8 +45,15 @@ export default function AddExerciseSheet({ onAdd, onClose }: AddExerciseSheetPro
 
   const isCustom = validation.status === 'none' && validation.confirmed
 
+  // GYM-95: one-shot guard prevents a fast double-tap from firing `onAdd`
+  // twice before the parent unmounts the sheet. Ref doesn't need reset —
+  // parent always unmounts on success and a fresh mount allocates a new ref.
+  const isSubmittingRef = useRef(false)
+
   function handleAdd() {
     if (!canAdd) return
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
     const matched = validation.status === 'exact' ? validation.exercise : null
     onAdd(name.trim(), matched, prefillWeight, prefillReps)
   }

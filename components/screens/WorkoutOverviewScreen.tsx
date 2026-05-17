@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
+import RemoveExerciseSheet from '@/components/RemoveExerciseSheet'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 import ExerciseProgressionStrip from '@/components/ExerciseProgressionStrip'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
@@ -17,18 +18,22 @@ interface WorkoutOverviewScreenProps {
   onResume?: () => void
   onBack: () => void
   onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
+  onRemoveFromSessionOnly?: (entry: ExercisePlan, index: number) => void
+  onRemoveFromRoutine?: (entry: ExercisePlan, index: number) => void
   onSessionSwap?: (oldName: string, newName: string) => void
 }
 
 type PendingSwap = { exIdx: number; oldName: string; newName: string }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onSessionSwap }: WorkoutOverviewScreenProps) {
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onRemoveFromSessionOnly, onRemoveFromRoutine, onSessionSwap }: WorkoutOverviewScreenProps) {
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
+  const [removeTarget, setRemoveTarget] = useState<{ entry: ExercisePlan; index: number } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const [progression, setProgression] = useState<Record<string, ProgressionData>>({})
   const cardio = CARDIO_RECOMMENDATION[split]
+  const canRemove = !!onRemoveFromSessionOnly && !!onRemoveFromRoutine
 
   useEffect(() => {
     const names = Array.from(new Set(plan.map(p => p.exercise.name).filter(Boolean)))
@@ -183,13 +188,38 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                     )}
                   </div>
 
-                  <button
-                    className="swap-badge"
-                    onClick={() => toggleSwap(i)}
-                    style={{ flexShrink: 0, marginTop: '2px' }}
-                  >
-                    {isSwapped ? 'HIDE' : 'SWAP'}
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0, marginTop: '2px' }}>
+                    <button
+                      className="swap-badge"
+                      onClick={() => toggleSwap(i)}
+                    >
+                      {isSwapped ? 'HIDE' : 'SWAP'}
+                    </button>
+                    {canRemove && (
+                      <button
+                        onClick={() => setRemoveTarget({ entry: item, index: i })}
+                        aria-label={`Remove ${item.exercise.name}`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          padding: '2px 4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          lineHeight: 1,
+                          transition: 'color 0.1s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--rust)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Swap options */}
@@ -316,6 +346,21 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
             setShowAddSheet(false)
           }}
           onClose={() => setShowAddSheet(false)}
+        />
+      )}
+
+      {removeTarget && onRemoveFromSessionOnly && onRemoveFromRoutine && (
+        <RemoveExerciseSheet
+          exerciseName={removeTarget.entry.exercise.name}
+          onJustToday={() => {
+            onRemoveFromSessionOnly(removeTarget.entry, removeTarget.index)
+            setRemoveTarget(null)
+          }}
+          onFromRoutine={() => {
+            onRemoveFromRoutine(removeTarget.entry, removeTarget.index)
+            setRemoveTarget(null)
+          }}
+          onClose={() => setRemoveTarget(null)}
         />
       )}
 
