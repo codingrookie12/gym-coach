@@ -251,7 +251,12 @@ export default function App() {
       plan: prev.plan
         ? prev.plan.map(p =>
             p.exercise.name === oldName
-              ? { ...p, exercise: { ...p.exercise, name: newName, canonicalName: newName } }
+              ? {
+                  ...p,
+                  exercise: { ...p.exercise, name: newName, canonicalName: newName },
+                  targetWeight: null,
+                  coachingNote: null,
+                }
               : p
           )
         : null,
