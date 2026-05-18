@@ -26,7 +26,6 @@ export default function ExerciseNameInput({
 }: ExerciseNameInputProps) {
   const [validation, setValidation] = useState<ValidationState>({ status: 'empty' })
   const [confirmed, setConfirmed] = useState(false)
-  const [showInstructions, setShowInstructions] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -51,7 +50,6 @@ export default function ExerciseNameInput({
       if (exactMatch) {
         next = { status: 'exact', exercise: exactMatch }
         setConfirmed(false)
-        setShowInstructions(false)
       } else if (closeMatches.length > 0) {
         next = { status: 'close', matches: closeMatches }
         setConfirmed(false)
@@ -120,31 +118,6 @@ export default function ExerciseNameInput({
             ))}
             {validation.exercise.split && <span className="tag">{validation.exercise.split}</span>}
           </div>
-
-          {validation.exercise.instructions && validation.exercise.instructions.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowInstructions(p => !p)}
-                style={{
-                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                }}
-              >
-                <span className="section-label" style={{ color: 'var(--text-secondary)' }}>
-                  INSTRUCTIONS {showInstructions ? '▴' : '▾'}
-                </span>
-              </button>
-              {showInstructions && (
-                <ol style={{ margin: '6px 0 0', padding: '0 0 0 16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {validation.exercise.instructions.map((step, i) => (
-                    <li key={i} className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', lineHeight: 1.5 }}>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          )}
         </div>
       )}
 
