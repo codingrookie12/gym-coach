@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gym-coach-v3'
+const CACHE_NAME = 'gym-coach-v4'
 const SHELL_ASSETS = [
   '/manifest.json',
 ]
@@ -25,6 +25,14 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
+
+  // Only handle same-origin requests. Cross-origin (e.g. Supabase REST at
+  // <project>.supabase.co) must pass through untouched — caching those
+  // returns stale rows after a write and silently breaks read-your-write
+  // for any direct-from-browser supabase-js read (GYM-83 reorder regression).
+  if (url.origin !== self.location.origin) {
+    return
+  }
 
   // Don't cache API calls or auth routes — let them fail fast so the
   // outbox path in app/page.tsx triggers correctly.
