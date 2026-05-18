@@ -49,6 +49,8 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
   const [swapTarget, setSwapTarget] = useState<RoutineExerciseRow | null>(null)
   const [pendingOp, setPendingOp] = useState<PendingOp | null>(null)
   const pendingOpRef = useRef<PendingOp | null>(null)
+  const [reordering, setReordering] = useState(false)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const activeSplit = splits.find(s => s.id === activeSplitId)
@@ -163,6 +165,63 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
     }, 3000)
 
     startPendingOp({ splitId, message: `${exerciseName} removed`, timeoutId, flush, undo })
+  }
+
+  // GYM-83: Reorder via ▲/▼. Optimistic local swap → PATCH /api/routine/[splitId]
+  // → replace local state with the server response (authoritative). On error
+  // we revert and show a toast. All ▲/▼ controls are disabled during the
+  // round-trip so a second tap can't race the first.
+  async function handleReorder(rowId: string, direction: 'up' | 'down') {
+    if (reordering) return
+    await flushPendingOp()
+    const splitId = activeSplitId
+    const rows = exerciseMap.get(splitId) ?? []
+    const idx = rows.findIndex(r => r.id === rowId)
+    if (idx === -1) return
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1
+    if (swapIdx < 0 || swapIdx >= rows.length) return
+
+    const optimistic = rows.slice()
+    ;[optimistic[idx], optimistic[swapIdx]] = [optimistic[swapIdx], optimistic[idx]]
+    const orderedIds = optimistic.map(r => r.id)
+    const snapshot = rows
+
+    setExerciseMap(prev => {
+      const next = new Map(prev)
+      next.set(splitId, optimistic)
+      return next
+    })
+    setReordering(true)
+    setReorderError(null)
+
+    try {
+      const res = await fetch(`/api/routine/${splitId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reorder', orderedIds }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.error || `HTTP ${res.status}`)
+      }
+      const { exercises } = await res.json() as { exercises: RoutineExerciseRow[] }
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(splitId, exercises)
+        return next
+      })
+    } catch (err) {
+      console.error('handleReorder failed:', err)
+      setExerciseMap(prev => {
+        const next = new Map(prev)
+        next.set(splitId, snapshot)
+        return next
+      })
+      setReorderError("Couldn't save order")
+      setTimeout(() => setReorderError(null), 3000)
+    } finally {
+      setReordering(false)
+    }
   }
 
   function handleAddExercise(def: ExerciseDefinition) {
@@ -439,6 +498,46 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                 </span>
               </button>
 
+              {/* Reorder ▲/▼ — GYM-83 */}
+              <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, marginRight: '2px' }}>
+                <button
+                  onClick={e => { e.stopPropagation(); handleReorder(row.id, 'up') }}
+                  disabled={i === 0 || reordering}
+                  aria-label="Move up"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: i === 0 ? 'var(--border-2)' : 'var(--text-secondary)',
+                    cursor: i === 0 || reordering ? 'default' : 'pointer',
+                    padding: '4px 8px',
+                    fontFamily: 'Space Mono, monospace',
+                    fontSize: '0.7rem',
+                    lineHeight: 1,
+                    opacity: reordering && i !== 0 ? 0.4 : 1,
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleReorder(row.id, 'down') }}
+                  disabled={i === currentRows.length - 1 || reordering}
+                  aria-label="Move down"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: i === currentRows.length - 1 ? 'var(--border-2)' : 'var(--text-secondary)',
+                    cursor: i === currentRows.length - 1 || reordering ? 'default' : 'pointer',
+                    padding: '4px 8px',
+                    fontFamily: 'Space Mono, monospace',
+                    fontSize: '0.7rem',
+                    lineHeight: 1,
+                    opacity: reordering && i !== currentRows.length - 1 ? 0.4 : 1,
+                  }}
+                >
+                  ▼
+                </button>
+              </div>
+
               {/* Remove */}
               <button
                 onClick={e => { e.stopPropagation(); handleRemove(row.exercise_name) }}
@@ -544,6 +643,29 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           >
             UNDO
           </button>
+        </div>
+      )}
+
+      {/* Reorder error toast — GYM-83 */}
+      {reorderError && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '10px 16px',
+            background: 'var(--surface)',
+            border: '1px solid var(--rust)',
+            borderRadius: '4px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            zIndex: 20,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', letterSpacing: '0.06em' }}>
+            {reorderError}
+          </span>
         </div>
       )}
 
