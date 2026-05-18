@@ -1,11 +1,15 @@
-const CACHE_NAME = 'gym-coach-v2'
+const CACHE_NAME = 'gym-coach-v3'
 const SHELL_ASSETS = [
   '/manifest.json',
 ]
+// The app shell HTML to serve for navigation requests when offline.
+// Next.js serves the same HTML for all routes (it's a SPA shell), so
+// caching '/' is enough to give the user the app skeleton offline.
+const SHELL_URL = '/'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll([...SHELL_ASSETS, SHELL_URL]))
   )
   self.skipWaiting()
 })
@@ -22,17 +26,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
-  // Never intercept navigation requests — let the server (middleware/auth) handle them
-  if (event.request.mode === 'navigate') {
-    return
-  }
-
-  // Don't cache API calls or auth routes
+  // Don't cache API calls or auth routes — let them fail fast so the
+  // outbox path in app/page.tsx triggers correctly.
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/')) {
     return
   }
 
-  // Cache-first for static assets only
+  // Navigation requests: try network first, fall back to cached shell.
+  // This ensures the app loads even on a cold offline launch.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(SHELL_URL).then(cached => cached ?? Response.error())
+      )
+    )
+    return
+  }
+
+  // Cache-first for static assets
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached

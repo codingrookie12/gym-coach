@@ -31,7 +31,12 @@ import {
   loadSessionFromStorage,
   clearSessionFromStorage,
   PersistedSession,
+  readOutbox,
+  removeFromOutbox,
+  enqueueOutbox,
 } from '@/lib/sessionStorage'
+import { useOnlineStatus } from '@/hooks/useOnlineStatus'
+import OfflineIndicator from '@/components/OfflineIndicator'
 import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import type { User } from '@supabase/supabase-js'
@@ -68,7 +73,7 @@ export interface AppState {
   savedExIdx: number
   savedSnapshot: SavedSnapshot
   sessionSwaps: SessionSwap[]
-  sessionSyncStatus: 'confirmed' | 'partial' | null
+  sessionSyncStatus: 'confirmed' | 'partial' | 'queued' | null
   workoutStartedAt: string | null
   detectedSession: PersistedSession | null
   detectedSplit: string | null
@@ -135,6 +140,49 @@ export default function App() {
   const updateState = useCallback((partial: Partial<AppState>) => {
     setAppState(prev => ({ ...prev, ...partial }))
   }, [])
+
+  const online = useOnlineStatus()
+  const [outboxCount, setOutboxCount] = useState(0)
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  // Drain the offline finish-session outbox. Safe to call any time.
+  const drainOutbox = useCallback(async (userId: string) => {
+    const pending = readOutbox(userId)
+    if (!pending.length) return
+    setIsSyncing(true)
+    for (const entry of pending) {
+      try {
+        const res = await fetch('/api/session/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry.body),
+        })
+        if (res.ok) {
+          removeFromOutbox(userId, entry.id)
+          setOutboxCount(readOutbox(userId).length)
+        } else if (res.status >= 400 && res.status < 500) {
+          // 4xx — malformed payload; drop to avoid infinite retry
+          console.warn('[GYM-49] Outbox entry rejected by server, dropping:', entry.id, res.status)
+          removeFromOutbox(userId, entry.id)
+          setOutboxCount(readOutbox(userId).length)
+        }
+        // 5xx or network error: leave in outbox, retry next time
+      } catch {
+        // Network error — leave in outbox
+        break
+      }
+    }
+    setIsSyncing(false)
+  }, [])
+
+  // Drain on reconnect
+  useEffect(() => {
+    const userId = appState.user?.id
+    if (online && userId) {
+      setOutboxCount(readOutbox(userId).length)
+      drainOutbox(userId)
+    }
+  }, [online, appState.user?.id, drainOutbox])
 
   // GYM-95: pending in-memory plan op (add or remove) with 3s Undo window.
   // Mirrors GYM-94's PendingOp pattern but for `appState.plan` instead of
@@ -307,6 +355,13 @@ export default function App() {
         if (pending?.length) {
           retryFailedSyncs(supabase, user.id, pending).catch(() => {})
         }
+
+        // Drain any offline-finish outbox entries queued while offline (GYM-49)
+        const outboxPending = readOutbox(user.id)
+        setOutboxCount(outboxPending.length)
+        if (outboxPending.length) {
+          drainOutbox(user.id)
+        }
       }
 
       const activeSplits = resolvedProgram?.splits ?? []
@@ -408,18 +463,55 @@ export default function App() {
       }
     }
 
-    const [, writeResponse] = await Promise.all([
-      Promise.all(patchPromises),
-      newEntries.length > 0
-        ? fetch('/api/session/write', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entries: newEntries, ...(appState.workoutStartedAt ? { startedAt: appState.workoutStartedAt } : {}) }),
-          })
-        : Promise.resolve(null),
-    ])
+    // If offline (or write fails with a network error), queue and clear the
+    // in-progress session — it belongs to the outbox now.
+    const writeBody = newEntries.length > 0
+      ? { entries: newEntries, ...(appState.workoutStartedAt ? { startedAt: appState.workoutStartedAt } : {}) }
+      : null
 
-    let syncStatus: 'confirmed' | 'partial' = 'confirmed'
+    let syncStatus: 'confirmed' | 'partial' | 'queued' = 'confirmed'
+
+    if (writeBody && !navigator.onLine) {
+      // Definitely offline — skip the fetch entirely and queue
+      if (appState.user) enqueueOutbox(appState.user.id, writeBody)
+      setOutboxCount(appState.user ? readOutbox(appState.user.id).length : 1)
+      if (appState.user) clearSessionFromStorage(appState.user.id)
+      updateState({
+        exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+        sessionSwaps: [], sessionSyncStatus: 'queued', workoutStartedAt: null,
+      })
+      navigate('session-summary')
+      return
+    }
+
+    let writeResponse: Response | null = null
+    try {
+      const [, wr] = await Promise.all([
+        Promise.all(patchPromises),
+        writeBody
+          ? fetch('/api/session/write', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(writeBody),
+            })
+          : Promise.resolve(null),
+      ])
+      writeResponse = wr
+    } catch {
+      // Network error mid-session (went offline after check) — queue
+      if (writeBody && appState.user) {
+        enqueueOutbox(appState.user.id, writeBody)
+        setOutboxCount(readOutbox(appState.user.id).length)
+      }
+      if (appState.user) clearSessionFromStorage(appState.user.id)
+      updateState({
+        exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
+        sessionSwaps: [], sessionSyncStatus: 'queued', workoutStartedAt: null,
+      })
+      navigate('session-summary')
+      return
+    }
+
     if (writeResponse) {
       const data = await writeResponse.json()
       if (!data.success) throw new Error(data.error ?? 'Save failed')
@@ -808,6 +900,11 @@ export default function App() {
           }}
         />
       )}
+
+      <OfflineIndicator
+        hasPendingOutbox={outboxCount > 0}
+        isSyncing={isSyncing}
+      />
 
     </div>
   )

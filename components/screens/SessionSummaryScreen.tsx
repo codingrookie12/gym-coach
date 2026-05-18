@@ -17,7 +17,7 @@ interface SessionSummaryScreenProps {
   exerciseLogs: ExerciseLog[]
   plan: ExercisePlan[]
   previousSessions: SessionRecord[]
-  syncStatus?: 'confirmed' | 'partial'
+  syncStatus?: 'confirmed' | 'partial' | 'queued'
   onDone: () => void
 }
 
@@ -289,6 +289,11 @@ export default function SessionSummaryScreen({
         {syncStatus === 'partial' && (
           <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
             ⚠ PARTIAL SYNC — queued for auto-retry
+          </p>
+        )}
+        {syncStatus === 'queued' && (
+          <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
+            SAVED ON DEVICE — will sync to your account when you&apos;re back online.
           </p>
         )}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
