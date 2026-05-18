@@ -31,6 +31,18 @@ export default function ResumePromptScreen({
   const exIdx = detectedSession?.exIdx ?? 0
   const currentExName = detectedSession?.logs[exIdx]?.exerciseName ?? null
 
+  const startedAtLabel = detectedSession?.startedAt
+    ? (() => {
+        const d = new Date(detectedSession.startedAt)
+        const now = new Date()
+        const diffMs = now.getTime() - d.getTime()
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+        if (diffDays === 0) return 'Started today'
+        if (diffDays === 1) return 'Started yesterday'
+        return `Started ${diffDays} days ago`
+      })()
+    : null
+
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh', background: 'var(--bg)' }}>
 
@@ -104,8 +116,13 @@ export default function ResumePromptScreen({
               {completedCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {totalCount} sets</span>
             </p>
             {currentExName && (
-              <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', margin: 0, letterSpacing: '0.06em' }}>
+              <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', margin: '0 0 2px 0', letterSpacing: '0.06em' }}>
                 LEFT OFF AT: {currentExName.toUpperCase()}
+              </p>
+            )}
+            {startedAtLabel && (
+              <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: 0, letterSpacing: '0.06em' }}>
+                {startedAtLabel.toUpperCase()}
               </p>
             )}
           </div>
