@@ -144,3 +144,128 @@ describe('Critical path: sign in → log workout → read back', () => {
     if (userId) await serviceClient.auth.admin.deleteUser(userId)
   })
 })
+
+/**
+ * GYM-83: Reorder exercises within a split.
+ *
+ * Exercises the lib helper directly (mirrors what the PATCH route does). Asserts:
+ *   - new sort_order reflected in DB,
+ *   - only rows whose position changed get a fresh updated_at,
+ *   - a second user cannot UPDATE the first user's rows (RLS on UPDATE).
+ */
+describe('GYM-83: reorder exercises within a split', () => {
+  const reorderSuffix = Date.now() + 1
+  const reorderEmailA = `test-reorder-a-${reorderSuffix}@gym-test.invalid`
+  const reorderEmailB = `test-reorder-b-${reorderSuffix}@gym-test.invalid`
+
+  let aUserId: string
+  let bUserId: string
+  let aClient: SupabaseClient
+  let bClient: SupabaseClient
+  let rProgramId: string
+  let rSplitId: string
+  const rowIds: string[] = []      // ordered by initial sort_order 0..2
+  const exerciseNames = ['Barbell Bench Press', 'Dumbbell Row', 'Overhead Press']
+
+  beforeAll(async () => {
+    const { data: a, error: aErr } = await serviceClient.auth.admin.createUser({ email: reorderEmailA, email_confirm: true })
+    if (aErr) throw aErr
+    aUserId = a.user!.id
+    const { data: b, error: bErr } = await serviceClient.auth.admin.createUser({ email: reorderEmailB, email_confirm: true })
+    if (bErr) throw bErr
+    bUserId = b.user!.id
+
+    aClient = await signInAs(reorderEmailA)
+    bClient = await signInAs(reorderEmailB)
+
+    const { data: prog } = await aClient
+      .from('user_programs')
+      .insert({ user_id: aUserId, name: 'Reorder Test Program' })
+      .select('id').single()
+    rProgramId = prog!.id
+
+    const { data: split } = await aClient
+      .from('user_program_splits')
+      .insert({ user_program_id: rProgramId, name: 'Push', sort_order: 0 })
+      .select('id').single()
+    rSplitId = split!.id
+
+    for (let i = 0; i < exerciseNames.length; i++) {
+      const { data: row } = await aClient
+        .from('user_routine_exercises')
+        .insert({
+          user_id: aUserId,
+          user_program_split_id: rSplitId,
+          exercise_name: exerciseNames[i],
+          canonical_name: exerciseNames[i],
+          sets: 3,
+          rep_range_min: 8,
+          rep_range_max: 12,
+          weight_unit: 'lbs',
+          sort_order: i,
+          added_via: 'manual-add',
+        })
+        .select('id').single()
+      rowIds.push(row!.id)
+    }
+  })
+
+  it('reorder swaps two adjacent rows and leaves the third untouched', async () => {
+    const { reorderExercisesInSplit } = await import('../lib/userRoutine')
+
+    // Capture pre-reorder updated_at for the row that shouldn't move (index 2).
+    const { data: beforeRows } = await aClient
+      .from('user_routine_exercises')
+      .select('id, sort_order, updated_at')
+      .eq('user_program_split_id', rSplitId)
+      .order('sort_order', { ascending: true })
+    const untouchedBefore = beforeRows!.find(r => r.id === rowIds[2])!
+
+    // Wait a beat so updated_at would visibly change if we touched the row.
+    await new Promise(r => setTimeout(r, 10))
+
+    // Swap positions 0 and 1; leave position 2 alone.
+    const newOrder = [rowIds[1], rowIds[0], rowIds[2]]
+    const result = await reorderExercisesInSplit(aClient, aUserId, rSplitId, newOrder)
+
+    expect(result.map(r => r.id)).toEqual(newOrder)
+    expect(result.map(r => r.sort_order)).toEqual([0, 1, 2])
+
+    const { data: afterRows } = await aClient
+      .from('user_routine_exercises')
+      .select('id, sort_order, updated_at')
+      .eq('user_program_split_id', rSplitId)
+      .order('sort_order', { ascending: true })
+    expect(afterRows!.map(r => r.id)).toEqual(newOrder)
+
+    // Minimal-diff: untouched row's updated_at unchanged.
+    const untouchedAfter = afterRows!.find(r => r.id === rowIds[2])!
+    expect(untouchedAfter.updated_at).toBe(untouchedBefore.updated_at)
+  })
+
+  it('user B cannot reorder user A\'s split (RLS blocks UPDATE)', async () => {
+    // Direct UPDATE as user B should affect zero rows (RLS filter).
+    const { data: updated } = await bClient
+      .from('user_routine_exercises')
+      .update({ sort_order: 99 })
+      .eq('id', rowIds[0])
+      .select('id')
+    expect(updated ?? []).toHaveLength(0)
+
+    // Confirm A's row is unchanged.
+    const { data: stillThere } = await aClient
+      .from('user_routine_exercises')
+      .select('id, sort_order')
+      .eq('id', rowIds[0])
+      .single()
+    expect(stillThere!.sort_order).not.toBe(99)
+  })
+
+  afterAll(async () => {
+    for (const id of rowIds) await serviceClient.from('user_routine_exercises').delete().eq('id', id)
+    if (rSplitId) await serviceClient.from('user_program_splits').delete().eq('id', rSplitId)
+    if (rProgramId) await serviceClient.from('user_programs').delete().eq('id', rProgramId)
+    if (aUserId) await serviceClient.auth.admin.deleteUser(aUserId)
+    if (bUserId) await serviceClient.auth.admin.deleteUser(bUserId)
+  })
+})
