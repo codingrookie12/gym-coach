@@ -9,6 +9,7 @@ export interface PendingExercise {
   name: string
   addedAt: string
   metadataComplete: boolean
+  createdBy: string | null
   equipment?: Equipment
   primaryMuscles?: Muscle[]
   split?: Split | null
@@ -19,6 +20,7 @@ interface DbRow {
   name: string
   created_at: string
   metadata_complete: boolean
+  created_by: string | null
   equipment: string | null
   primary_muscles: string[] | null
   split: string | null
@@ -30,13 +32,14 @@ function rowToPending(row: DbRow): PendingExercise {
     name: row.name,
     addedAt: row.created_at,
     metadataComplete: row.metadata_complete,
+    createdBy: row.created_by ?? null,
     equipment: (row.equipment as Equipment | null) ?? undefined,
     primaryMuscles: (row.primary_muscles as Muscle[] | null) ?? undefined,
     split: (row.split as Split | null) ?? undefined,
   }
 }
 
-const SELECT_COLS = 'id, name, created_at, metadata_complete, equipment, primary_muscles, split'
+const SELECT_COLS = 'id, name, created_at, metadata_complete, created_by, equipment, primary_muscles, split'
 
 export async function getPendingExercises(userId: string): Promise<PendingExercise[]> {
   const supabase = createSupabaseBrowserClient()
@@ -44,7 +47,7 @@ export async function getPendingExercises(userId: string): Promise<PendingExerci
     .from('exercises')
     .select(SELECT_COLS)
     .eq('is_custom', true)
-    .eq('created_by', userId)
+    .or(`created_by.eq.${userId},created_by.is.null`)
     .order('created_at', { ascending: false })
   if (error || !data) return []
   return (data as unknown as DbRow[]).map(rowToPending)
@@ -56,7 +59,7 @@ export async function getIncompletePendingExercises(userId: string): Promise<Pen
     .from('exercises')
     .select(SELECT_COLS)
     .eq('is_custom', true)
-    .eq('created_by', userId)
+    .or(`created_by.eq.${userId},created_by.is.null`)
     .eq('metadata_complete', false)
     .order('created_at', { ascending: false })
   if (error || !data) return []

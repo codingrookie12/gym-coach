@@ -355,15 +355,7 @@ export default function ExerciseBrowserScreen({
   const pendingCustom = customRows.filter(r => !r.metadataComplete)
   const completeCustom = customRows.filter(r => r.metadataComplete)
 
-  // Catalog exercises marked isCustom=true (app-added, not from free-exercise-db).
-  // These are read-only — users can't edit or delete them, but they belong in this
-  // tab since they show the "Custom" tag throughout the rest of the app.
-  const catalogCustom = useMemo(
-    () => ALL_EXERCISES.filter(e => e.isCustom),
-    []
-  )
-
-  const totalCustomCount = customRows.length + catalogCustom.length
+  const totalCustomCount = customRows.length
 
   const totalCount = ALL_EXERCISES.length
 
@@ -527,27 +519,6 @@ export default function ExerciseBrowserScreen({
                   </>
                 )}
 
-                {catalogCustom.length > 0 && (
-                  <>
-                    <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
-                      <p className="section-label" style={{ margin: 0 }}>
-                        CATALOG · {catalogCustom.length}
-                      </p>
-                      <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '4px 0 0', letterSpacing: '0.04em' }}>
-                        App-added exercises not in the standard database.
-                      </p>
-                    </div>
-                    {catalogCustom.map(ex => (
-                      <ExerciseRow
-                        key={ex.id}
-                        exercise={ex}
-                        inProgram={programExerciseNames.has(ex.name)}
-                        isCustom={true}
-                        onTap={() => setSelectedExercise(ex)}
-                      />
-                    ))}
-                  </>
-                )}
               </>
             )}
           </div>

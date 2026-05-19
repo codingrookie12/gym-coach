@@ -2454,7 +2454,7 @@
     "force": "pull",
     "level": "beginner",
     "instructions": [],
-    "isCustom": true
+    "isCustom": false
   },
   {
     "id": "Cable_Deadlifts",
@@ -12976,7 +12976,7 @@
     "force": "push",
     "level": "intermediate",
     "instructions": [],
-    "isCustom": true
+    "isCustom": false
   },
   {
     "id": "Seated_Cable_Rows",
