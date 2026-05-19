@@ -125,6 +125,7 @@ export default function CustomExerciseSheet(props: Props) {
   const [modifier, setModifier] = useState(parsedInitial.modifier)
   const [muscles, setMuscles] = useState<Muscle[]>(initial?.primaryMuscles ?? [])
   const [split, setSplit] = useState<string>(initial?.split ?? 'None')
+  const [instructions, setInstructions] = useState((initial?.instructions ?? []).join('\n'))
   const [showSuggest, setShowSuggest] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -159,7 +160,7 @@ export default function CustomExerciseSheet(props: Props) {
 
   useEffect(() => {
     setError(null)
-  }, [equipment, movement, modifier, muscles, split])
+  }, [equipment, movement, modifier, muscles, split, instructions])
 
   async function handleSave() {
     if (!canSave) return
@@ -170,6 +171,7 @@ export default function CustomExerciseSheet(props: Props) {
       equipment: equipment as Equipment,
       primaryMuscles: muscles,
       split: split === 'None' ? null : split,
+      instructions: instructions.split('\n').map(l => l.trim()).filter(Boolean),
     }
     try {
       if (mode === 'create') {
@@ -291,6 +293,33 @@ export default function CustomExerciseSheet(props: Props) {
                 outline: 'none',
               }}
             />
+          </div>
+
+          <div>
+            <p className="section-label" style={{ margin: '0 0 6px 0' }}>Notes / Instructions (optional)</p>
+            <textarea
+              value={instructions}
+              onChange={e => setInstructions(e.target.value)}
+              placeholder={'Step 1: Set up...\nStep 2: ...'}
+              rows={4}
+              style={{
+                width: '100%',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border-2)',
+                borderRadius: '2px',
+                color: 'var(--text-primary)',
+                fontFamily: 'Space Mono, monospace',
+                fontSize: '0.75rem',
+                padding: '8px 10px',
+                outline: 'none',
+                resize: 'vertical',
+                lineHeight: 1.6,
+                boxSizing: 'border-box',
+              }}
+            />
+            <p className="font-mono" style={{ fontSize: '0.52rem', color: 'var(--text-secondary)', margin: '4px 0 0', letterSpacing: '0.04em' }}>
+              One step per line. Shown in the exercise detail view.
+            </p>
           </div>
 
           <ExerciseMetadataFields

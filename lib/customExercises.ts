@@ -13,6 +13,7 @@ export interface PendingExercise {
   equipment?: Equipment
   primaryMuscles?: Muscle[]
   split?: Split | null
+  instructions?: string[]
 }
 
 interface DbRow {
@@ -24,6 +25,7 @@ interface DbRow {
   equipment: string | null
   primary_muscles: string[] | null
   split: string | null
+  instructions: string[] | null
 }
 
 function rowToPending(row: DbRow): PendingExercise {
@@ -36,10 +38,11 @@ function rowToPending(row: DbRow): PendingExercise {
     equipment: (row.equipment as Equipment | null) ?? undefined,
     primaryMuscles: (row.primary_muscles as Muscle[] | null) ?? undefined,
     split: (row.split as Split | null) ?? undefined,
+    instructions: row.instructions ?? undefined,
   }
 }
 
-const SELECT_COLS = 'id, name, created_at, metadata_complete, created_by, equipment, primary_muscles, split'
+const SELECT_COLS = 'id, name, created_at, metadata_complete, created_by, equipment, primary_muscles, split, instructions'
 
 export async function getPendingExercises(userId: string): Promise<PendingExercise[]> {
   const supabase = createSupabaseBrowserClient()
@@ -109,6 +112,7 @@ export interface CustomExercisePayload {
   equipment: Equipment
   primaryMuscles: Muscle[]
   split: Split | null
+  instructions: string[]
 }
 
 export class CustomExerciseNameTakenError extends Error {
@@ -142,6 +146,7 @@ export async function createCustomExercise(
       equipment: payload.equipment,
       primary_muscles: payload.primaryMuscles,
       split: payload.split,
+      instructions: payload.instructions.length > 0 ? payload.instructions : null,
     })
     .select('id, name')
     .single()
@@ -173,6 +178,7 @@ export async function updateCustomExercise(
       primary_muscles: payload.primaryMuscles,
       split: payload.split,
       metadata_complete: true,
+      instructions: payload.instructions.length > 0 ? payload.instructions : null,
     })
     .eq('id', id)
   if (error) throw error
@@ -236,6 +242,7 @@ export async function migrateLegacyLocalStorage(userId: string): Promise<void> {
           equipment: entry.equipment,
           primaryMuscles: entry.primaryMuscles,
           split: entry.split ?? null,
+          instructions: [],
         })
       } else {
         await savePendingExercise(userId, entry.name)
