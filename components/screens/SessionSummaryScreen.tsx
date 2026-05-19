@@ -10,6 +10,7 @@ import {
   completeExerciseMetadata,
   PendingExercise,
 } from '@/lib/customExercises'
+import ExerciseMetadataFields from '@/components/ExerciseMetadataFields'
 
 interface SessionSummaryScreenProps {
   userId: string
@@ -20,17 +21,6 @@ interface SessionSummaryScreenProps {
   syncStatus?: 'confirmed' | 'partial' | 'queued'
   onDone: () => void
 }
-
-const EQUIPMENT_OPTIONS: Equipment[] = [
-  'Barbell', 'Dumbbell', 'Cable', 'Machine', 'EZ Bar',
-  'Bands', 'Kettlebell', 'Bodyweight', 'Other',
-]
-const MUSCLE_OPTIONS: Muscle[] = [
-  'Chest', 'Shoulders', 'Triceps', 'Biceps', 'Back', 'Lats',
-  'Middle Back', 'Lower Back', 'Abdominals', 'Quadriceps',
-  'Hamstrings', 'Glutes', 'Calves',
-] as Muscle[]
-const SPLIT_OPTIONS: string[] = ['Push', 'Pull', 'Legs', 'None']
 
 function MetadataSheet({
   exercise,
@@ -46,10 +36,6 @@ function MetadataSheet({
   const [split, setSplit] = useState<string>('None')
 
   const canSave = equipment !== '' && muscles.length > 0
-
-  function toggleMuscle(m: Muscle) {
-    setMuscles(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
-  }
 
   return (
     <>
@@ -81,87 +67,14 @@ function MetadataSheet({
         </div>
 
         <div className="scroll-area" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '16px' }}>
-
-          {/* Equipment */}
-          <div>
-            <p className="section-label" style={{ margin: '0 0 8px 0' }}>Equipment</p>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {EQUIPMENT_OPTIONS.map(eq => (
-                <button
-                  key={eq}
-                  onClick={() => setEquipment(eq)}
-                  style={{
-                    background: equipment === eq ? 'var(--accent-dim)' : 'var(--surface-2)',
-                    border: `1px solid ${equipment === eq ? 'var(--accent-border)' : 'var(--border-2)'}`,
-                    borderRadius: '2px',
-                    color: equipment === eq ? 'var(--accent)' : 'var(--text-mid)',
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.05em',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.1s',
-                  }}
-                >
-                  {eq}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Primary Muscles */}
-          <div>
-            <p className="section-label" style={{ margin: '0 0 8px 0' }}>Primary Muscles</p>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {MUSCLE_OPTIONS.map(m => (
-                <button
-                  key={m}
-                  onClick={() => toggleMuscle(m)}
-                  style={{
-                    background: muscles.includes(m) ? 'var(--accent-dim)' : 'var(--surface-2)',
-                    border: `1px solid ${muscles.includes(m) ? 'var(--accent-border)' : 'var(--border-2)'}`,
-                    borderRadius: '2px',
-                    color: muscles.includes(m) ? 'var(--accent)' : 'var(--text-mid)',
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.05em',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.1s',
-                  }}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Split */}
-          <div>
-            <p className="section-label" style={{ margin: '0 0 8px 0' }}>Split Day</p>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {SPLIT_OPTIONS.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setSplit(s)}
-                  style={{
-                    background: split === s ? 'var(--accent-dim)' : 'var(--surface-2)',
-                    border: `1px solid ${split === s ? 'var(--accent-border)' : 'var(--border-2)'}`,
-                    borderRadius: '2px',
-                    color: split === s ? 'var(--accent)' : 'var(--text-mid)',
-                    fontFamily: 'Space Mono, monospace',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.05em',
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.1s',
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          <ExerciseMetadataFields
+            equipment={equipment}
+            setEquipment={setEquipment}
+            muscles={muscles}
+            setMuscles={setMuscles}
+            split={split}
+            setSplit={setSplit}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexShrink: 0, paddingTop: '12px' }}>
@@ -249,14 +162,18 @@ export default function SessionSummaryScreen({
 
   useEffect(() => {
     if (customNames.length === 0) return
-    const all = getPendingExercises(userId)
-    const relevant = all.filter(e => !e.metadataComplete && customNames.includes(e.name))
-    setPendingForSession(relevant)
+    let cancelled = false
+    getPendingExercises(userId).then(all => {
+      if (cancelled) return
+      const relevant = all.filter(e => !e.metadataComplete && customNames.includes(e.name))
+      setPendingForSession(relevant)
+    })
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleSaveMetadata(name: string, equipment: Equipment, muscles: Muscle[], s: string | null) {
-    completeExerciseMetadata(userId, name, { equipment, primaryMuscles: muscles, split: s })
+  async function handleSaveMetadata(name: string, equipment: Equipment, muscles: Muscle[], s: string | null) {
+    await completeExerciseMetadata(userId, name, { equipment, primaryMuscles: muscles, split: s })
     const next = metadataIdx + 1
     if (next < pendingForSession.length) {
       setMetadataIdx(next)

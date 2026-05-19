@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { ExerciseDefinition, filterExercises, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
+import CustomExerciseSheet from '@/components/CustomExerciseSheet'
 
 interface ExercisePickerSheetProps {
   split: string
@@ -12,6 +13,8 @@ interface ExercisePickerSheetProps {
   onSelect: (exercise: ExerciseDefinition) => void
   onClose: () => void
   title?: string
+  /** If provided, an empty-search row offers "+ Create '<query>' as custom exercise". */
+  userId?: string
 }
 
 function PickerRow({
@@ -107,10 +110,12 @@ export default function ExercisePickerSheet({
   onSelect,
   onClose,
   title,
+  userId,
 }: ExercisePickerSheetProps) {
   const [query, setQuery] = useState('')
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const [pendingSelection, setPendingSelection] = useState<ExerciseDefinition | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const resolvedTitle = title ?? (swapTarget ? `SWAP ${swapTarget.name.toUpperCase()}` : 'ADD EXERCISE')
@@ -233,13 +238,31 @@ export default function ExercisePickerSheet({
                 <span className="section-label">{searchResults.length} RESULT{searchResults.length !== 1 ? 'S' : ''}</span>
               </div>
               {searchResults.length === 0 ? (
-                <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ padding: '24px 20px', textAlign: 'center' }}>
                   <div className="font-display" style={{ fontSize: '1rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '6px' }}>
                     NO RESULTS
                   </div>
-                  <div className="font-body" style={{ fontSize: '0.8rem', color: 'var(--border-2)' }}>
+                  <div className="font-body" style={{ fontSize: '0.8rem', color: 'var(--border-2)', marginBottom: '14px' }}>
                     Try a different name
                   </div>
+                  {userId && (
+                    <button
+                      onClick={() => setCreateOpen(true)}
+                      style={{
+                        background: 'var(--accent-dim)',
+                        border: '1px solid var(--accent-border)',
+                        borderRadius: '2px',
+                        color: 'var(--accent)',
+                        fontFamily: 'Space Mono, monospace',
+                        fontSize: '0.62rem',
+                        letterSpacing: '0.08em',
+                        padding: '8px 14px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + CREATE &ldquo;{query.trim().toUpperCase()}&rdquo; AS CUSTOM
+                    </button>
+                  )}
                 </div>
               ) : (
                 searchResults.map(ex => (
@@ -358,6 +381,33 @@ export default function ExercisePickerSheet({
           exercise={detailExercise}
           inProgram={excludeNames.includes(detailExercise.name)}
           onClose={() => setDetailExercise(null)}
+        />
+      )}
+
+      {createOpen && userId && (
+        <CustomExerciseSheet
+          mode="create"
+          userId={userId}
+          prefillName={query}
+          onClose={() => setCreateOpen(false)}
+          onSaved={(saved) => {
+            setCreateOpen(false)
+            // Adapt to ExerciseDefinition for the picker's selection flow.
+            const adapted: ExerciseDefinition = {
+              id: saved.id,
+              name: saved.name,
+              equipment: saved.equipment,
+              primaryMuscles: saved.primaryMuscles,
+              secondaryMuscles: [],
+              split: saved.split,
+              mechanic: null,
+              force: null,
+              level: 'intermediate',
+              instructions: [],
+              isCustom: true,
+            }
+            setPendingSelection(adapted)
+          }}
         />
       )}
     </>

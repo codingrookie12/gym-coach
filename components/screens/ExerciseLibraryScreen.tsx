@@ -30,6 +30,8 @@ interface ExerciseLibraryScreenProps {
   onEditRoutine?: () => void
   onOpenHistory?: () => void
   onOpenExercises?: (preselectedName?: string) => void
+  onOpenCustomExercises?: () => void
+  pendingCustomCount?: number
 }
 
 // ─── Main hub screen ───────────────────────────────────────────────────────────
@@ -46,6 +48,8 @@ export default function ExerciseLibraryScreen({
   onEditRoutine,
   onOpenHistory,
   onOpenExercises,
+  onOpenCustomExercises,
+  pendingCustomCount = 0,
 }: ExerciseLibraryScreenProps) {
   const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
   const [switching, setSwitching] = useState<string | null>(null)
@@ -66,7 +70,6 @@ export default function ExerciseLibraryScreen({
   }, [])
 
   const totalCount = ALL_EXERCISES.length
-  const customCount = ALL_EXERCISES.filter(e => e.isCustom).length
 
   const dots = historySummary?.last7Dots ?? Array(7).fill(false)
   const trainedOf7 = historySummary?.trainedLast7Days ?? 0
@@ -327,6 +330,36 @@ export default function ExerciseLibraryScreen({
             <span className="section-label">EXERCISES</span>
           </div>
 
+          {pendingCustomCount > 0 && (
+            <div style={{ padding: '8px 16px 0' }}>
+              <button
+                onClick={() => onOpenCustomExercises?.()}
+                style={{
+                  width: '100%',
+                  background: 'var(--accent-dim)',
+                  border: '1px solid var(--accent-border)',
+                  borderRadius: '2px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div>
+                  <div className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
+                    CUSTOM · {pendingCustomCount} NEED{pendingCustomCount === 1 ? 'S' : ''} METADATA
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '0.52rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '3px' }}>
+                    Tap to complete — required for history tracking
+                  </div>
+                </div>
+                <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em', flexShrink: 0 }}>→</span>
+              </button>
+            </div>
+          )}
+
           <div style={{ padding: '10px 16px 20px' }}>
             <button
               onClick={() => onOpenExercises?.()}
@@ -345,9 +378,6 @@ export default function ExerciseLibraryScreen({
                 <div>
                   <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
                     {totalCount} TOTAL
-                    {customCount > 0 && (
-                      <span style={{ color: 'var(--text-mid)' }}> · {customCount} CUSTOM</span>
-                    )}
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginTop: '4px' }}>
                     BROWSE & SEARCH
