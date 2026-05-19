@@ -224,6 +224,7 @@ export async function migrateLegacyLocalStorage(userId: string): Promise<void> {
     localStorage.removeItem(legacyKeyFor(userId))
     return
   }
+  const failed: LegacyPending[] = []
   for (const entry of entries) {
     try {
       if (entry.metadataComplete && entry.equipment && entry.primaryMuscles?.length) {
@@ -236,9 +237,22 @@ export async function migrateLegacyLocalStorage(userId: string): Promise<void> {
       } else {
         await savePendingExercise(userId, entry.name)
       }
-    } catch {
-      // Name taken or other — skip silently; migration is best-effort.
+    } catch (e) {
+      // Name already taken means it's already in Supabase — safe to discard.
+      // Any other error means the save genuinely failed; keep for retry.
+      if (!(e instanceof CustomExerciseNameTakenError)) {
+        failed.push(entry)
+      }
     }
   }
-  localStorage.removeItem(legacyKeyFor(userId))
+  if (failed.length > 0) {
+    // Preserve failed entries so the next app load retries them.
+    try {
+      localStorage.setItem(legacyKeyFor(userId), JSON.stringify(failed))
+    } catch {
+      localStorage.removeItem(legacyKeyFor(userId))
+    }
+  } else {
+    localStorage.removeItem(legacyKeyFor(userId))
+  }
 }

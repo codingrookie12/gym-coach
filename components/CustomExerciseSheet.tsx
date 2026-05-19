@@ -98,11 +98,14 @@ const MOVEMENT_VOCAB: string[] = (() => {
   return Array.from(tokens).sort()
 })()
 
-function suggestMovements(query: string, limit = 5): string[] {
+function suggestMovements(query: string, equipment: Equipment | '', limit = 5): string[] {
   const q = query.trim().toLowerCase()
   if (q.length < 2) return []
   return MOVEMENT_VOCAB
     .filter(t => t.toLowerCase().includes(q))
+    // Hide suggestions that would produce a catalog duplicate with the current equipment.
+    // Those would fail validation anyway — showing them just confuses.
+    .filter(t => !equipment || !findExerciseByName(`${equipment} ${t}`))
     .slice(0, limit)
 }
 
@@ -129,7 +132,7 @@ export default function CustomExerciseSheet(props: Props) {
   const onDelete = mode === 'edit' ? (props as EditProps).onDelete : undefined
 
   const previewName = composeName(equipment, movement, modifier)
-  const suggestions = showSuggest ? suggestMovements(movement) : []
+  const suggestions = showSuggest ? suggestMovements(movement, equipment) : []
 
   const validation = useMemo(() => {
     // `modifier` is consumed via `previewName` (declared above this hook),
@@ -178,9 +181,10 @@ export default function CustomExerciseSheet(props: Props) {
       }
     } catch (e) {
       if (e instanceof CustomExerciseNameTakenError) {
-        setError(`"${payload.name}" already exists.`)
+        setError(`"${payload.name}" already exists in the catalog. Use it from the exercise picker instead.`)
       } else {
-        setError('Could not save. Try again.')
+        const msg = e instanceof Error ? e.message : String(e)
+        setError(`Could not save: ${msg}`)
       }
       setSaving(false)
     }
@@ -264,7 +268,7 @@ export default function CustomExerciseSheet(props: Props) {
               </div>
             )}
             <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '6px 0 0', letterSpacing: '0.04em' }}>
-              Use the canonical movement name. Suggestions come from the existing catalog.
+              Suggestions are movement names from the catalog — tap to match spelling.
             </p>
           </div>
 
