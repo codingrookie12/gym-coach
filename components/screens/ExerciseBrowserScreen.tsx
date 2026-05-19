@@ -31,6 +31,7 @@ interface Props {
   userId: string
   activeProgramId?: string
   preselectedExerciseName?: string | null
+  defaultTab?: Tab
 }
 
 // Adapt a custom-exercise row from Supabase to the ExerciseDefinition shape
@@ -337,8 +338,9 @@ export default function ExerciseBrowserScreen({
   userId,
   activeProgramId = 'ppl-default',
   preselectedExerciseName,
+  defaultTab = 'browse',
 }: Props) {
-  const [tab, setTab] = useState<Tab>('browse')
+  const [tab, setTab] = useState<Tab>(defaultTab)
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
   const [customRows, setCustomRows] = useState<PendingExercise[]>([])
   const [createOpen, setCreateOpen] = useState(false)

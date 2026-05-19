@@ -110,6 +110,7 @@ export default function App() {
   const [showProgressHistory, setShowProgressHistory] = useState(false)
   const [showExerciseBrowser, setShowExerciseBrowser] = useState(false)
   const [exerciseBrowserPreselected, setExerciseBrowserPreselected] = useState<string | null>(null)
+  const [exerciseBrowserDefaultTab, setExerciseBrowserDefaultTab] = useState<'browse' | 'custom'>('browse')
   const [pendingCustomCount, setPendingCustomCount] = useState(0)
   const [programSplits, setProgramSplits] = useState<{ id: string; name: string }[]>([])
   const [appState, setAppState] = useState<AppState>({
@@ -857,20 +858,23 @@ export default function App() {
               userId={appState.user.id}
               activeProgramId={appState.userProgramId ?? appState.programId}
               preselectedExerciseName={exerciseBrowserPreselected}
-              onBack={() => { setShowExerciseBrowser(false); setExerciseBrowserPreselected(null) }}
+              defaultTab={exerciseBrowserDefaultTab}
+              onBack={() => { setShowExerciseBrowser(false); setExerciseBrowserPreselected(null); setExerciseBrowserDefaultTab('browse') }}
             />
           ) : (
             <ExerciseLibraryScreen
               lastSplit={appState.lastSplit}
               activeProgramId={appState.userProgramId ?? appState.programId}
               activeProgram={appState.activeProgram}
+              pendingCustomCount={pendingCustomCount}
               onSelectProgram={() => { if (appState.user) clearSessionFromStorage(appState.user.id); window.location.reload() }}
               onOpenMyPrograms={() => { setProgramLibraryInitialMode(undefined); setShowProgramLibrary(true) }}
               onOpenExplorer={() => { setProgramLibraryInitialMode('explorer'); setShowProgramLibrary(true) }}
               onOpenBuilder={() => { setProgramLibraryInitialMode('builder'); setShowProgramLibrary(true) }}
               onEditRoutine={() => setScreen('routine-editor')}
               onOpenHistory={() => setShowProgressHistory(true)}
-              onOpenExercises={(preselectedName) => { setExerciseBrowserPreselected(preselectedName ?? null); setShowExerciseBrowser(true) }}
+              onOpenExercises={(preselectedName) => { setExerciseBrowserPreselected(preselectedName ?? null); setExerciseBrowserDefaultTab('browse'); setShowExerciseBrowser(true) }}
+              onOpenCustomExercises={() => { setExerciseBrowserPreselected(null); setExerciseBrowserDefaultTab('custom'); setShowExerciseBrowser(true) }}
             />
           )}
         </div>
