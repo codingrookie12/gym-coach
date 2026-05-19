@@ -355,6 +355,16 @@ export default function ExerciseBrowserScreen({
   const pendingCustom = customRows.filter(r => !r.metadataComplete)
   const completeCustom = customRows.filter(r => r.metadataComplete)
 
+  // Catalog exercises marked isCustom=true (app-added, not from free-exercise-db).
+  // These are read-only — users can't edit or delete them, but they belong in this
+  // tab since they show the "Custom" tag throughout the rest of the app.
+  const catalogCustom = useMemo(
+    () => ALL_EXERCISES.filter(e => e.isCustom),
+    []
+  )
+
+  const totalCustomCount = customRows.length + catalogCustom.length
+
   const totalCount = ALL_EXERCISES.length
 
   const programExerciseNames = useMemo(
@@ -396,7 +406,7 @@ export default function ExerciseBrowserScreen({
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {([
           { id: 'browse' as Tab, label: 'BROWSE' },
-          { id: 'custom' as Tab, label: 'CUSTOM', count: customRows.length },
+          { id: 'custom' as Tab, label: 'CUSTOM', count: totalCustomCount },
         ]).map(t => (
           <button
             key={t.id}
@@ -465,7 +475,7 @@ export default function ExerciseBrowserScreen({
           </div>
 
           <div className="scroll-area" style={{ flex: 1, minHeight: 0 }}>
-            {customRows.length === 0 ? (
+            {totalCustomCount === 0 ? (
               <div style={{ padding: '48px 20px', textAlign: 'center' }}>
                 <div className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '6px' }}>
                   NO CUSTOM EXERCISES
@@ -512,6 +522,28 @@ export default function ExerciseBrowserScreen({
                         inProgram={programExerciseNames.has(p.name)}
                         isCustom={true}
                         onTap={() => setEditing(p)}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {catalogCustom.length > 0 && (
+                  <>
+                    <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
+                      <p className="section-label" style={{ margin: 0 }}>
+                        CATALOG · {catalogCustom.length}
+                      </p>
+                      <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '4px 0 0', letterSpacing: '0.04em' }}>
+                        App-added exercises not in the standard database.
+                      </p>
+                    </div>
+                    {catalogCustom.map(ex => (
+                      <ExerciseRow
+                        key={ex.id}
+                        exercise={ex}
+                        inProgram={programExerciseNames.has(ex.name)}
+                        isCustom={true}
+                        onTap={() => setSelectedExercise(ex)}
                       />
                     ))}
                   </>
