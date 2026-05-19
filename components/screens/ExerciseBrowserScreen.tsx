@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import {
   ALL_EXERCISES,
   ExerciseDefinition,
@@ -11,6 +11,13 @@ import {
 } from '@/lib/exerciseLibrary'
 import { getAllExercisesForProgram, Split } from '@/lib/routines'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
+import CustomExerciseSheet from '@/components/CustomExerciseSheet'
+import {
+  getPendingExercises,
+  deleteCustomExercise,
+  CustomExerciseInUseError,
+  PendingExercise,
+} from '@/lib/customExercises'
 
 const SPLITS: (Split | 'All')[] = ['All', 'Push', 'Pull', 'Legs']
 const EQUIPMENT_OPTIONS = getUniqueEquipment()
@@ -21,8 +28,27 @@ type SplitFilter = Split | 'All'
 
 interface Props {
   onBack: () => void
+  userId: string
   activeProgramId?: string
   preselectedExerciseName?: string | null
+}
+
+// Adapt a custom-exercise row from Supabase to the ExerciseDefinition shape
+// the row renderer expects. Only the fields the row reads are populated.
+function pendingToDefinition(p: PendingExercise): ExerciseDefinition {
+  return {
+    id: p.id,
+    name: p.name,
+    equipment: (p.equipment ?? 'Other') as Equipment,
+    primaryMuscles: p.primaryMuscles ?? [],
+    secondaryMuscles: [],
+    split: p.split ?? null,
+    mechanic: null,
+    force: null,
+    level: 'intermediate',
+    instructions: [],
+    isCustom: true,
+  }
 }
 
 function SplitChip({
@@ -308,14 +334,28 @@ function BrowseTab({
 
 export default function ExerciseBrowserScreen({
   onBack,
+  userId,
   activeProgramId = 'ppl-default',
   preselectedExerciseName,
 }: Props) {
   const [tab, setTab] = useState<Tab>('browse')
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
+  const [customRows, setCustomRows] = useState<PendingExercise[]>([])
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editing, setEditing] = useState<PendingExercise | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const reloadCustom = useCallback(async () => {
+    const rows = await getPendingExercises(userId)
+    setCustomRows(rows)
+  }, [userId])
+
+  useEffect(() => { void reloadCustom() }, [reloadCustom])
+
+  const pendingCustom = customRows.filter(r => !r.metadataComplete)
+  const completeCustom = customRows.filter(r => r.metadataComplete)
 
   const totalCount = ALL_EXERCISES.length
-  const customExercises = ALL_EXERCISES.filter(e => e.isCustom)
 
   const programExerciseNames = useMemo(
     () => new Set(getAllExercisesForProgram(activeProgramId).map(e => e.name)),
@@ -356,7 +396,7 @@ export default function ExerciseBrowserScreen({
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {([
           { id: 'browse' as Tab, label: 'BROWSE' },
-          { id: 'custom' as Tab, label: 'CUSTOM', count: customExercises.length },
+          { id: 'custom' as Tab, label: 'CUSTOM', count: customRows.length },
         ]).map(t => (
           <button
             key={t.id}
@@ -403,26 +443,80 @@ export default function ExerciseBrowserScreen({
 
       {tab === 'custom' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <button
+              onClick={() => setCreateOpen(true)}
+              style={{
+                width: '100%',
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--accent-border)',
+                borderRadius: '2px',
+                color: 'var(--accent)',
+                fontFamily: 'Space Mono, monospace',
+                fontSize: '0.65rem',
+                letterSpacing: '0.1em',
+                padding: '10px',
+                cursor: 'pointer',
+                transition: 'all 0.1s',
+              }}
+            >
+              + NEW CUSTOM EXERCISE
+            </button>
+          </div>
+
           <div className="scroll-area" style={{ flex: 1, minHeight: 0 }}>
-            {customExercises.length === 0 ? (
+            {customRows.length === 0 ? (
               <div style={{ padding: '48px 20px', textAlign: 'center' }}>
                 <div className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '6px' }}>
                   NO CUSTOM EXERCISES
                 </div>
                 <div className="font-body" style={{ fontSize: '0.85rem', color: 'var(--border-2)' }}>
-                  Custom exercises added to your profile appear here
+                  Tap &ldquo;+ NEW CUSTOM EXERCISE&rdquo; to add your own
                 </div>
               </div>
             ) : (
-              customExercises.map(ex => (
-                <ExerciseRow
-                  key={ex.id}
-                  exercise={ex}
-                  inProgram={programExerciseNames.has(ex.name)}
-                  isCustom={true}
-                  onTap={setSelectedExercise}
-                />
-              ))
+              <>
+                {pendingCustom.length > 0 && (
+                  <>
+                    <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
+                      <p className="section-label" style={{ margin: 0 }}>
+                        NEEDS METADATA · {pendingCustom.length}
+                      </p>
+                      <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '4px 0 0', letterSpacing: '0.04em' }}>
+                        Tap to complete — these won&apos;t appear in history aggregations until done.
+                      </p>
+                    </div>
+                    {pendingCustom.map(p => (
+                      <ExerciseRow
+                        key={p.id}
+                        exercise={pendingToDefinition(p)}
+                        inProgram={programExerciseNames.has(p.name)}
+                        isCustom={true}
+                        onTap={() => setEditing(p)}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {completeCustom.length > 0 && (
+                  <>
+                    <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
+                      <p className="section-label" style={{ margin: 0 }}>
+                        YOUR EXERCISES · {completeCustom.length}
+                      </p>
+                    </div>
+                    {completeCustom.map(p => (
+                      <ExerciseRow
+                        key={p.id}
+                        exercise={pendingToDefinition(p)}
+                        inProgram={programExerciseNames.has(p.name)}
+                        isCustom={true}
+                        onTap={() => setEditing(p)}
+                      />
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -434,6 +528,60 @@ export default function ExerciseBrowserScreen({
           inProgram={programExerciseNames.has(selectedExercise.name)}
           onClose={() => setSelectedExercise(null)}
         />
+      )}
+
+      {createOpen && (
+        <CustomExerciseSheet
+          mode="create"
+          userId={userId}
+          onClose={() => setCreateOpen(false)}
+          onSaved={async () => {
+            setCreateOpen(false)
+            await reloadCustom()
+          }}
+        />
+      )}
+
+      {editing && (
+        <CustomExerciseSheet
+          mode="edit"
+          userId={userId}
+          initial={editing}
+          onClose={() => setEditing(null)}
+          onSaved={async () => {
+            setEditing(null)
+            await reloadCustom()
+          }}
+          onDelete={async () => {
+            try {
+              await deleteCustomExercise(editing.id)
+              setEditing(null)
+              setDeleteError(null)
+              await reloadCustom()
+            } catch (e) {
+              if (e instanceof CustomExerciseInUseError) {
+                setDeleteError("Can't delete — sets have been logged. Rename instead.")
+              } else {
+                setDeleteError('Delete failed. Try again.')
+              }
+            }
+          }}
+        />
+      )}
+
+      {deleteError && (
+        <div
+          onClick={() => setDeleteError(null)}
+          style={{
+            position: 'fixed', bottom: '20px', left: '20px', right: '20px',
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: '2px', padding: '10px 14px', zIndex: 60,
+            fontFamily: 'Space Mono, monospace', fontSize: '0.62rem',
+            color: 'var(--text-mid)', cursor: 'pointer',
+          }}
+        >
+          {deleteError}
+        </div>
       )}
     </div>
   )

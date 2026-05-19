@@ -675,6 +675,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           splitMuscles={splitMuscles?.[activeSplit.name] ?? []}
           excludeNames={pickerExcludeNames}
           swapTarget={swapTargetDef}
+          userId={userId}
           onSelect={swapTarget
             ? (def) => handleSwapExercise(swapTarget, def)
             : handleAddExercise

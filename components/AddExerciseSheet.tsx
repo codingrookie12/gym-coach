@@ -3,6 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import ExerciseNameInput, { ValidationState } from './ExerciseNameInput'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
+import { EQUIPMENT_OPTIONS } from './ExerciseMetadataFields'
+
+function startsWithEquipment(name: string): boolean {
+  const lower = name.trim().toLowerCase()
+  return EQUIPMENT_OPTIONS.some(eq => lower.startsWith(`${eq.toLowerCase()} `) || lower === eq.toLowerCase())
+}
 
 interface AddExerciseSheetProps {
   onAdd: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
@@ -122,6 +128,14 @@ export default function AddExerciseSheet({ onAdd, onClose }: AddExerciseSheetPro
         {isCustom && (
           <p className="font-mono" style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', margin: '12px 0 0', letterSpacing: '0.04em', lineHeight: 1.6 }}>
             This exercise will be added to your session. After the workout, you&apos;ll be prompted to complete its details so it can be saved to your library.
+          </p>
+        )}
+
+        {/* Naming nudge — non-blocking. The catalog format is [Equipment] [Movement] [Modifier];
+            mid-session we hint but don't block so the user keeps moving. */}
+        {isCustom && !startsWithEquipment(name) && (
+          <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: '8px 0 0', letterSpacing: '0.04em', lineHeight: 1.5 }}>
+            Tip: start with equipment — e.g. &ldquo;Dumbbell Curl,&rdquo; &ldquo;Cable Row.&rdquo; Helps history aggregate correctly. You can fix the name later in the Custom tab.
           </p>
         )}
 

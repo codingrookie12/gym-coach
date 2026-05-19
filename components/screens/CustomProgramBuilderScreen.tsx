@@ -509,6 +509,7 @@ export default function CustomProgramBuilderScreen({
           <ExercisePickerSheet
             split={pickerSplitIdx !== null ? splits[pickerSplitIdx]?.name ?? '' : ''}
             excludeNames={pickerExcludeNames}
+            userId={userId}
             onSelect={handleAddExercise}
             onClose={() => setPickerSplitIdx(null)}
           />

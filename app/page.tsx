@@ -37,7 +37,7 @@ import {
 } from '@/lib/sessionStorage'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import OfflineIndicator from '@/components/OfflineIndicator'
-import { getIncompletePendingExercises, savePendingExercise } from '@/lib/customExercises'
+import { getIncompletePendingExercises, savePendingExercise, migrateLegacyLocalStorage } from '@/lib/customExercises'
 import { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import type { User } from '@supabase/supabase-js'
 
@@ -238,7 +238,8 @@ export default function App() {
       // programId preserved intentionally
     }))
     if (appState.user) {
-      setPendingCustomCount(getIncompletePendingExercises(appState.user.id).length)
+      const uid = appState.user.id
+      getIncompletePendingExercises(uid).then(arr => setPendingCustomCount(arr.length))
     }
     setScreen('home')
     setActiveTab('train')
@@ -330,7 +331,9 @@ export default function App() {
 
         // Per-user state hydration. Fire-and-forget: the home screen renders
         // while these resolve; badges update when they land.
-        setPendingCustomCount(getIncompletePendingExercises(user.id).length)
+        migrateLegacyLocalStorage(user.id)
+          .then(() => getIncompletePendingExercises(user.id))
+          .then(arr => setPendingCustomCount(arr.length))
 
         // Check onboarding status — new users pick a program before first session
         try {
@@ -849,8 +852,9 @@ export default function App() {
             />
           ) : showProgressHistory ? (
             <ProgressHistoryScreen onBack={() => setShowProgressHistory(false)} />
-          ) : showExerciseBrowser ? (
+          ) : showExerciseBrowser && appState.user ? (
             <ExerciseBrowserScreen
+              userId={appState.user.id}
               activeProgramId={appState.userProgramId ?? appState.programId}
               preselectedExerciseName={exerciseBrowserPreselected}
               onBack={() => { setShowExerciseBrowser(false); setExerciseBrowserPreselected(null) }}
