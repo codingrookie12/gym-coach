@@ -46,7 +46,7 @@ export default function Toast({ message, onUndo, onTimeout, duration = 3000 }: T
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: '4px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+        boxShadow: 'var(--shadow-elevated)',
         zIndex: 60,
         animation: 'slideUp 0.2s ease',
         whiteSpace: 'nowrap',
@@ -65,10 +65,19 @@ export default function Toast({ message, onUndo, onTimeout, duration = 3000 }: T
           fontSize: '0.65rem',
           letterSpacing: '0.08em',
           cursor: 'pointer',
-          padding: '8px 0',
+          // 44x44 tap-target floor: minHeight alone isn't enough — "UNDO"
+          // (4 chars, 0.65rem Space Mono) renders narrower than 44px with
+          // padding: '8px 0' (no horizontal padding), so minWidth + real
+          // horizontal padding are both needed. Note this is an English-
+          // string risk, not the usual Spanish-overflow direction this
+          // primitive library otherwise guards against — Spanish
+          // "DESHACER" (8 chars) already clears 44px on its own.
+          padding: '8px 12px',
           minHeight: '44px',
+          minWidth: '44px',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
           fontWeight: 700,
         }}
       >

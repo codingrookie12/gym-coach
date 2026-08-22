@@ -68,7 +68,7 @@ export default function NumberPad({
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', allowDecimal ? '.' : '', '0', '⌫']
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'rgba(12,11,9,0.97)' }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--overlay)' }}>
       {/* Label + display */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         <p className="section-label" style={{ marginBottom: '10px' }}>{label ?? t('defaultLabel')}</p>
