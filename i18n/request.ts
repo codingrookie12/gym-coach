@@ -1,6 +1,6 @@
 import { getRequestConfig } from 'next-intl/server'
 import { cookies, headers } from 'next/headers'
-import { LOCALE_COOKIE, defaultLocale, detectLocaleFromAcceptLanguage, isLocale } from '@/lib/i18n/config'
+import { LOCALE_COOKIE, defaultLocale, resolveLocale } from '@/lib/i18n/config'
 
 // GYM-29: resolves the request locale from (1) the persisted cookie, then
 // (2) a silent Accept-Language-based auto-detect, then (3) the default.
@@ -10,11 +10,7 @@ import { LOCALE_COOKIE, defaultLocale, detectLocaleFromAcceptLanguage, isLocale 
 // render a label (protects lib/sessionStorage.ts's offline-first outbox).
 export default getRequestConfig(async () => {
   const cookieStore = await cookies()
-  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value
-
-  const locale = isLocale(cookieLocale)
-    ? cookieLocale
-    : detectLocaleFromAcceptLanguage((await headers()).get('accept-language'))
+  const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value, (await headers()).get('accept-language'))
 
   return {
     locale,
