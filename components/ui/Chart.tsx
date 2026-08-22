@@ -5,7 +5,7 @@ export interface ChartPoint {
   y: number
 }
 
-interface Props {
+interface ChartProps {
   data: ChartPoint[]
   width?: number
   height?: number
@@ -14,14 +14,27 @@ interface Props {
   yLabel?: string
 }
 
-export default function WeightProgressChart({
+/**
+ * components/ui/Chart — Phase 1: formalized from components/charts/
+ * WeightProgressChart.tsx into the components/ui/ primitive library.
+ * Kept intentionally hand-rolled SVG (no charting library dependency) —
+ * matches the app's existing minimal-dependency posture and there's
+ * nothing on `main` today that would justify pulling one in.
+ *
+ * Despite the generic name this is still a single line-chart primitive
+ * (name kept `Chart` rather than `LineChart` because it's the only chart
+ * shape this app needs through Phase 4 — see coachingVisuals.ts's
+ * comment for why coaching annotations render as badges/icons on top of
+ * this, not as additional chart types).
+ */
+export default function Chart({
   data,
   width = 320,
   height = 160,
   stroke = 'var(--accent)',
   showAxis = true,
   yLabel,
-}: Props) {
+}: ChartProps) {
   if (data.length < 2) return null
 
   const padL = showAxis ? 28 : 4
@@ -47,7 +60,7 @@ export default function WeightProgressChart({
   const ticks = showAxis ? [yMin, (yMin + yMax) / 2, yMax] : []
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={yLabel ?? 'Weight progress chart'}>
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label={yLabel ?? 'Progress chart'}>
       {showAxis && ticks.map((t, i) => {
         const y = yScale(t)
         return (

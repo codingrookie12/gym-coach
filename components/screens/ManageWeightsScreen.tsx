@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getAllExercises, Exercise, Split } from '@/lib/routines'
-import NumberPad from '@/components/NumberPad'
+import NumberPad from '@/components/ui/NumberPad'
 import LoadingScreen from '@/components/LoadingScreen'
 
 interface ManageWeightsScreenProps {

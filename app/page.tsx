@@ -15,6 +15,7 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import ProgressHistoryScreen from '@/components/screens/ProgressHistoryScreen'
 import ExerciseBrowserScreen from '@/components/screens/ExerciseBrowserScreen'
 import MeScreen from '@/components/screens/MeScreen'
+import ReportsLandingScreen from '@/components/screens/ReportsLandingScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
 import { CoachingContext, ExercisePlan } from '@/lib/coaching'
@@ -26,7 +27,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { SessionRecord } from '@/lib/supabase.queries'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
-import UndoToast from '@/components/UndoToast'
+import Toast from '@/components/ui/Toast'
 import {
   loadSessionFromStorage,
   clearSessionFromStorage,
@@ -879,6 +880,11 @@ export default function App() {
           )}
         </div>
 
+        {/* Reports tab — GYM-19/Section 6: standalone 4th tab, landing stub only (Phase 4 rebuilds ProgressHistoryScreen here) */}
+        <div style={{ height: '100%', display: activeTab === 'reports' ? 'flex' : 'none', flexDirection: 'column' }}>
+          <ReportsLandingScreen />
+        </div>
+
         {/* Me tab */}
         <div style={{ height: '100%', display: activeTab === 'me' ? 'flex' : 'none', flexDirection: 'column' }}>
           <MeScreen user={appState.user} onLogout={handleLogout} />
@@ -901,11 +907,11 @@ export default function App() {
       )}
 
       {pendingPlanOp && (
-        <UndoToast
+        <Toast
           message={pendingPlanOp.message}
           onUndo={handleUndoPlanOp}
           onTimeout={() => {
-            // Timer fires inside UndoToast; the op's own timeoutId already
+            // Timer fires inside Toast; the op's own timeoutId already
             // triggered flush+state-clear, so this is a defensive no-op for
             // the case where state hasn't yet caught up.
             setPendingPlanOp(null)

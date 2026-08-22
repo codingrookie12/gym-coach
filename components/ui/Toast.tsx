@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
-interface UndoToastProps {
+interface ToastProps {
   message: string
   onUndo: () => void
   onTimeout: () => void
@@ -10,14 +11,25 @@ interface UndoToastProps {
 }
 
 /**
- * GYM-95: 3s Undo toast for in-memory session-plan mutations (adds + removes).
- * Self-managed timer; parent owns the state that determines whether the toast
- * is rendered. Styling matches RoutineEditorScreen's GYM-94 toast.
+ * components/ui/Toast — GYM-94/GYM-95/Phase 1: formalized from its previous
+ * standalone location (components/UndoToast.tsx) into the components/ui/
+ * primitive library. This is the ONLY UI surface backing the non-negotiable
+ * routine-write provenance rule (CLAUDE.md "Routine writes") — every
+ * INSERT into `user_routine_exercises` must show this toast with a working
+ * Undo before the write commits. Do not fork/duplicate this component;
+ * extend it here if a new call site needs a variant.
+ *
+ * Self-managed timer; parent owns the state that determines whether the
+ * toast is rendered. Undo button text is localized (`toast.undo`); the
+ * `message` itself is passed in by the caller (screen-specific content —
+ * e.g. "Bench Press added", not part of this primitive's own vocabulary).
  */
-export default function UndoToast({ message, onUndo, onTimeout, duration = 3000 }: UndoToastProps) {
+export default function Toast({ message, onUndo, onTimeout, duration = 3000 }: ToastProps) {
+  const t = useTranslations('toast')
+
   useEffect(() => {
-    const t = setTimeout(onTimeout, duration)
-    return () => clearTimeout(t)
+    const timer = setTimeout(onTimeout, duration)
+    return () => clearTimeout(timer)
   }, [onTimeout, duration])
 
   return (
@@ -53,11 +65,14 @@ export default function UndoToast({ message, onUndo, onTimeout, duration = 3000 
           fontSize: '0.65rem',
           letterSpacing: '0.08em',
           cursor: 'pointer',
-          padding: '0',
+          padding: '8px 0',
+          minHeight: '44px',
+          display: 'flex',
+          alignItems: 'center',
           fontWeight: 700,
         }}
       >
-        UNDO
+        {t('undo')}
       </button>
     </div>
   )
