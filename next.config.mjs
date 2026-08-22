@@ -1,3 +1,10 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
+// GYM-29: no locale-prefixed routing (Section 5 of the revamp plan) — this
+// just wires next-intl's build-time message bundling into next.config, the
+// actual locale resolution lives in i18n/request.ts (cookie/header-based).
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -11,4 +18,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

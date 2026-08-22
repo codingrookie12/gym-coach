@@ -5,9 +5,10 @@ import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
-import NumberPad from '@/components/NumberPad'
+import NumberPad from '@/components/ui/NumberPad'
+import ChipGrid from '@/components/ui/ChipGrid'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
-import UndoToast from '@/components/UndoToast'
+import Toast from '@/components/ui/Toast'
 import { savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
@@ -376,37 +377,13 @@ function WeightInput({
           SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
         </p>
         <p className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-mid)', margin: '0 0 24px 0', fontWeight: 500 }}>{currentEx.exerciseName}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', width: '100%', maxWidth: '320px' }}>
-          {availableWeights.map(w => (
-            <button key={w} onClick={() => onConfirm(w)} style={{
-              padding: '18px 8px', borderRadius: '2px', cursor: 'pointer',
-              background: currentWeight === w ? 'var(--accent)' : 'var(--surface-2)',
-              color: currentWeight === w ? '#0C0B09' : 'var(--text-primary)',
-              border: `1px solid ${currentWeight === w ? 'var(--accent)' : 'var(--border)'}`,
-              fontFamily: 'Space Mono, monospace', fontSize: '0.9rem',
-              fontWeight: currentWeight === w ? 700 : 400,
-              transition: 'all 0.1s',
-            }}>{w}</button>
-          ))}
-        </div>
-        {/* Custom input option */}
-        <button
-          onClick={() => setShowCustom(true)}
-          style={{
-            marginTop: '16px',
-            background: 'none',
-            border: '1px dashed var(--border-2)',
-            borderRadius: '2px',
-            color: 'var(--text-secondary)',
-            fontFamily: 'Space Mono, monospace',
-            fontSize: '0.6rem',
-            letterSpacing: '0.08em',
-            padding: '8px 20px',
-            cursor: 'pointer',
-          }}
-        >
-          CUSTOM VALUE
-        </button>
+        <ChipGrid
+          values={availableWeights}
+          selectedValue={currentWeight}
+          onSelect={onConfirm}
+          onCustomValue={() => setShowCustom(true)}
+          maxWidth={320}
+        />
       </div>
       <div style={{ padding: '0 24px 32px' }}>
         <button className="btn-secondary" onClick={onCancel}>Cancel</button>
@@ -880,7 +857,7 @@ export default function ActiveSessionScreen({
         />
       )}
       {pendingLogsOp && (
-        <UndoToast
+        <Toast
           message={pendingLogsOp.message}
           onUndo={handleUndoLogsOp}
           onTimeout={() => {

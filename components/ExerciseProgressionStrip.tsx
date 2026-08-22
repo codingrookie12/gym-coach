@@ -1,6 +1,6 @@
 'use client'
 
-import WeightProgressChart from '@/components/charts/WeightProgressChart'
+import Chart from '@/components/ui/Chart'
 import type { ExerciseProgressionStrip as Data } from '@/lib/supabase.queries'
 
 interface Props {
@@ -41,7 +41,7 @@ export default function ExerciseProgressionStrip({ data, targetWeight }: Props) 
           </div>
           {hasChart && (
             <div style={{ width: '60px', height: '20px', flexShrink: 0, opacity: 0.85 }}>
-              <WeightProgressChart data={chartPoints} width={60} height={20} showAxis={false} yLabel={`${pr.weight} ${pr.unit} progression`} />
+              <Chart data={chartPoints} width={60} height={20} showAxis={false} yLabel={`${pr.weight} ${pr.unit} progression`} />
             </div>
           )}
         </div>
@@ -57,7 +57,7 @@ export default function ExerciseProgressionStrip({ data, targetWeight }: Props) 
         ))}
         {hasChart && !showPr && (
           <div style={{ width: '60px', height: '20px', flexShrink: 0, opacity: 0.85, marginLeft: 'auto' }}>
-            <WeightProgressChart data={chartPoints} width={60} height={20} showAxis={false} yLabel="weight progression" />
+            <Chart data={chartPoints} width={60} height={20} showAxis={false} yLabel="weight progression" />
           </div>
         )}
       </div>

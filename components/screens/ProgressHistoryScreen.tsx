@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import WeightProgressChart from '@/components/charts/WeightProgressChart'
+import Chart from '@/components/ui/Chart'
 import { ALL_EXERCISES } from '@/lib/exerciseLibrary'
 import type { ExerciseDefinition } from '@/lib/exerciseLibrary'
 import { MUSCLE_GROUPS, TARGET_SETS, muscleToGroup, type MuscleGroup } from '@/lib/muscleGroups'
@@ -389,7 +389,7 @@ function ExerciseRow({
         {/* Inline sparkline */}
         {chartData.length >= 2 && (
           <div style={{ width: '70px', height: '24px', flexShrink: 0 }}>
-            <WeightProgressChart data={chartData} width={70} height={24} showAxis={false} />
+            <Chart data={chartData} width={70} height={24} showAxis={false} />
           </div>
         )}
         {/* Current weight */}
@@ -407,7 +407,7 @@ function ExerciseRow({
       </button>
       {expanded && chartData.length >= 2 && (
         <div style={{ padding: '6px 0 18px' }}>
-          <WeightProgressChart data={chartData} height={140} />
+          <Chart data={chartData} height={140} />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
             <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>
               {prettyDate(chartData[0].x as string)}
