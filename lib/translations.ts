@@ -1,6 +1,16 @@
 // GYM-79: UI string constants for the program builder, library, and onboarding flows.
 // All user-facing copy lives here (except exercise/split names which are user data).
-// When i18n is introduced, this file becomes the en-US source.
+//
+// GYM-29 (Phase 1, 2026-08-22): this file's content has been migrated
+// verbatim into messages/en.json's builder/library/explorer/onboarding/
+// sessionBlock namespaces (+ Spanish in messages/es.json), the new
+// locale-keyed source of truth for the next-intl infra (see
+// i18n/request.ts, app/layout.tsx). This file itself is left as-is and
+// still imported by the 4 screens using it today (RoutineEditorScreen,
+// CustomProgramBuilderScreen, ProgramLibraryScreen, ProgramExplorerScreen)
+// — those screens get rewired to `useTranslations()` when they're rebuilt
+// in Phase 3/4, not here. Do not add new keys to this file; add them to
+// messages/en.json + messages/es.json instead.
 
 export const t = {
   // Program Builder
