@@ -67,7 +67,9 @@ Source: [conversation / user / Canny / research]
 
 **Version label** — displayed version is hardcoded in `components/screens/PreSessionScreen.tsx`. Must be manually updated on every version bump — it does not read from `package.json` automatically. Always update it as part of the first commit on a new version.
 
-**Code** — TypeScript strict. `Array.from()` not spread on Set/Map. CSS custom properties only, no hardcoded colors.
+**Code** — TypeScript strict. `Array.from()` not spread on Set/Map. CSS custom properties only, no hardcoded colors. No hardcoded pixel widths on any element containing localized text — English and Spanish string lengths differ (e.g. "FINISH" vs "TERMINAR"); size with `min-width`/flex/padding instead. Established after `ActiveSessionScreen.tsx`'s `width: '60px'` header spacer, hand-eyeballed for English, broke under Spanish.
+
+**Migrations — manual apply only.** Every migration is authored and reviewed in this repo, then applied by Johnnatan (or with him) directly in Supabase Studio. Never auto-applied by an agent via CLI or API, including additive/idempotent ones — this is the standing zero-data-loss discipline for the one production database holding his real training history.
 
 **Routine writes** — every INSERT into `user_routine_exercises` must (a) declare an `added_via` value in the union `'template-clone' | 'custom-program-create' | 'manual-add' | 'manual-swap'`, and (b) surface a visible Undo toast in the UI before committing. Picker tap alone never persists — use the deferred-write + Undo pattern in [components/screens/RoutineEditorScreen.tsx](components/screens/RoutineEditorScreen.tsx). Direct SDK inserts that skip the helper functions (`addExerciseToRoutine`, `swapExerciseInRoutine`, `cloneTemplate`, `createBlankProgram`) are forbidden — the helpers are the only legitimate write surface and they encode the provenance contract. GYM-94 rule.
 

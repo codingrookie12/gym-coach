@@ -1,6 +1,8 @@
 'use client'
 
-export type ActiveTab = 'train' | 'library' | 'me'
+import { useTranslations } from 'next-intl'
+
+export type ActiveTab = 'train' | 'library' | 'reports' | 'me'
 
 interface BottomTabBarProps {
   activeTab: ActiveTab
@@ -35,6 +37,21 @@ function LibraryIcon({ active }: { active: boolean }) {
   )
 }
 
+// GYM-19/Section 6: Reports becomes its own standalone 4th bottom tab
+// (Train / Library / Reports / Me), not merged into Library — ratified
+// 2026-08-21, overriding the planner's original merged-tab proposal.
+function ReportsIcon({ active }: { active: boolean }) {
+  const color = active ? 'var(--accent)' : 'var(--text-secondary)'
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3v18h18" />
+      <rect x="7" y="13" width="3" height="5" rx="0.5" />
+      <rect x="12" y="9" width="3" height="9" rx="0.5" />
+      <rect x="17" y="5" width="3" height="13" rx="0.5" />
+    </svg>
+  )
+}
+
 function MeIcon({ active }: { active: boolean }) {
   const color = active ? 'var(--accent)' : 'var(--text-secondary)'
   return (
@@ -46,10 +63,13 @@ function MeIcon({ active }: { active: boolean }) {
 }
 
 export default function BottomTabBar({ activeTab, onTabChange, libraryBadge = 0 }: BottomTabBarProps) {
+  const t = useTranslations('tabs')
+
   const tabs: TabConfig[] = [
-    { id: 'train', label: 'TRAIN', icon: <TrainIcon active={activeTab === 'train'} /> },
-    { id: 'library', label: 'LIBRARY', icon: <LibraryIcon active={activeTab === 'library'} /> },
-    { id: 'me', label: 'ME', icon: <MeIcon active={activeTab === 'me'} /> },
+    { id: 'train', label: t('train'), icon: <TrainIcon active={activeTab === 'train'} /> },
+    { id: 'library', label: t('library'), icon: <LibraryIcon active={activeTab === 'library'} /> },
+    { id: 'reports', label: t('reports'), icon: <ReportsIcon active={activeTab === 'reports'} /> },
+    { id: 'me', label: t('me'), icon: <MeIcon active={activeTab === 'me'} /> },
   ]
 
   return (
@@ -72,6 +92,7 @@ export default function BottomTabBar({ activeTab, onTabChange, libraryBadge = 0 
             onClick={() => onTabChange(tab.id)}
             style={{
               flex: 1,
+              minHeight: '44px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -107,6 +128,7 @@ export default function BottomTabBar({ activeTab, onTabChange, libraryBadge = 0 
                 letterSpacing: '0.1em',
                 color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                 transition: 'color 0.12s',
+                whiteSpace: 'nowrap',
               }}
             >
               {tab.label}

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ExercisePlan } from '@/lib/coaching'
 import { ExerciseLog } from '@/lib/store'
-import NumberPad from '@/components/NumberPad'
+import NumberPad from '@/components/ui/NumberPad'
 
 interface SessionSwap { oldName: string; newName: string }
 

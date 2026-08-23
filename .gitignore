@@ -37,3 +37,9 @@ next-env.d.ts
 
 # one-shot enrichment dataset (yuhonas/free-exercise-db) — re-download if needed
 /free-exercise-db-main/
+
+# git worktrees (e.g. redesign/phase1-foundation) — expected to exist locally, never committed
+/.worktrees/
+
+# personal photo exports, unrelated to app code
+/Proof/

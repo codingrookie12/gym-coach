@@ -1,0 +1,335 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "cancelCaps": "CANCEL",
+    "confirm": "CONFIRM",
+    "delete": "DELETE",
+    "done": "DONE",
+    "save": "SAVE",
+    "saving": "SAVING...",
+    "loading": "LOADING...",
+    "retry": "RETRY",
+    "back": "Back",
+    "undo": "UNDO",
+    "edit": "EDIT",
+    "close": "CLOSE",
+    "swap": "SWAP",
+    "hide": "HIDE",
+    "skip": "SKIP",
+    "useNow": "USE NOW",
+    "notAuthenticated": "Not authenticated",
+    "failedToLoad": "Failed to load",
+    "genericError": "Something went wrong. Try again."
+  },
+
+  "tabs": {
+    "train": "TRAIN",
+    "library": "LIBRARY",
+    "reports": "REPORTS",
+    "me": "ME"
+  },
+
+  "me": {
+    "header": "ME",
+    "account": "ACCOUNT",
+    "signOut": "Sign Out",
+    "privacyPolicy": "Privacy Policy",
+    "appearance": "APPEARANCE",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "language": "LANGUAGE",
+    "languageEnglish": "English",
+    "languageSpanish": "Español",
+    "invite": "INVITE A FRIEND",
+    "inviteBody": "Share Ritmo with a friend — they get their own private account.",
+    "inviteCopyLink": "COPY LINK",
+    "inviteShareWhatsApp": "SHARE VIA WHATSAPP"
+  },
+
+  "numberPad": {
+    "defaultLabel": "Enter value",
+    "cancel": "Cancel",
+    "weightLabel": "Set {setNumber} — weight ({unit})",
+    "repsLabel": "Set {setNumber} — reps"
+  },
+
+  "toast": {
+    "undo": "UNDO"
+  },
+
+  "chipGrid": {
+    "customValue": "CUSTOM VALUE"
+  },
+
+  "reports": {
+    "title": "REPORTS",
+    "comingSoonHeading": "YOUR PROGRESS, ONE TAP AWAY",
+    "comingSoonBody": "Charts and coaching history for this tab are landing in a later phase — for now, open History from Library."
+  },
+
+  "builder": {
+    "titleCreate": "Program Builder",
+    "titleEdit": "Edit Program",
+    "namePlaceholder": "e.g. My Custom Split",
+    "nameLabel": "PROGRAM NAME",
+    "nameMinLengthError": "Program name must be at least 3 characters",
+    "addSplitButton": "+ ADD SPLIT",
+    "maxSplitsWarning": "Maximum 7 splits reached",
+    "splitNamePlaceholder": "Split name",
+    "addExerciseButton": "+ ADD EXERCISE",
+    "setsLabel": "S",
+    "repRangeLabel": "Reps",
+    "saveButton": "CREATE PROGRAM",
+    "saveButtonEdit": "DONE",
+    "savingButton": "SAVING...",
+    "cancelButton": "Cancel",
+    "deleteSplitConfirm": "DELETE",
+    "deleteSplitCancel": "CANCEL",
+    "archiveNotice": "This split has logged workouts and was archived",
+    "noExercises": "No exercises yet",
+    "sessionBlockBanner": "Finish your current workout before editing this program.",
+    "loadFailed": "Failed to load program",
+    "saveFailed": "Failed to save"
+  },
+
+  "library": {
+    "title": "PROGRAMS",
+    "myProgramsHeader": "MY PROGRAMS",
+    "emptyStateHeading": "GET STARTED",
+    "emptyStateBody": "Explore curated programs or build your own from scratch.",
+    "exploreProgramsCta": "+ EXPLORE PROGRAMS",
+    "buildMyOwnCta": "+ BUILD MY OWN",
+    "editButton": "EDIT",
+    "deleteButton": "DELETE",
+    "deleteConfirmButton": "CONFIRM",
+    "deleteCancelButton": "CANCEL",
+    "selectButton": "SELECT",
+    "activeBadge": "ACTIVE",
+    "confirmButton": "CONFIRM",
+    "cancelButton": "CANCEL",
+    "loading": "LOADING..."
+  },
+
+  "explorer": {
+    "title": "EXPLORE PROGRAMS",
+    "backButton": "← PROGRAMS",
+    "addButton": "ADD TO MY PROGRAMS",
+    "ownedButton": "IN YOUR PROGRAMS",
+    "addingButton": "ADDING...",
+    "splitsHeader": "SPLITS & EXERCISES",
+    "errorGeneric": "Something went wrong. Try again.",
+    "cloneFailed": "Clone failed"
+  },
+
+  "onboarding": {
+    "title": "Choose Your Program",
+    "subtitle": "Pick a template to get started, or build your own from scratch.",
+    "templateSectionHeader": "TEMPLATES",
+    "buildMyOwnCta": "+ BUILD MY OWN"
+  },
+
+  "sessionBlock": {
+    "banner": "Finish your current workout before editing this program."
+  },
+
+  "screens": {
+    "preSession": {
+      "appName": "RITMO",
+      "weightsLink": "WEIGHTS"
+    },
+
+    "resumePrompt": {
+      "appName": "RITMO",
+      "weightsLink": "WEIGHTS",
+      "dayLabel": "DAY",
+      "progressLink": "PROGRESS",
+      "unfinishedFound": "UNFINISHED SESSION FOUND",
+      "sessionLoggedToday": "SESSION LOGGED TODAY",
+      "resumeSession": "RESUME SESSION →",
+      "continueToday": "CONTINUE TODAY →",
+      "startFresh": "START FRESH",
+      "startFreshConfirmTitle": "Start Fresh?",
+      "startFreshCancel": "CANCEL"
+    },
+
+    "coachingContext": {
+      "preSessionIntel": "PRE-SESSION INTEL",
+      "deload": "DELOAD",
+      "lastSession": "LAST SESSION",
+      "trendingUp": "TRENDING UP",
+      "watch": "WATCH",
+      "keepWeight": "KEEP WEIGHT",
+      "newExercises": "NEW EXERCISES",
+      "focusToday": "FOCUS TODAY"
+    },
+
+    "workoutOverview": {
+      "sessionPlan": "SESSION PLAN",
+      "exercisesCount": "{count} exercises",
+      "noWeightLogged": "no weight logged",
+      "cardio": "CARDIO",
+      "hide": "HIDE",
+      "swap": "SWAP",
+      "swapForToday": "Swap {exerciseName} for today only?",
+      "confirmSwap": "CONFIRM SWAP",
+      "cancelSwap": "CANCEL",
+      "noAlternativesFound": "NO ALTERNATIVES FOUND",
+      "swapForTodayButton": "SWAP FOR TODAY",
+      "useToday": "USE TODAY",
+      "beginWorkout": "BEGIN WORKOUT →"
+    },
+
+    "activeSession": {
+      "restDone": "REST DONE",
+      "start": "START",
+      "reset": "RESET",
+      "stop": "STOP",
+      "sessionOverview": "SESSION OVERVIEW",
+      "close": "CLOSE",
+      "cardio": "CARDIO",
+      "sessionInProgress": "SESSION IN PROGRESS",
+      "goBackTitle": "Go Back?",
+      "goBackBody": "Progress is saved. Resume any time.",
+      "keepGoing": "KEEP GOING",
+      "goBackConfirm": "GO BACK (progress saved)",
+      "customValue": "CUSTOM VALUE",
+      "cancel": "Cancel",
+      "hide": "HIDE",
+      "finish": "FINISH",
+      "skip": "SKIP",
+      "replaceWith": "Replace {oldName} with {newName} for this exercise?",
+      "confirmSwap": "CONFIRM SWAP",
+      "cancel2": "CANCEL",
+      "noAlternatives": "No alternatives available",
+      "useNow": "USE NOW",
+      "reps": "REPS",
+      "nextUp": "NEXT UP",
+      "pin": "PIN",
+      "weight": "WEIGHT",
+      "notesPlaceholder": "Notes for next time...",
+      "unitLbs": "Lbs",
+      "unitPins": "Pins"
+    },
+
+    "preSaveSummary": {
+      "reviewSession": "REVIEW SESSION",
+      "tapToEdit": "TAP ANY VALUE TO EDIT BEFORE SAVING",
+      "skipped": "SKIPPED",
+      "reps": "reps",
+      "sessionSwapsHeading": "SESSION SWAPS — MAKE DEFAULT?",
+      "replaceWith": "Replace {oldName} with {newName} permanently?",
+      "skip": "SKIP",
+      "saved": "SAVED",
+      "setDefault": "SET DEFAULT",
+      "saveFailed": "SAVE FAILED — check your connection and try again",
+      "saving": "SAVING...",
+      "confirm": "CONFIRM",
+      "retrySave": "RETRY SAVE →",
+      "saveSession": "SAVE SESSION →"
+    },
+
+    "sessionSummary": {
+      "sessionComplete": "SESSION COMPLETE",
+      "setsLogged": "{count} sets logged",
+      "workoutLog": "WORKOUT LOG",
+      "custom": "CUSTOM",
+      "completeExercise": "COMPLETE EXERCISE",
+      "addDetailsToSaveLibrary": "Add details to save to your exercise library",
+      "addDetailsToSaveLibraryShort": "Add details to save to your library",
+      "later": "LATER",
+      "saveToLibrary": "SAVE TO LIBRARY",
+      "addDetails": "ADD DETAILS",
+      "nextSession": "NEXT SESSION",
+      "done": "DONE"
+    },
+
+    "exerciseLibrary": {
+      "library": "LIBRARY",
+      "programs": "PROGRAMS",
+      "active": "ACTIVE",
+      "switching": "SWITCHING...",
+      "editRoutine": "EDIT ROUTINE",
+      "history": "HISTORY",
+      "daysTrained": "DAYS TRAINED",
+      "pr": "PR",
+      "noSessionsLoggedYet": "NO SESSIONS LOGGED YET",
+      "exercises": "EXERCISES",
+      "tapToCompleteHint": "Tap to complete — required for history tracking",
+      "browseAndSearch": "BROWSE & SEARCH",
+      "recent": "RECENT"
+    },
+
+    "exerciseBrowser": {
+      "browse": "BROWSE",
+      "custom": "CUSTOM",
+      "all": "All",
+      "push": "Push",
+      "pull": "Pull",
+      "legs": "Legs",
+      "other": "Other",
+      "inProgram": "In Program",
+      "equipment": "Equipment",
+      "primaryMuscle": "Primary Muscle",
+      "clearFilters": "CLEAR FILTERS",
+      "noResults": "NO RESULTS",
+      "tryAdjusting": "Try adjusting your search or filters",
+      "exercisesCount": "EXERCISES",
+      "noCustomExercises": "NO CUSTOM EXERCISES",
+      "searchPlaceholder": "Search exercises...",
+      "cannotDeleteLogged": "Can't delete — sets have been logged. Rename instead.",
+      "deleteFailed": "Delete failed. Try again."
+    },
+
+    "manageWeights": {
+      "title": "Manage Weights",
+      "settings": "SETTINGS",
+      "all": "All",
+      "push": "Push",
+      "pull": "Pull",
+      "legs": "Legs",
+      "loadingWeights": "Loading weights...",
+      "saveFailed": "Save failed: {reason}"
+    },
+
+    "routineEditor": {
+      "title": "ROUTINE EDITOR",
+      "loading": "LOADING...",
+      "retry": "RETRY",
+      "noExercises": "NO EXERCISES",
+      "tapAddExerciseHint": "Tap + ADD EXERCISE below",
+      "addExercise": "ADD EXERCISE",
+      "undo": "UNDO",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "loadFailed": "Failed to load routine",
+      "reorderFailed": "Couldn't save order"
+    },
+
+    "customProgramBuilder": {
+      "loading": "LOADING...",
+      "sessionBlockBanner": "Finish your current workout before editing this program.",
+      "programName": "PROGRAM NAME",
+      "delete": "DELETE",
+      "cancel": "CANCEL",
+      "noExercises": "No exercises yet",
+      "title": "Program Builder",
+      "loadFailed": "Failed to load program"
+    },
+
+    "progressHistory": {
+      "pr": "PR",
+      "title": "PROGRESS",
+      "noSessionsYet": "NO SESSIONS YET",
+      "emptyStateBody": "Complete a workout to start tracking",
+      "workingSetsCaption": "Working sets per muscle vs. weekly target band",
+      "tapMuscleHint": "Tap a muscle to see exercises and trend lines",
+      "today": "TODAY",
+      "yesterday": "YESTERDAY",
+      "splitPush": "PUSH",
+      "splitPull": "PULL",
+      "splitLegs": "LEGS",
+      "splitMixed": "MIXED"
+    }
+  }
+}

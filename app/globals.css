@@ -4,6 +4,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — dark (source of truth) + light (derived, GYM-19)
+   ═══════════════════════════════════════════════════════════════════════
+
+   Dark values are the existing shipped palette — NOT relitigated (see
+   Phase 1 plan, Section 3). Light values are derived per-token below,
+   never by a single "flip the background" pass — several tokens (alpha
+   tints, the dual-purpose accent/success color, the rust/warning color,
+   the grain overlay) don't survive that naive derivation.
+
+   Target: WCAG AA — 4.5:1 for body text, 3:1 for large text (≥24px
+   regular / ≥18.66px bold) and meaningful non-text UI component
+   boundaries. Ratios below are measured (formula: relative-luminance
+   contrast per WCAG 2.x), not eyeballed — see the derivation script
+   referenced in the Phase 1 doer report for the exact computation.
+
+   ┌─────────────────┬───────────┬───────────┬────────────────────────────┬──────────────┬──────────────────────────────────────────┐
+   │ Token            │ Dark      │ Light     │ Semantic role              │ Target ratio │ Measured (light, vs. its paired surface)  │
+   ├─────────────────┼───────────┼───────────┼────────────────────────────┼──────────────┼──────────────────────────────────────────┤
+   │ --bg             │ #0C0B09   │ #FAF8F3   │ App background              │ n/a (base)   │ n/a                                       │
+   │ --surface        │ #131210   │ #FFFFFF   │ Card/panel background       │ n/a (base)   │ n/a                                       │
+   │ --surface-2      │ #1A1916   │ #F1EEE7   │ Raised surface (numpad,     │ n/a (base)   │ n/a                                       │
+   │                  │           │           │ chips, swap badge)          │              │                                            │
+   │ --border          │ #252320  │ #DAD5C9   │ Decorative divider          │ ≥1.3:1       │ 1.38:1 vs --bg                            │
+   │ --border-2        │ #2E2B27  │ #948862   │ Interactive-boundary border │ 3:1          │ 3.32:1 vs --bg                            │
+   │                  │           │           │ (input, btn-secondary,      │              │                                            │
+   │                  │           │           │ split-btn indicator)        │              │                                            │
+   │ --text-primary   │ #EDE9E3  │ #1A1815   │ Primary text/numerics       │ 4.5:1        │ 16.69:1 vs --bg                           │
+   │ --text-secondary │ #5C5751  │ #6B6559   │ Secondary/mono micro-labels │ 4.5:1 (best- │ 5.45:1 vs --bg (dark original is 2.75:1 — │
+   │                  │           │           │                             │ effort;      │ light mode clears AA the dark original    │
+   │                  │           │           │                             │ dark is 2.75)│ doesn't; not silently carried forward)    │
+   │ --text-mid        │ #8A8278  │ #47433C   │ Mid-emphasis text           │ 4.5:1        │ 9.26:1 vs --bg                            │
+   │ --accent          │ #D4F13A  │ #667708   │ Brand accent / positive     │ 3:1 (large   │ 4.99:1 vs --surface (clears AA-normal too)│
+   │                  │           │           │ cue / active state          │ text & UI    │                                            │
+   │                  │           │           │                             │ components)  │                                            │
+   │ --success        │ = accent │ = accent  │ Explicit success semantic,  │ same as      │ same as --accent — formalized as its own  │
+   │                  │           │           │ aliases --accent today      │ --accent     │ var so it can diverge later w/o touching  │
+   │                  │           │           │ (this app's positive cue    │              │ --accent's brand meaning                  │
+   │                  │           │           │ has always been the lime)   │              │                                            │
+   │ --rust (warning) │ #E8633A  │ #CE4318   │ Warning/negative cue         │ 4.5:1        │ 4.73:1 vs --surface                       │
+   │ --accent-dim      │ 8% alpha  │ 8% alpha  │ Accent background tint      │ n/a (decor)  │ built from LIGHT accent (#667708), not    │
+   │                  │           │           │                             │              │ the dark hex — else the tint reads muddy  │
+   │ --accent-border   │ 25% alpha │ 25% alpha │ Accent border tint          │ n/a (decor)  │ same fix as above                         │
+   │ --rust-dim        │ 8% alpha  │ 8% alpha  │ Warning background tint     │ n/a (decor)  │ built from LIGHT rust (#CE4318)           │
+   │ --rust-border      │ 25% alpha │ 25% alpha │ Warning border tint         │ n/a (decor)  │ same fix as above                         │
+   │ --grain            │ 3.5% op.  │ 5% op.    │ Grain texture overlay        │ n/a (decor)  │ opacity bumped for light — the same 3.5%  │
+   │                  │           │           │                             │              │ reads as near-invisible on a pale surface │
+   │ --overlay          │ rgba(12,  │ rgba(250, │ Full-screen scrim behind a  │ n/a (decor,  │ Added post-checker-review: was hardcoded  │
+   │                  │ 11,9,0.97)│ 248,243,  │ modal (NumberPad). Built    │ near-opaque) │ verbatim as rgba(12,11,9,0.97) on the     │
+   │                  │           │ 0.97)     │ from the paired-theme --bg  │              │ primitive itself — stayed near-black in   │
+   │                  │           │           │ hex at 97% alpha            │              │ light mode while the numpad's own token-  │
+   │                  │           │           │                             │              │ driven contents switched to light values  │
+   │ --shadow-elevated │ 0 4px 16px│ 0 4px 16px│ Drop shadow for a floating  │ n/a (decor)  │ Deliberately the same value both themes — │
+   │                  │ rgba(0,0, │ rgba(0,0, │ surface over content (Toast)│              │ shadows read as dark regardless of theme; │
+   │                  │ 0,0.4)    │ 0,0.4)    │                             │              │ this isn't a per-theme "flip" token        │
+   └─────────────────┴───────────┴───────────┴────────────────────────────┴──────────────┴──────────────────────────────────────────┘
+
+   Theme selection: dark is the default (dark-first, light is a companion
+   mode — not equal dual-identity, per the ratified decision). No system
+   `prefers-color-scheme` auto-detection for theme (unlike locale, which
+   does silently auto-detect) — an explicit user toggle only, persisted
+   via cookie (`ritmo-theme`) by lib/theme.tsx. `[data-theme="light"]` on
+   `<html>` overrides the dark :root defaults below.
+   ═══════════════════════════════════════════════════════════════════════ */
+
 :root {
   --bg: #0C0B09;
   --surface: #131210;
@@ -11,15 +76,54 @@
   --border: #252320;
   --border-2: #2E2B27;
   --accent: #D4F13A;
+  --accent-active: #c2de2f;
   --accent-dim: rgba(212, 241, 58, 0.08);
   --accent-border: rgba(212, 241, 58, 0.25);
+  --success: var(--accent);
   --rust: #E8633A;
   --rust-dim: rgba(232, 99, 58, 0.08);
   --rust-border: rgba(232, 99, 58, 0.25);
   --text-primary: #EDE9E3;
   --text-secondary: #5C5751;
   --text-mid: #8A8278;
-  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  --grain-opacity: 0.035;
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  --overlay: rgba(12, 11, 9, 0.97);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] {
+  --bg: #FAF8F3;
+  --surface: #FFFFFF;
+  --surface-2: #F1EEE7;
+  --border: #DAD5C9;
+  --border-2: #948862;
+  --accent: #667708;
+  --accent-active: #566309;
+  --accent-dim: rgba(102, 119, 8, 0.08);
+  --accent-border: rgba(102, 119, 8, 0.25);
+  --success: var(--accent);
+  --rust: #CE4318;
+  --rust-dim: rgba(206, 67, 24, 0.08);
+  --rust-border: rgba(206, 67, 24, 0.25);
+  --text-primary: #1A1815;
+  --text-secondary: #6B6559;
+  --text-mid: #47433C;
+  --grain-opacity: 0.05;
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  --overlay: rgba(250, 248, 243, 0.97);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* numpad-btn.accent and btn-primary put #0C0B09-on-accent text — that's
+   correct in dark mode (accent is very light, near-black text reads
+   fine) but wrong in light mode, where --accent is now a dark olive and
+   needs light text on top of it instead. */
+[data-theme="light"] {
+  --on-accent: #FFFFFF;
+}
+:root {
+  --on-accent: #0C0B09;
 }
 
 * {
@@ -59,6 +163,7 @@ html, body {
   position: absolute;
   inset: 0;
   background-image: var(--grain);
+  opacity: var(--grain-opacity);
   pointer-events: none;
   border-radius: inherit;
 }
@@ -112,13 +217,13 @@ html, body {
 
 .numpad-btn.accent {
   background: var(--accent);
-  color: #0C0B09;
+  color: var(--on-accent);
   border-color: var(--accent);
   font-weight: 700;
 }
 
 .numpad-btn.accent:active {
-  background: #c2de2f;
+  background: var(--accent-active);
   transform: scale(0.96);
 }
 
@@ -320,8 +425,9 @@ html, body {
 /* ── Primary button ───────────────────────────────────────────────────── */
 .btn-primary {
   width: 100%;
+  min-height: 44px;
   background: var(--accent);
-  color: #0C0B09;
+  color: var(--on-accent);
   border: none;
   border-radius: 2px;
   padding: 18px 20px;
@@ -337,12 +443,13 @@ html, body {
 }
 
 .btn-primary:active {
-  background: #c2de2f;
+  background: var(--accent-active);
   transform: scale(0.99);
 }
 
 .btn-secondary {
   width: 100%;
+  min-height: 44px;
   background: none;
   color: var(--text-mid);
   border: 1px solid var(--border-2);
