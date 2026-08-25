@@ -19,7 +19,14 @@
     "useNow": "USAR AHORA",
     "notAuthenticated": "No autenticado",
     "failedToLoad": "Error al cargar",
-    "genericError": "Algo salió mal. Intenta de nuevo."
+    "genericError": "Algo salió mal. Intenta de nuevo.",
+    "lbs": "lbs",
+    "pins": "clavijas",
+    "sets": "series",
+    "skipped": "omitidas",
+    "reps": "reps",
+    "splitDay": "Día de {split}",
+    "splitDone": "{split} Completado"
   },
   "tabs": {
     "train": "ENTRENAR",
@@ -124,7 +131,8 @@
   "screens": {
     "preSession": {
       "appName": "RITMO",
-      "weightsLink": "PESOS"
+      "weightsLink": "PESOS",
+      "startButton": "COMENZAR {split}"
     },
     "resumePrompt": {
       "appName": "RITMO",
@@ -136,8 +144,18 @@
       "resumeSession": "REANUDAR SESIÓN →",
       "continueToday": "CONTINUAR HOY →",
       "startFresh": "EMPEZAR DE CERO",
+      "startFreshConfirmLabel": "¿DESCARTAR LA SESIÓN DE HOY?",
       "startFreshConfirmTitle": "¿Empezar de Cero?",
-      "startFreshCancel": "CANCELAR"
+      "startFreshCancel": "CANCELAR",
+      "startFreshConfirmBody": "Esto eliminará permanentemente los ejercicios que ya registraste hoy para este split.",
+      "startFreshConfirmAction": "DESCARTAR Y EMPEZAR DE CERO",
+      "dbOnlyFallback": "Se encontraron registros de hoy. Empieza de cero o continúa donde crees que lo dejaste.",
+      "progressLabel": "PROGRESO",
+      "leftOffAt": "TE QUEDASTE EN: {exercise}",
+      "startedToday": "Comenzado hoy",
+      "startedYesterday": "Comenzado ayer",
+      "startedDaysAgo": "Comenzado hace {days} días",
+      "todaySession": "SESIÓN DE HOY"
     },
     "coachingContext": {
       "preSessionIntel": "ANTES DE ENTRENAR",
@@ -147,7 +165,18 @@
       "watch": "OBSERVAR",
       "keepWeight": "MANTENER PESO",
       "newExercises": "EJERCICIOS NUEVOS",
-      "focusToday": "ENFOQUE DE HOY"
+      "focusToday": "ENFOQUE DE HOY",
+      "noPreviousSession": "No se encontró sesión previa de {split}",
+      "recoveryWarning": "Solo {days}d de recuperación — reteniendo progresión",
+      "dataMaturityLimited": "Todavía aprendiendo tu punto de partida — las recomendaciones mejorarán con más sesiones registradas.",
+      "dataMaturityDeveloping": "Construyendo un panorama de tu entrenamiento — las recomendaciones son cada vez más precisas.",
+      "viewPlan": "VER PLAN DE SESIÓN →",
+      "acceptWeight": "ACEPTAR {from} → {to}",
+      "keepWeightValue": "Manteniendo {weight}",
+      "droppingTo": "Bajando a {weight}",
+      "technicalLabel": "TÉCNICO",
+      "backLink": "Atrás",
+      "focusDefault": "Ejecuta series limpias. Registra todo."
     },
     "workoutOverview": {
       "sessionPlan": "PLAN DE SESIÓN",
@@ -156,13 +185,19 @@
       "cardio": "CARDIO",
       "hide": "OCULTAR",
       "swap": "CAMBIAR",
-      "swapForToday": "¿Cambiar {exerciseName} por {newName} solo por hoy?",
+      "swapForToday": "¿Cambiar {oldName} por {newName} solo por hoy?",
       "confirmSwap": "CONFIRMAR CAMBIO",
       "cancelSwap": "CANCELAR",
       "noAlternativesFound": "NO SE ENCONTRARON ALTERNATIVAS",
       "swapForTodayButton": "CAMBIAR SOLO HOY",
       "useToday": "USAR HOY",
-      "beginWorkout": "COMENZAR ENTRENAMIENTO →"
+      "beginWorkout": "COMENZAR ENTRENAMIENTO →",
+      "exercisesLabel": "ejercicios",
+      "addExercise": "+ AGREGAR EJERCICIO",
+      "resumeSessionButton": "REANUDAR SESIÓN →",
+      "startFreshButton": "EMPEZAR DE CERO",
+      "technicalLabel": "TÉCNICO",
+      "swapNote": "Se te pedirá guardar como predeterminado después de la sesión."
     },
     "activeSession": {
       "restDone": "DESCANSO TERMINADO",
@@ -172,6 +207,14 @@
       "sessionOverview": "RESUMEN DE SESIÓN",
       "close": "CERRAR",
       "cardio": "CARDIO",
+      "savedIndicator": "GUARDADO",
+      "overviewLabel": "RESUMEN",
+      "setLabel": "SERIE {setNumber}",
+      "skippedUndo": "OMITIDA · DESHACER",
+      "nextExercise": "SIGUIENTE EJERCICIO →",
+      "exercisesLabel": "Ejercicios",
+      "addExerciseButton": "+ AGREGAR EJERCICIO",
+      "nowLabel": "AHORA",
       "sessionInProgress": "SESIÓN EN PROGRESO",
       "goBackTitle": "¿Volver Atrás?",
       "goBackBody": "El progreso está guardado. Puedes reanudar cuando quieras.",
@@ -193,7 +236,14 @@
       "weight": "PESO",
       "notesPlaceholder": "Notas para la próxima vez...",
       "unitLbs": "Lbs",
-      "unitPins": "Clavijas"
+      "unitPins": "Clavijas",
+      "rirLabel": "RIR",
+      "rirExplainerAriaLabel": "¿Qué significa RIR?",
+      "rirExplainerText": "RIR = Repeticiones en Reserva — cuántas repeticiones más podrías haber hecho antes de fallar. 0 = no quedaba ninguna. 5+ = esa serie se sintió fácil.",
+      "addSet": "+ AGREGAR SERIE",
+      "addNote": "+ AGREGAR NOTA",
+      "notesHide": "OCULTAR",
+      "swapNote": "Se te pedirá guardar como predeterminado después de la sesión."
     },
     "preSaveSummary": {
       "reviewSession": "REVISAR SESIÓN",
@@ -209,7 +259,14 @@
       "saving": "GUARDANDO...",
       "confirm": "CONFIRMAR",
       "retrySave": "REINTENTAR →",
-      "saveSession": "GUARDAR SESIÓN →"
+      "saveSession": "GUARDAR SESIÓN →",
+      "setsTag": "{count} series",
+      "skippedTag": "{count} omitidas",
+      "sessionRpeHeading": "¿QUÉ TAN DURA FUE ESTA SESIÓN?",
+      "sessionRpeOptional": "Opcional — ayuda a ajustar tu próxima sesión",
+      "sessionRpeSkip": "OMITIR",
+      "replacePermanentlyBody": "Tu rutina siempre usará {newName} en su lugar.",
+      "setIndex": "SERIE {setNumber}"
     },
     "sessionSummary": {
       "sessionComplete": "SESIÓN COMPLETADA",
@@ -223,7 +280,12 @@
       "saveToLibrary": "GUARDAR EN LIBRERÍA",
       "addDetails": "AGREGAR DETALLES",
       "nextSession": "PRÓXIMA SESIÓN",
-      "done": "LISTO"
+      "done": "LISTO",
+      "syncedConfirmed": "✓ GUARDADO EN EL HISTORIAL",
+      "syncedPartial": "⚠ SINCRONIZACIÓN PARCIAL — en cola para reintentar",
+      "syncedQueued": "GUARDADO EN EL DISPOSITIVO — se sincronizará con tu cuenta cuando vuelvas a estar en línea.",
+      "technicalLabel": "TÉCNICO",
+      "customExerciseCount": "{count, plural, one {# EJERCICIO PERSONALIZADO} other {# EJERCICIOS PERSONALIZADOS}}"
     },
     "exerciseLibrary": {
       "library": "LIBRERÍA",
@@ -307,5 +369,60 @@
       "splitLegs": "PIERNAS",
       "splitMixed": "MIXTO"
     }
+  },
+  "coaching": {
+    "flags": {
+      "noHistory": {
+        "technical": "Todavía no hay peso registrado para este ejercicio.",
+        "plain": "Primera vez con este — elige un peso inicial."
+      },
+      "progressReady": {
+        "technical": "Llegaste a {topOfRange} reps en 2 sesiones — listo para progresar {fromWeight} → {toWeight}",
+        "plain": "Lo hiciste muy bien la última vez — vamos con más peso: {fromWeight} → {toWeight}."
+      },
+      "recoveryHold": {
+        "technical": "Listo para progresar pero solo {recoveryGapDays}d de recuperación — manteniendo el peso",
+        "plain": "Entrenaste esto hace poco (hace {recoveryGapDays}d) — mantenemos el peso para que te recuperes."
+      },
+      "weightTooHeavy": {
+        "technical": "Por debajo del piso de {bottomOfRange} reps en 2 sesiones con {weight} — recalibrando",
+        "plain": "Este peso ha sido demasiado las últimas dos veces — vamos a bajarlo un poco."
+      },
+      "fatigueRepDrop": {
+        "technical": "Las reps bajaron de {firstSetReps} a {lastSetReps} dentro de la sesión — posible fatiga",
+        "plain": "Bajaste mucho el ritmo a mitad del ejercicio — podría ser fatiga."
+      },
+      "fatigueRirTrend": {
+        "technical": "El esfuerzo va en aumento (RIR promedio {recentAvgRir}) en las últimas sesiones",
+        "plain": "Has estado exigiéndote más de lo usual en este ejercicio últimamente."
+      },
+      "stall": {
+        "technical": "Sin progreso en {sessionCount} sesiones",
+        "plain": "Estancado en el mismo peso por un tiempo — prueba {strategy}."
+      },
+      "deloadRecommended": {
+        "technical": "{fatiguedExerciseCount} ejercicios muestran señales de fatiga — se recomienda descarga",
+        "plain": "Tu cuerpo está pidiendo un descanso — tómalo con calma esta semana."
+      },
+      "volumeUnderMev": {
+        "technical": "{muscleGroup}: {weeklyCreditedSets} series/sem, por debajo del MEV ({mev})",
+        "plain": "No estás entrenando suficiente {muscleGroup} para crecer — agrega una serie o dos."
+      },
+      "volumeOverMrv": {
+        "technical": "{muscleGroup}: {weeklyCreditedSets} series/sem, por encima del MRV ({mrv})",
+        "plain": "Podrías estar excediéndote con {muscleGroup} — considera reducir el volumen."
+      }
+    },
+    "stallStrategy": {
+      "dropSet": "una serie descendente",
+      "pauseReps": "repeticiones con pausa",
+      "gripAngle": "un ángulo de agarre diferente",
+      "deload": "una descarga"
+    },
+    "dataMaturity": {
+      "limitedHistory": "Todavía aprendiendo tu punto de partida",
+      "developing": "Construyendo un panorama de tu entrenamiento"
+    },
+    "provenanceInferred": "estimado — sin RIR registrado"
   }
 }

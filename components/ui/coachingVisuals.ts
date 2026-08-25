@@ -5,16 +5,14 @@
 // renders annotations on top of components/ui/Chart) both consume — the
 // plan's own words: "this mapping is the single source of truth."
 //
-// IMPORTANT — the keys below are the OLD engine's flag `type` union
-// (lib/coaching.ts `CoachingFlag['type']`: 'progress' | 'stall' | 'fatigue'
-// | 'deload' | 'no-history' | 'recovery-hold' | 'weight-too-heavy'), used
-// here only to establish the *shape* of the mapping table and prove every
-// existing flag class has a defined treatment. Phase 2 replaces the old
-// engine with a structured `{ kind, params }` contract and its own real
-// `kind` enum (volume-landmark/RIR/fatigue-deload vocabulary) — when that
-// lands, update KIND_VISUALS's keys to match Phase 2's actual `kind`
-// values. The Treatment interface / lookup pattern below is the stable
-// part; the specific key list is expected to change.
+// Updated in Phase 3 (the phase that first actually wires lib/coaching/'s
+// real output into a live screen) to match lib/coaching/types.ts's real
+// `CoachingFlagKind` union: 'no-history' | 'progress-ready' |
+// 'recovery-hold' | 'weight-too-heavy' | 'fatigue' | 'stall' |
+// 'deload-recommended' | 'volume-under-mev' | 'volume-over-mrv'. The old
+// placeholder keys (from before Phase 2 published its real enum) are gone —
+// nothing else in the repo referenced them by string literal (confirmed via
+// grep before this change).
 
 export type FlagSeverity = 'positive' | 'neutral' | 'watch' | 'warning'
 
@@ -30,10 +28,8 @@ export interface FlagVisualTreatment {
   icon: 'trend-up' | 'trend-flat' | 'trend-down' | 'alert' | 'info'
 }
 
-// Old-engine flag type -> treatment. See header comment: keys are a
-// placeholder vocabulary until Phase 2 publishes its real `kind` enum.
 export const KIND_VISUALS: Record<string, FlagVisualTreatment> = {
-  progress: {
+  'progress-ready': {
     colorToken: '--accent',
     badgeVariant: 'accent',
     severity: 'positive',
@@ -63,7 +59,7 @@ export const KIND_VISUALS: Record<string, FlagVisualTreatment> = {
     severity: 'warning',
     icon: 'trend-down',
   },
-  deload: {
+  'deload-recommended': {
     colorToken: '--rust',
     badgeVariant: 'rust',
     severity: 'warning',
@@ -74,6 +70,18 @@ export const KIND_VISUALS: Record<string, FlagVisualTreatment> = {
     badgeVariant: 'neutral',
     severity: 'neutral',
     icon: 'info',
+  },
+  'volume-under-mev': {
+    colorToken: '--text-mid',
+    badgeVariant: 'neutral',
+    severity: 'watch',
+    icon: 'trend-down',
+  },
+  'volume-over-mrv': {
+    colorToken: '--rust',
+    badgeVariant: 'rust',
+    severity: 'warning',
+    icon: 'trend-up',
   },
 }
 

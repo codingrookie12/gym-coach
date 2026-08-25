@@ -19,16 +19,21 @@
     "useNow": "USE NOW",
     "notAuthenticated": "Not authenticated",
     "failedToLoad": "Failed to load",
-    "genericError": "Something went wrong. Try again."
+    "genericError": "Something went wrong. Try again.",
+    "lbs": "lbs",
+    "pins": "pins",
+    "sets": "sets",
+    "skipped": "skipped",
+    "reps": "reps",
+    "splitDay": "{split} Day",
+    "splitDone": "{split} Done"
   },
-
   "tabs": {
     "train": "TRAIN",
     "library": "LIBRARY",
     "reports": "REPORTS",
     "me": "ME"
   },
-
   "me": {
     "header": "ME",
     "account": "ACCOUNT",
@@ -46,28 +51,23 @@
     "inviteCopyLink": "COPY LINK",
     "inviteShareWhatsApp": "SHARE VIA WHATSAPP"
   },
-
   "numberPad": {
     "defaultLabel": "Enter value",
     "cancel": "Cancel",
     "weightLabel": "Set {setNumber} — weight ({unit})",
     "repsLabel": "Set {setNumber} — reps"
   },
-
   "toast": {
     "undo": "UNDO"
   },
-
   "chipGrid": {
     "customValue": "CUSTOM VALUE"
   },
-
   "reports": {
     "title": "REPORTS",
     "comingSoonHeading": "YOUR PROGRESS, ONE TAP AWAY",
     "comingSoonBody": "Charts and coaching history for this tab are landing in a later phase — for now, open History from Library."
   },
-
   "builder": {
     "titleCreate": "Program Builder",
     "titleEdit": "Edit Program",
@@ -92,7 +92,6 @@
     "loadFailed": "Failed to load program",
     "saveFailed": "Failed to save"
   },
-
   "library": {
     "title": "PROGRAMS",
     "myProgramsHeader": "MY PROGRAMS",
@@ -110,7 +109,6 @@
     "cancelButton": "CANCEL",
     "loading": "LOADING..."
   },
-
   "explorer": {
     "title": "EXPLORE PROGRAMS",
     "backButton": "← PROGRAMS",
@@ -121,24 +119,21 @@
     "errorGeneric": "Something went wrong. Try again.",
     "cloneFailed": "Clone failed"
   },
-
   "onboarding": {
     "title": "Choose Your Program",
     "subtitle": "Pick a template to get started, or build your own from scratch.",
     "templateSectionHeader": "TEMPLATES",
     "buildMyOwnCta": "+ BUILD MY OWN"
   },
-
   "sessionBlock": {
     "banner": "Finish your current workout before editing this program."
   },
-
   "screens": {
     "preSession": {
       "appName": "RITMO",
-      "weightsLink": "WEIGHTS"
+      "weightsLink": "WEIGHTS",
+      "startButton": "START {split}"
     },
-
     "resumePrompt": {
       "appName": "RITMO",
       "weightsLink": "WEIGHTS",
@@ -149,10 +144,19 @@
       "resumeSession": "RESUME SESSION →",
       "continueToday": "CONTINUE TODAY →",
       "startFresh": "START FRESH",
+      "startFreshConfirmLabel": "DISCARD TODAY'S SESSION?",
       "startFreshConfirmTitle": "Start Fresh?",
-      "startFreshCancel": "CANCEL"
+      "startFreshCancel": "CANCEL",
+      "startFreshConfirmBody": "This will permanently delete the exercises you've already logged today for this split.",
+      "startFreshConfirmAction": "DISCARD & START FRESH",
+      "dbOnlyFallback": "Entries found for today. Start fresh or continue from where you think you left off.",
+      "progressLabel": "PROGRESS",
+      "leftOffAt": "LEFT OFF AT: {exercise}",
+      "startedToday": "Started today",
+      "startedYesterday": "Started yesterday",
+      "startedDaysAgo": "Started {days} days ago",
+      "todaySession": "TODAY'S SESSION"
     },
-
     "coachingContext": {
       "preSessionIntel": "PRE-SESSION INTEL",
       "deload": "DELOAD",
@@ -161,9 +165,19 @@
       "watch": "WATCH",
       "keepWeight": "KEEP WEIGHT",
       "newExercises": "NEW EXERCISES",
-      "focusToday": "FOCUS TODAY"
+      "focusToday": "FOCUS TODAY",
+      "noPreviousSession": "No previous {split} session found",
+      "recoveryWarning": "Only {days}d recovery — holding progression",
+      "dataMaturityLimited": "Still learning your baseline — recommendations will sharpen as you log more sessions.",
+      "dataMaturityDeveloping": "Building a picture of your training — recommendations are getting more precise.",
+      "viewPlan": "VIEW SESSION PLAN →",
+      "acceptWeight": "ACCEPT {from} → {to}",
+      "keepWeightValue": "Keeping {weight}",
+      "droppingTo": "Dropping to {weight}",
+      "technicalLabel": "TECHNICAL",
+      "backLink": "Back",
+      "focusDefault": "Execute clean sets. Log everything."
     },
-
     "workoutOverview": {
       "sessionPlan": "SESSION PLAN",
       "exercisesCount": "{count} exercises",
@@ -171,15 +185,20 @@
       "cardio": "CARDIO",
       "hide": "HIDE",
       "swap": "SWAP",
-      "swapForToday": "Swap {exerciseName} for today only?",
+      "swapForToday": "Swap {oldName} → {newName} for today only?",
       "confirmSwap": "CONFIRM SWAP",
       "cancelSwap": "CANCEL",
       "noAlternativesFound": "NO ALTERNATIVES FOUND",
       "swapForTodayButton": "SWAP FOR TODAY",
       "useToday": "USE TODAY",
-      "beginWorkout": "BEGIN WORKOUT →"
+      "beginWorkout": "BEGIN WORKOUT →",
+      "exercisesLabel": "exercises",
+      "addExercise": "+ ADD EXERCISE",
+      "resumeSessionButton": "RESUME SESSION →",
+      "startFreshButton": "START FRESH",
+      "technicalLabel": "TECHNICAL",
+      "swapNote": "You'll be asked to save as default after the session."
     },
-
     "activeSession": {
       "restDone": "REST DONE",
       "start": "START",
@@ -188,6 +207,14 @@
       "sessionOverview": "SESSION OVERVIEW",
       "close": "CLOSE",
       "cardio": "CARDIO",
+      "savedIndicator": "SAVED",
+      "overviewLabel": "OVERVIEW",
+      "setLabel": "SET {setNumber}",
+      "skippedUndo": "SKIPPED · UNDO",
+      "nextExercise": "NEXT EXERCISE →",
+      "exercisesLabel": "Exercises",
+      "addExerciseButton": "+ ADD EXERCISE",
+      "nowLabel": "NOW",
       "sessionInProgress": "SESSION IN PROGRESS",
       "goBackTitle": "Go Back?",
       "goBackBody": "Progress is saved. Resume any time.",
@@ -209,9 +236,15 @@
       "weight": "WEIGHT",
       "notesPlaceholder": "Notes for next time...",
       "unitLbs": "Lbs",
-      "unitPins": "Pins"
+      "unitPins": "Pins",
+      "rirLabel": "RIR",
+      "rirExplainerAriaLabel": "What does RIR mean?",
+      "rirExplainerText": "RIR = Reps in Reserve — how many more reps you could have done before failure. 0 = none left in the tank. 5+ = that set felt easy.",
+      "addSet": "+ ADD SET",
+      "addNote": "+ ADD NOTE",
+      "notesHide": "HIDE",
+      "swapNote": "You'll be asked to save as default after the session."
     },
-
     "preSaveSummary": {
       "reviewSession": "REVIEW SESSION",
       "tapToEdit": "TAP ANY VALUE TO EDIT BEFORE SAVING",
@@ -226,9 +259,15 @@
       "saving": "SAVING...",
       "confirm": "CONFIRM",
       "retrySave": "RETRY SAVE →",
-      "saveSession": "SAVE SESSION →"
+      "saveSession": "SAVE SESSION →",
+      "setsTag": "{count} sets",
+      "skippedTag": "{count} skipped",
+      "sessionRpeHeading": "HOW HARD WAS THIS SESSION?",
+      "sessionRpeOptional": "Optional — helps tailor your next session",
+      "sessionRpeSkip": "SKIP",
+      "replacePermanentlyBody": "Your routine will always use {newName} in its place.",
+      "setIndex": "SET {setNumber}"
     },
-
     "sessionSummary": {
       "sessionComplete": "SESSION COMPLETE",
       "setsLogged": "{count} sets logged",
@@ -241,9 +280,13 @@
       "saveToLibrary": "SAVE TO LIBRARY",
       "addDetails": "ADD DETAILS",
       "nextSession": "NEXT SESSION",
-      "done": "DONE"
+      "done": "DONE",
+      "syncedConfirmed": "✓ SAVED TO HISTORY",
+      "syncedPartial": "⚠ PARTIAL SYNC — queued for auto-retry",
+      "syncedQueued": "SAVED ON DEVICE — will sync to your account when you're back online.",
+      "technicalLabel": "TECHNICAL",
+      "customExerciseCount": "{count, plural, one {# CUSTOM EXERCISE} other {# CUSTOM EXERCISES}}"
     },
-
     "exerciseLibrary": {
       "library": "LIBRARY",
       "programs": "PROGRAMS",
@@ -259,7 +302,6 @@
       "browseAndSearch": "BROWSE & SEARCH",
       "recent": "RECENT"
     },
-
     "exerciseBrowser": {
       "browse": "BROWSE",
       "custom": "CUSTOM",
@@ -280,7 +322,6 @@
       "cannotDeleteLogged": "Can't delete — sets have been logged. Rename instead.",
       "deleteFailed": "Delete failed. Try again."
     },
-
     "manageWeights": {
       "title": "Manage Weights",
       "settings": "SETTINGS",
@@ -291,7 +332,6 @@
       "loadingWeights": "Loading weights...",
       "saveFailed": "Save failed: {reason}"
     },
-
     "routineEditor": {
       "title": "ROUTINE EDITOR",
       "loading": "LOADING...",
@@ -305,7 +345,6 @@
       "loadFailed": "Failed to load routine",
       "reorderFailed": "Couldn't save order"
     },
-
     "customProgramBuilder": {
       "loading": "LOADING...",
       "sessionBlockBanner": "Finish your current workout before editing this program.",
@@ -316,7 +355,6 @@
       "title": "Program Builder",
       "loadFailed": "Failed to load program"
     },
-
     "progressHistory": {
       "pr": "PR",
       "title": "PROGRESS",
@@ -331,5 +369,60 @@
       "splitLegs": "LEGS",
       "splitMixed": "MIXED"
     }
+  },
+  "coaching": {
+    "flags": {
+      "noHistory": {
+        "technical": "No weight logged for this exercise yet.",
+        "plain": "First time on this one — pick a starting weight."
+      },
+      "progressReady": {
+        "technical": "Hit {topOfRange} reps for 2 sessions — ready to progress {fromWeight} → {toWeight}",
+        "plain": "You crushed it last time — let's go heavier: {fromWeight} → {toWeight}."
+      },
+      "recoveryHold": {
+        "technical": "Ready to progress but only {recoveryGapDays}d recovery — holding weight",
+        "plain": "You trained this recently ({recoveryGapDays}d ago) — holding steady so you can recover."
+      },
+      "weightTooHeavy": {
+        "technical": "Below the {bottomOfRange}-rep floor for 2 sessions at {weight} — recalibrating",
+        "plain": "This weight's been too heavy the last two times — let's dial it back."
+      },
+      "fatigueRepDrop": {
+        "technical": "Reps dropped from {firstSetReps} to {lastSetReps} within the session — possible fatigue",
+        "plain": "You slowed down a lot mid-exercise — might be fatigue."
+      },
+      "fatigueRirTrend": {
+        "technical": "Effort trending up (avg RIR {recentAvgRir}) across recent sessions",
+        "plain": "You've been grinding harder than usual on this one lately."
+      },
+      "stall": {
+        "technical": "No progress for {sessionCount} sessions",
+        "plain": "Stuck at the same weight for a while — try {strategy}."
+      },
+      "deloadRecommended": {
+        "technical": "{fatiguedExerciseCount} exercises showing fatigue signals — deload recommended",
+        "plain": "Your body's asking for a break — take it easier this week."
+      },
+      "volumeUnderMev": {
+        "technical": "{muscleGroup}: {weeklyCreditedSets} sets/wk, below MEV ({mev})",
+        "plain": "You're not training {muscleGroup} enough to grow — add a set or two."
+      },
+      "volumeOverMrv": {
+        "technical": "{muscleGroup}: {weeklyCreditedSets} sets/wk, over MRV ({mrv})",
+        "plain": "You might be overdoing {muscleGroup} — consider trimming volume."
+      }
+    },
+    "stallStrategy": {
+      "dropSet": "a drop set",
+      "pauseReps": "pause reps",
+      "gripAngle": "a different grip angle",
+      "deload": "a deload"
+    },
+    "dataMaturity": {
+      "limitedHistory": "Still learning your baseline",
+      "developing": "Building a picture of your training"
+    },
+    "provenanceInferred": "estimated — no RIR logged"
   }
 }

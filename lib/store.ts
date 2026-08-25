@@ -8,6 +8,10 @@ export interface SetLog {
   reps: number
   completed: boolean
   skipped?: boolean
+  /** Phase 1/2/3 joint contract (sets.rir): integer 0-5+, null/undefined =
+   *  not logged — the coaching engine infers from rep-range position
+   *  instead. Optional, never required to complete a set. */
+  rir?: number | null
 }
 
 export interface ExerciseLog {
@@ -25,6 +29,7 @@ export type SavedSnapshot = Record<string, {
   weight: number
   reps: number
   notes: string
+  rir?: number | null
 }>
 
 export interface SessionState {

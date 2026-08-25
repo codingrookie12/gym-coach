@@ -17,6 +17,9 @@ interface SessionEntry {
   notes?: string
   unit?: 'Lbs' | 'Pins'
   userProgramSplitId?: string
+  /** Phase 1/2/3 joint contract (sets.rir): integer 0-5+, omitted/null =
+   *  not logged. See lib/coaching/types.ts's RirValue docstring. */
+  rir?: number | null
 }
 
 export async function POST(request: NextRequest) {
@@ -65,6 +68,7 @@ export async function POST(request: NextRequest) {
         reps: number
         unit: string
         notes?: string
+        rir?: number
         _entry: SessionEntry
       }
 
@@ -83,6 +87,7 @@ export async function POST(request: NextRequest) {
           reps: entry.reps,
           unit: entry.unit ?? 'Lbs',
           ...(entry.notes ? { notes: entry.notes } : {}),
+          ...(entry.rir !== undefined && entry.rir !== null ? { rir: entry.rir } : {}),
           _entry: entry,
         })
       }

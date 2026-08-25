@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { CARDIO_RECOMMENDATION } from '@/lib/routines'
-import { ExercisePlan } from '@/lib/coaching'
+import { SessionExercisePlan } from '@/lib/sessionPlan'
+import { useCoachingFlagText } from '@/lib/i18n/coachingMessages'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
 import RemoveExerciseSheet from '@/components/RemoveExerciseSheet'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
@@ -12,24 +14,49 @@ import type { ExerciseProgressionStrip as ProgressionData } from '@/lib/supabase
 
 interface WorkoutOverviewScreenProps {
   split: string
-  plan: ExercisePlan[]
+  plan: SessionExercisePlan[]
   hasResumable?: boolean
   onBegin: () => void
   onResume?: () => void
   onBack: () => void
   onAddExercise?: (name: string, matched: ExerciseDefinition | null, prefillWeight: number | null, prefillReps: number | null) => void
-  onRemoveFromSessionOnly?: (entry: ExercisePlan, index: number) => void
-  onRemoveFromRoutine?: (entry: ExercisePlan, index: number) => void
+  onRemoveFromSessionOnly?: (entry: SessionExercisePlan, index: number) => void
+  onRemoveFromRoutine?: (entry: SessionExercisePlan, index: number) => void
   onSessionSwap?: (oldName: string, newName: string) => void
 }
 
 type PendingSwap = { exIdx: number; oldName: string; newName: string }
 
+function ItemFlags({ item }: { item: SessionExercisePlan }) {
+  const t = useTranslations('screens.workoutOverview')
+  // The item's highest-signal flag drives the note line — prioritized
+  // consistent with CoachingContextScreen's focus-cue ordering (Tier 2 UX
+  // choice, not spelled out in the plan): fatigue/stall/weight-too-heavy
+  // before a positive progress-ready note.
+  const priority = ['fatigue', 'stall', 'weight-too-heavy', 'recovery-hold', 'progress-ready']
+  const flag = priority.map(k => item.flags.find(f => f.kind === k)).find(Boolean)
+  const rendered = useCoachingFlagText(flag ?? item.flags[0] ?? { kind: 'no-history', params: {} } as any)
+  if (!flag) return null
+  const accent = flag.kind === 'progress-ready'
+  return (
+    <div style={{ marginTop: '6px' }}>
+      <p className="font-mono" style={{ fontSize: '0.6rem', color: accent ? 'var(--accent)' : 'var(--rust)', margin: 0, opacity: 0.9, lineHeight: 1.4 }}>
+        {accent ? '↑' : '⚠'} {rendered.plain}
+      </p>
+      <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+        {t('technicalLabel')}: {rendered.technical}
+      </p>
+    </div>
+  )
+}
+
 export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onRemoveFromSessionOnly, onRemoveFromRoutine, onSessionSwap }: WorkoutOverviewScreenProps) {
+  const t = useTranslations('screens.workoutOverview')
+  const common = useTranslations('common')
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
-  const [removeTarget, setRemoveTarget] = useState<{ entry: ExercisePlan; index: number } | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<{ entry: SessionExercisePlan; index: number } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   const [progression, setProgression] = useState<Record<string, ProgressionData>>({})
   const cardio = CARDIO_RECOMMENDATION[split]
@@ -72,7 +99,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
     setSwappedIndex(null)
   }
 
-  function getSwapOptions(exercise: ExercisePlan['exercise']): string[] {
+  function getSwapOptions(exercise: SessionExercisePlan['exercise']): string[] {
     const options: string[] = []
     if (exercise.backup) options.push(exercise.backup)
     const def = findExerciseByName(exercise.name)
@@ -102,16 +129,16 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
           ←
         </button>
         <div style={{ flex: 1 }}>
-          <p className="section-label" style={{ margin: '0 0 2px 0' }}>SESSION PLAN</p>
+          <p className="section-label" style={{ margin: '0 0 2px 0' }}>{t('sessionPlan')}</p>
           <h1 className="font-display" style={{ fontSize: '1.7rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em', lineHeight: 1 }}>
-            {split} Day
+            {common('splitDay', { split })}
           </h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
           <span className="font-display" style={{ fontSize: '1.8rem', color: 'var(--accent)', lineHeight: 1, letterSpacing: '0.02em' }}>
             {plan.length}
           </span>
-          <span className="section-label">exercises</span>
+          <span className="section-label">{t('exercisesLabel')}</span>
         </div>
       </div>
 
@@ -120,14 +147,15 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
         <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {plan.map((item, i) => {
             const isSwapped = swappedIndex === i
+            const hasFlags = item.flags.length > 0
             return (
               <div
                 key={i}
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border)',
-                  borderLeft: item.coachingNote ? '3px solid var(--accent)' : '1px solid var(--border)',
-                  borderRadius: item.coachingNote ? '0 2px 2px 0' : '2px',
+                  borderLeft: hasFlags ? '3px solid var(--accent)' : '1px solid var(--border)',
+                  borderRadius: hasFlags ? '0 2px 2px 0' : '2px',
                   padding: '12px 14px',
                   transition: 'all 0.15s',
                 }}
@@ -152,26 +180,26 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                     {/* Stats row */}
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)' }}>
-                        {item.exercise.sets} sets
+                        {item.exercise.sets} {common('sets')}
                       </span>
                       <span style={{ color: 'var(--border-2)', fontSize: '0.6rem' }}>·</span>
                       <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)' }}>
                         {item.exercise.repRange[0] === item.exercise.repRange[1]
-                          ? `${item.exercise.repRange[0]} reps`
-                          : `${item.exercise.repRange[0]}–${item.exercise.repRange[1]} reps`}
+                          ? `${item.exercise.repRange[0]} ${common('reps')}`
+                          : `${item.exercise.repRange[0]}–${item.exercise.repRange[1]} ${common('reps')}`}
                       </span>
                       {item.targetWeight !== null ? (
                         <>
                           <span style={{ color: 'var(--border-2)', fontSize: '0.6rem' }}>·</span>
                           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--accent)' }}>
-                            {item.targetWeight} lbs
+                            {item.targetWeight} {item.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')}
                           </span>
                         </>
                       ) : (
                         <>
                           <span style={{ color: 'var(--border-2)', fontSize: '0.6rem' }}>·</span>
                           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-                            no weight logged
+                            {t('noWeightLogged')}
                           </span>
                         </>
                       )}
@@ -180,12 +208,8 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                     {/* Progression strip (PR + last 3 + sparkline) */}
                     <ExerciseProgressionStrip data={progression[item.exercise.name]} targetWeight={item.targetWeight} />
 
-                    {/* Coaching note */}
-                    {item.coachingNote && (
-                      <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--accent)', margin: '6px 0 0 0', opacity: 0.9 }}>
-                        ↑ {item.coachingNote}
-                      </p>
-                    )}
+                    {/* Coaching flags — plain + technical, Phase 2 contract */}
+                    <ItemFlags item={item} />
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0, marginTop: '2px' }}>
@@ -193,7 +217,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                       className="swap-badge"
                       onClick={() => toggleSwap(i)}
                     >
-                      {isSwapped ? 'HIDE' : 'SWAP'}
+                      {isSwapped ? common('hide') : common('swap')}
                     </button>
                     {canRemove && (
                       <button
@@ -230,16 +254,16 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                   if (pendingSwap?.exIdx === i) return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
                       <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
-                        Swap <span style={{ color: 'var(--rust)' }}>{pendingSwap.oldName}</span> → <span style={{ color: 'var(--accent)' }}>{pendingSwap.newName}</span> for today only?
+                        {t('swapForToday', { oldName: pendingSwap.oldName, newName: pendingSwap.newName })}
                         <br />
-                        <span style={{ color: 'var(--text-secondary)' }}>You&apos;ll be asked to save as default after the session.</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{t('swapNote')}</span>
                       </p>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn-primary" onClick={confirmSwap} style={{ flex: 1, fontSize: '0.7rem', padding: '8px' }}>
-                          CONFIRM SWAP
+                          {t('confirmSwap')}
                         </button>
                         <button onClick={() => setPendingSwap(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px 14px', cursor: 'pointer' }}>
-                          CANCEL
+                          {t('cancelSwap')}
                         </button>
                       </div>
                     </div>
@@ -247,12 +271,12 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
 
                   if (!options.length) return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
-                      <span className="section-label" style={{ color: 'var(--text-secondary)' }}>NO ALTERNATIVES FOUND</span>
+                      <span className="section-label" style={{ color: 'var(--text-secondary)' }}>{t('noAlternativesFound')}</span>
                     </div>
                   )
                   return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span className="section-label" style={{ marginBottom: '2px' }}>SWAP FOR TODAY</span>
+                      <span className="section-label" style={{ marginBottom: '2px' }}>{t('swapForTodayButton')}</span>
                       {options.map(altName => (
                         <div
                           key={altName}
@@ -271,7 +295,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                             onClick={() => requestSwap(i, item.exercise.name, altName)}
                             style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
                           >
-                            USE TODAY
+                            {t('useToday')}
                           </button>
                         </div>
                       ))}
@@ -285,7 +309,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
 
         {/* Cardio recommendation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '2px', marginTop: '4px' }}>
-          <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>CARDIO</span>
+          <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>{t('cardio')}</span>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-mid)' }}>{cardio}</span>
         </div>
 
@@ -316,7 +340,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
             }}
           >
-            + ADD EXERCISE
+            {t('addExercise')}
           </button>
         )}
       </div>
@@ -328,14 +352,14 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
       >
         {hasResumable && onResume && (
           <button className="btn-primary" onClick={onResume}>
-            RESUME SESSION →
+            {t('resumeSessionButton')}
           </button>
         )}
         <button
           onClick={onBegin}
           className={hasResumable ? 'btn-secondary' : 'btn-primary'}
         >
-          {hasResumable ? 'START FRESH' : 'BEGIN WORKOUT →'}
+          {hasResumable ? t('startFreshButton') : t('beginWorkout')}
         </button>
       </div>
 

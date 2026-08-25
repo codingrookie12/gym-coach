@@ -18,14 +18,18 @@ import MeScreen from '@/components/screens/MeScreen'
 import ReportsLandingScreen from '@/components/screens/ReportsLandingScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-import { CoachingContext, ExercisePlan } from '@/lib/coaching'
+// NOTE: '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts file,
+// not the lib/coaching/ directory's index.ts — Node/webpack resolves a
+// same-named .ts file before a directory index. The new engine's public
+// API must be imported from the explicit '/index' path everywhere.
+import { CoachingContext, unresolvedExerciseId } from '@/lib/coaching/index'
+import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { type Program } from '@/lib/programs'
 import ProgramLibraryScreen from '@/components/screens/ProgramLibraryScreen'
 import CustomProgramBuilderScreen from '@/components/screens/CustomProgramBuilderScreen'
 import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.queries'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
-import { SessionRecord } from '@/lib/supabase.queries'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import Toast from '@/components/ui/Toast'
 import {
@@ -67,8 +71,7 @@ export interface AppState {
   userProgramSplitId: string | null
   split: string | null
   coachingContext: CoachingContext | null
-  plan: ExercisePlan[] | null
-  sessions: SessionRecord[] | null
+  plan: SessionExercisePlan[] | null
   exerciseLogs: ExerciseLog[]
   savedLogs: ExerciseLog[] | null
   savedExIdx: number
@@ -123,7 +126,6 @@ export default function App() {
     split: null,
     coachingContext: null,
     plan: null,
-    sessions: null,
     exerciseLogs: [],
     savedLogs: null,
     savedExIdx: 0,
@@ -233,7 +235,7 @@ export default function App() {
   const goHome = useCallback(() => {
     setAppState(prev => ({
       ...prev,
-      split: null, coachingContext: null, plan: null, sessions: null,
+      split: null, coachingContext: null, plan: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       sessionSwaps: [], sessionSyncStatus: null,
       detectedSession: null, detectedSplit: null,
@@ -257,8 +259,15 @@ export default function App() {
               ? {
                   ...p,
                   exercise: { ...p.exercise, name: newName, canonicalName: newName },
+                  // Swapped-in exercise has a different identity than the
+                  // one the coaching engine analyzed — clear its
+                  // engine-derived state rather than carry stale flags
+                  // forward under the wrong exerciseId. Recomputed next
+                  // time CoachingContextScreen loads.
+                  exerciseId: unresolvedExerciseId(newName),
                   targetWeight: null,
-                  coachingNote: null,
+                  targetWeightOrigin: null,
+                  flags: [],
                 }
               : p
           )
@@ -421,7 +430,7 @@ export default function App() {
     navigate('pre-save')
   }, [updateState, navigate])
 
-  async function handleSaveSession(logs: ExerciseLog[]) {
+  async function handleSaveSession(logs: ExerciseLog[], sessionRpe: number | null = null) {
     const today = new Date().toISOString().split('T')[0]
     const snapshot = appState.savedSnapshot
 
@@ -440,12 +449,14 @@ export default function App() {
           const weightChanged = set.weight !== prior.weight
           const repsChanged = set.reps !== prior.reps
           const notesChanged = (exLog.notes ?? '') !== prior.notes
+          const rirChanged = (set.rir ?? null) !== (prior.rir ?? null)
 
-          if (weightChanged || repsChanged || notesChanged) {
-            const changes: { weight?: number; reps?: number; notes?: string } = {}
+          if (weightChanged || repsChanged || notesChanged || rirChanged) {
+            const changes: { weight?: number; reps?: number; notes?: string; rir?: number | null } = {}
             if (weightChanged) changes.weight = set.weight
             if (repsChanged) changes.reps = set.reps
             if (notesChanged) changes.notes = exLog.notes ?? ''
+            if (rirChanged) changes.rir = set.rir ?? null
 
             patchPromises.push(
               fetch('/api/session/update', {
@@ -468,6 +479,7 @@ export default function App() {
             notes: exLog.notes || undefined,
             unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
             userProgramSplitId: appState.userProgramSplitId ?? undefined,
+            rir: set.rir ?? undefined,
           })
         }
       }
@@ -533,7 +545,7 @@ export default function App() {
     fetch('/api/session/finish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: today, userProgramSplitId: appState.userProgramSplitId }),
+      body: JSON.stringify({ date: today, userProgramSplitId: appState.userProgramSplitId, sessionRpe }),
     }).catch(() => {})
 
     updateState({
@@ -660,20 +672,19 @@ export default function App() {
           {screen === 'coaching-context' && appState.split && (
             <CoachingContextScreen
               split={appState.split}
-              programId={appState.programId}
               userProgramSplitId={appState.userProgramSplitId ?? undefined}
-              onDataLoaded={(context, plan, sessions) => updateState({ coachingContext: context, plan, sessions })}
+              onDataLoaded={(context, plan) => updateState({ coachingContext: context, plan })}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
-              onWeightDecision={(exerciseName, accepted) => {
+              onWeightDecision={(exerciseId, accepted) => {
                 if (accepted || !appState.plan) return
-                const flag = appState.coachingContext?.watchFlags.find(
-                  f => f.exercise === exerciseName && f.type === 'weight-too-heavy'
-                )
-                if (!flag?.originalWeight) return
+                const item = appState.plan.find(p => p.exerciseId === exerciseId)
+                const flag = item?.flags.find(f => f.kind === 'weight-too-heavy')
+                const originalWeight = flag?.params.weight
+                if (typeof originalWeight !== 'number') return
                 const updatedPlan = appState.plan.map(p =>
-                  p.exercise.name === exerciseName
-                    ? { ...p, targetWeight: flag.originalWeight!, coachingNote: null }
+                  p.exerciseId === exerciseId
+                    ? { ...p, targetWeight: originalWeight, targetWeightOrigin: 'structural' as const }
                     : p
                 )
                 updateState({ plan: updatedPlan })
@@ -700,7 +711,7 @@ export default function App() {
                 const avgSets = currentPlan.length > 0
                   ? Math.max(1, Math.round(currentPlan.reduce((s, p) => s + p.exercise.sets, 0) / currentPlan.length))
                   : 3
-                const newEntry: ExercisePlan = {
+                const newEntry: SessionExercisePlan = {
                   exercise: {
                     name,
                     canonicalName: name,
@@ -709,8 +720,16 @@ export default function App() {
                     backup: null,
                     split: appState.split!,
                   },
+                  // Mid-session add — not resolved through the coaching
+                  // engine's routine-wiring pass, so no real DB exerciseId
+                  // yet (matched.id from the client-bundled catalog isn't
+                  // the DB UUID either — see lib/coaching/matching.ts). The
+                  // unresolved-id sentinel makes this loudly non-matching
+                  // rather than silently colliding with a real id.
+                  exerciseId: unresolvedExerciseId(name),
                   targetWeight: prefillWeight,
-                  coachingNote: null,
+                  targetWeightOrigin: null,
+                  flags: [],
                 }
                 updateState({ plan: [...currentPlan, newEntry] })
                 if (!matched && appState.user) savePendingExercise(appState.user.id, name)
@@ -817,13 +836,12 @@ export default function App() {
             />
           )}
 
-          {screen === 'session-summary' && appState.user && appState.exerciseLogs && appState.split && appState.sessions && appState.plan && (
+          {screen === 'session-summary' && appState.user && appState.exerciseLogs && appState.split && appState.plan && (
             <SessionSummaryScreen
               userId={appState.user.id}
               split={appState.split}
               exerciseLogs={appState.exerciseLogs}
               plan={appState.plan}
-              previousSessions={appState.sessions}
               syncStatus={appState.sessionSyncStatus ?? undefined}
               onDone={goHome}
             />

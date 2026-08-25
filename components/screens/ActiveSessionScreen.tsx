@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { CARDIO_RECOMMENDATION } from '@/lib/routines'
-import { ExercisePlan } from '@/lib/coaching'
+import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/ui/NumberPad'
@@ -16,7 +17,7 @@ import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 interface ActiveSessionScreenProps {
   userId: string
   split: string
-  plan: ExercisePlan[]
+  plan: SessionExercisePlan[]
   initialLogs?: ExerciseLog[]
   initialExIdx?: number
   initialSnapshot?: SavedSnapshot
@@ -28,8 +29,14 @@ interface ActiveSessionScreenProps {
 
 type PadMode = 'reps' | 'weight' | null
 
+// RIR chip scale — Phase 1/2/3 joint contract (sets.rir): integer 0-5+.
+// '5+' is the open-ended top bucket (stored as 5), matching
+// lib/coaching/rir.ts's clampRir ceiling.
+const RIR_CHOICES = [0, 1, 2, 3, 4, 5] as const
+
 // ── Rest Timer (timestamp-based, background-safe) ─────────────────────────────
 function RestTimer() {
+  const t = useTranslations('screens.activeSession')
   const [targetMinutes, setTargetMinutes] = useState(3)
   const [startTs, setStartTs] = useState<number | null>(null)     // ms timestamp when started
   const [elapsed, setElapsed] = useState(0)                        // seconds, for display
@@ -129,7 +136,7 @@ function RestTimer() {
           }}>
             {running ? fmt(remaining) : done ? '0:00' : fmt(targetSeconds)}
           </span>
-          {done && <span className="section-label" style={{ color: 'var(--accent)' }}>REST DONE</span>}
+          {done && <span className="section-label" style={{ color: 'var(--accent)' }}>{t('restDone')}</span>}
         </div>
 
         {/* Min adjuster */}
@@ -145,11 +152,11 @@ function RestTimer() {
       {/* Actions — START when idle, RESET+STOP when running or done */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {!running && !done ? (
-          <button onClick={start} style={timerActionBtn('var(--accent)', '#0C0B09', true)}>START</button>
+          <button onClick={start} style={timerActionBtn('var(--accent)', 'var(--on-accent)', true)}>{t('start')}</button>
         ) : (
           <>
-            <button onClick={start} style={timerActionBtn('var(--surface-2)', 'var(--text-primary)', false)}>RESET</button>
-            <button onClick={stop} style={timerActionBtn('var(--surface-2)', 'var(--text-secondary)', false)}>STOP</button>
+            <button onClick={start} style={timerActionBtn('var(--surface-2)', 'var(--text-primary)', false)}>{t('reset')}</button>
+            <button onClick={stop} style={timerActionBtn('var(--surface-2)', 'var(--text-secondary)', false)}>{t('stop')}</button>
           </>
         )}
       </div>
@@ -182,7 +189,7 @@ function timerActionBtn(bg: string, color: string, isAccent: boolean): React.CSS
 function WorkoutOverviewModal({
   plan, logs, currentExIdx, split, onNavigate, onClose, onAddExercise, onRemoveExercise,
 }: {
-  plan: ExercisePlan[]
+  plan: SessionExercisePlan[]
   logs: ExerciseLog[]
   currentExIdx: number
   split: string
@@ -191,22 +198,23 @@ function WorkoutOverviewModal({
   onAddExercise: () => void
   onRemoveExercise: (idx: number) => void
 }) {
+  const t = useTranslations('screens.activeSession')
   const cardio = CARDIO_RECOMMENDATION[split]
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'var(--overlay)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 14px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div>
-          <p className="section-label" style={{ margin: '0 0 2px 0' }}>SESSION OVERVIEW</p>
+          <p className="section-label" style={{ margin: '0 0 2px 0' }}>{t('sessionOverview')}</p>
           <h2 className="font-display" style={{ fontSize: '1.6rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em' }}>
-            {logs.length} Exercises
+            {logs.length} {t('exercisesLabel')}
           </h2>
         </div>
         <button
           onClick={onClose}
           style={{ background: 'none', border: '1px solid var(--border-2)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Bebas Neue, sans-serif', fontSize: '0.95rem', letterSpacing: '0.08em', padding: '7px 14px', cursor: 'pointer' }}
         >
-          CLOSE
+          {t('close')}
         </button>
       </div>
 
@@ -249,11 +257,11 @@ function WorkoutOverviewModal({
                     <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{String(i + 1).padStart(2, '0')}</span>
                     <span className="font-sans" style={{ fontSize: '0.9rem', fontWeight: 600, color: isCurrent ? 'var(--accent)' : 'var(--text-primary)' }}>
                       {log.exerciseName}
-                      {isCurrent && <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', marginLeft: '8px' }}>← NOW</span>}
+                      {isCurrent && <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', marginLeft: '8px' }}>← {t('nowLabel')}</span>}
                     </span>
                   </div>
                   <span className="font-mono" style={{ fontSize: '0.65rem', color: skipped ? 'var(--rust)' : isDone ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                    {skipped ? 'SKIP' : isDone ? '✓' : i <= currentExIdx ? `${completedSets}/${totalSets}` : '—'}
+                    {skipped ? t('skip') : isDone ? '✓' : i <= currentExIdx ? `${completedSets}/${totalSets}` : '—'}
                   </span>
                 </div>
               </button>
@@ -286,7 +294,7 @@ function WorkoutOverviewModal({
         })}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '2px', marginTop: '4px' }}>
-          <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>CARDIO</span>
+          <span className="section-label" style={{ color: 'var(--accent)', flexShrink: 0 }}>{t('cardio')}</span>
           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)' }}>{cardio}</span>
         </div>
 
@@ -310,7 +318,7 @@ function WorkoutOverviewModal({
             width: '100%',
           }}
         >
-          + ADD EXERCISE
+          {t('addExerciseButton')}
         </button>
       </div>
     </div>
@@ -319,18 +327,19 @@ function WorkoutOverviewModal({
 
 // ── Back Guard Modal ──────────────────────────────────────────────────────────
 function BackGuardModal({ onResume, onGoBack }: { onResume: () => void; onGoBack: () => void }) {
+  const t = useTranslations('screens.activeSession')
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-      <p className="section-label" style={{ margin: '0 0 10px 0' }}>SESSION IN PROGRESS</p>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'var(--overlay)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+      <p className="section-label" style={{ margin: '0 0 10px 0' }}>{t('sessionInProgress')}</p>
       <h2 className="font-display" style={{ fontSize: '2.5rem', fontWeight: 400, color: 'var(--text-primary)', margin: '0 0 8px 0', textAlign: 'center', letterSpacing: '0.04em' }}>
-        Go Back?
+        {t('goBackTitle')}
       </h2>
       <p className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-mid)', margin: '0 0 32px 0', textAlign: 'center', lineHeight: 1.7 }}>
-        Progress is saved. Resume any time.
+        {t('goBackBody')}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
-        <button className="btn-primary" onClick={onResume}>KEEP GOING</button>
-        <button className="btn-secondary" onClick={onGoBack}>GO BACK (progress saved)</button>
+        <button className="btn-primary" onClick={onResume}>{t('keepGoing')}</button>
+        <button className="btn-secondary" onClick={onGoBack}>{t('goBackConfirm')}</button>
       </div>
     </div>
   )
@@ -342,11 +351,13 @@ function WeightInput({
 }: {
   activeSetIdx: number
   currentEx: ExerciseLog
-  currentPlan: ExercisePlan
+  currentPlan: SessionExercisePlan
   activeUnit: 'lbs' | 'pins'
   onConfirm: (v: number) => void
   onCancel: () => void
 }) {
+  const t = useTranslations('screens.activeSession')
+  const numberPadT = useTranslations('numberPad')
   const availableWeights = currentPlan.exercise.availableWeights
   const currentWeight = currentEx.sets[activeSetIdx].weight
   const [showCustom, setShowCustom] = useState(false)
@@ -363,7 +374,7 @@ function WeightInput({
             onCancel()
           }
         }}
-        label={`Set ${activeSetIdx + 1} — weight (${activeUnit})`}
+        label={numberPadT('weightLabel', { setNumber: activeSetIdx + 1, unit: activeUnit })}
         maxValue={999}
         allowDecimal={true}
       />
@@ -371,10 +382,10 @@ function WeightInput({
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'var(--overlay)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}>
         <p className="section-label" style={{ margin: '0 0 4px 0' }}>
-          SET {activeSetIdx + 1} — {activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}
+          {t('setLabel', { setNumber: activeSetIdx + 1 })} — {activeUnit === 'pins' ? t('pin') : t('weight')}
         </p>
         <p className="font-sans" style={{ fontSize: '1rem', color: 'var(--text-mid)', margin: '0 0 24px 0', fontWeight: 500 }}>{currentEx.exerciseName}</p>
         <ChipGrid
@@ -386,7 +397,82 @@ function WeightInput({
         />
       </div>
       <div style={{ padding: '0 24px 32px' }}>
-        <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+        <button className="btn-secondary" onClick={onCancel}>{t('cancel')}</button>
+      </div>
+    </div>
+  )
+}
+
+// ── RIR Row — Phase 3: persistent inline explainer, not one-time onboarding ──
+function RirRow({
+  value, explainerOpen, onToggleExplainer, onSelect,
+}: {
+  value: number | null | undefined
+  explainerOpen: boolean
+  onToggleExplainer: () => void
+  onSelect: (v: number | null) => void
+}) {
+  const t = useTranslations('screens.activeSession')
+  return (
+    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+        <span className="section-label">{t('rirLabel')}</span>
+        <button
+          onClick={onToggleExplainer}
+          aria-label={t('rirExplainerAriaLabel')}
+          style={{
+            background: explainerOpen ? 'var(--accent-dim)' : 'none',
+            border: `1px solid ${explainerOpen ? 'var(--accent-border)' : 'var(--border-2)'}`,
+            borderRadius: '50%',
+            color: explainerOpen ? 'var(--accent)' : 'var(--text-secondary)',
+            width: '18px',
+            height: '18px',
+            minWidth: '18px',
+            fontSize: '0.6rem',
+            lineHeight: 1,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'Space Mono, monospace',
+            padding: 0,
+          }}
+        >
+          ?
+        </button>
+      </div>
+      {explainerOpen && (
+        <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', lineHeight: 1.6, margin: '0 0 10px 0' }}>
+          {t('rirExplainerText')}
+        </p>
+      )}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {RIR_CHOICES.map(choice => {
+          const isSelected = value === choice
+          const label = choice === 5 ? '5+' : String(choice)
+          return (
+            <button
+              key={choice}
+              onClick={() => onSelect(isSelected ? null : choice)}
+              style={{
+                minWidth: '38px',
+                minHeight: '38px',
+                padding: '0 8px',
+                borderRadius: '2px',
+                cursor: 'pointer',
+                background: isSelected ? 'var(--accent)' : 'var(--surface-2)',
+                color: isSelected ? 'var(--on-accent)' : 'var(--text-mid)',
+                border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                fontFamily: 'Space Mono, monospace',
+                fontSize: '0.75rem',
+                fontWeight: isSelected ? 700 : 400,
+                transition: 'all 0.1s',
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -394,6 +480,7 @@ function WeightInput({
 
 // ── Notes Input ───────────────────────────────────────────────────────────────
 function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('screens.activeSession')
   const [expanded, setExpanded] = useState(!!value)
 
   return (
@@ -418,14 +505,14 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
             justifyContent: 'flex-start',
           }}
         >
-          + ADD NOTE
+          {t('addNote')}
         </button>
       ) : (
         <div style={{ position: 'relative' }}>
           <textarea
             value={value}
             onChange={e => onChange(e.target.value)}
-            placeholder="Notes for next time..."
+            placeholder={t('notesPlaceholder')}
             autoFocus
             className="notes-area"
             style={{
@@ -460,7 +547,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
                 padding: '2px 4px',
               }}
             >
-              HIDE
+              {t('notesHide')}
             </button>
           )}
         </div>
@@ -473,6 +560,9 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 export default function ActiveSessionScreen({
   userId, split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, onFinish, onBack, onSessionSwap,
 }: ActiveSessionScreenProps) {
+  const t = useTranslations('screens.activeSession')
+  const common = useTranslations('common')
+  const numberPadT = useTranslations('numberPad')
   const [logs, setLogs] = useState<ExerciseLog[]>(() =>
     initialLogs ??
     plan.map(item => ({
@@ -484,6 +574,7 @@ export default function ActiveSessionScreen({
         reps: 0,
         completed: false,
         skipped: false,
+        rir: null,
       })),
       notes: '',
     }))
@@ -501,6 +592,10 @@ export default function ActiveSessionScreen({
   const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
+  // Persistent per the plan's requirement ("reachable every time it's
+  // shown, not once") — a plain toggle, not a one-time onboarding flag; no
+  // dismiss-forever state anywhere.
+  const [rirExplainerOpen, setRirExplainerOpen] = useState(false)
   // GYM-95: pending in-memory logs op with 3s Undo. Mid-session is today-only;
   // no routine prompt (per plan). `flush` is a no-op — there's no DB write to
   // defer for mid-session add/remove.
@@ -541,7 +636,7 @@ export default function ActiveSessionScreen({
   ))
 
   const currentEx = logs[currentExIdx]
-  const currentPlan = currentExIdx < plan.length ? plan[currentExIdx] : {
+  const currentPlan: SessionExercisePlan = currentExIdx < plan.length ? plan[currentExIdx] : {
     exercise: {
       name: currentEx.exerciseName,
       canonicalName: currentEx.exerciseName,
@@ -552,8 +647,10 @@ export default function ActiveSessionScreen({
       availableWeights: [] as number[],
       weightUnit: 'lbs' as const,
     },
-    coachingNote: null,
+    exerciseId: '',
+    targetWeightOrigin: null,
     targetWeight: null,
+    flags: [],
   }
   const exerciseDef = currentPlan.exercise
   const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
@@ -607,6 +704,7 @@ export default function ActiveSessionScreen({
         entry: `${ex.exerciseName} — Set ${si + 1}`,
         notes: ex.notes || undefined,
         unit: (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
+        rir: set.rir ?? undefined,
       })
       setIndices.push(si + 1)  // 1-indexed set number
     }
@@ -628,6 +726,7 @@ export default function ActiveSessionScreen({
               weight: entries[i].weight,
               reps: entries[i].reps,
               notes: entries[i].notes ?? '',
+              rir: entries[i].rir ?? null,
             }
           })
         }
@@ -677,6 +776,19 @@ export default function ActiveSessionScreen({
     })
     setPadMode(null)
     setActiveSetIdx(null)
+  }
+
+  function selectRir(setIdx: number, value: number | null) {
+    setLogs(prev => {
+      const next = [...prev]
+      const ex = { ...next[currentExIdx], sets: [...next[currentExIdx].sets] }
+      ex.sets[setIdx] = { ...ex.sets[setIdx], rir: value }
+      next[currentExIdx] = ex
+      return next
+    })
+    // A RIR change after auto-save (e.g. logged reps first, RIR a moment
+    // later) must still make it to the DB — allow re-save.
+    savedExIndices.current.delete(currentExIdx)
   }
 
   function updateNotes(value: string) {
@@ -758,6 +870,7 @@ export default function ActiveSessionScreen({
         reps: prefillReps ?? 0,
         completed: false,
         skipped: false,
+        rir: null,
       })),
       notes: '',
       isCustom: matched === null,
@@ -838,7 +951,7 @@ export default function ActiveSessionScreen({
       const next = [...prev]
       const ex = { ...next[currentExIdx], sets: [...next[currentExIdx].sets] }
       const lastSet = ex.sets[ex.sets.length - 1]
-      ex.sets = [...ex.sets, { weight: lastSet?.weight ?? 0, reps: 0, completed: false, skipped: false }]
+      ex.sets = [...ex.sets, { weight: lastSet?.weight ?? 0, reps: 0, completed: false, skipped: false, rir: null }]
       next[currentExIdx] = ex
       return next
     })
@@ -889,26 +1002,38 @@ export default function ActiveSessionScreen({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {showSaved && (
             <span className="saved-indicator font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-              ✓ SAVED
+              ✓ {t('savedIndicator')}
             </span>
           )}
           <button
             onClick={() => setOverviewVisible(true)}
             style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.06em', padding: '5px 10px', cursor: 'pointer' }}
           >
-            {currentExIdx + 1}/{plan.length} · OVERVIEW
+            {currentExIdx + 1}/{plan.length} · {t('overviewLabel')}
           </button>
         </div>
+        {/* Fixed-content spacer preserves header layout balance without a
+           hardcoded pixel width — CLAUDE.md's localized-text rule
+           (a `width: '60px'` spacer here, eyeballed to balance the English
+           word "FINISH", broke under Spanish "TERMINAR"). Rendering the
+           real FINISH button with visibility:hidden auto-sizes to
+           whatever locale/length is active instead. */}
         {allExercisesDone ? (
           <button
             onClick={() => onFinish(logs, snapshot.current)}
             disabled={saving}
-            style={{ background: 'var(--accent)', color: '#0C0B09', border: 'none', borderRadius: '2px', padding: '8px 16px', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.1em', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: '2px', padding: '8px 16px', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.1em', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
           >
-            FINISH
+            {t('finish')}
           </button>
         ) : (
-          <div style={{ width: '60px' }} />
+          <button
+            aria-hidden="true"
+            tabIndex={-1}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '2px', padding: '8px 16px', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1rem', letterSpacing: '0.1em', visibility: 'hidden', pointerEvents: 'none' }}
+          >
+            {t('finish')}
+          </button>
         )}
       </div>
 
@@ -927,22 +1052,22 @@ export default function ActiveSessionScreen({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--text-mid)' }}>
-            {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} reps
+            {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} {t('reps').toLowerCase()}
           </span>
           <button
             onClick={toggleUnit}
             style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
           >
-            {activeUnit.toUpperCase()}
+            {activeUnit === 'pins' ? t('unitPins') : t('unitLbs')}
           </button>
           <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
-            {swapShown ? 'HIDE' : 'SWAP'}
+            {swapShown ? t('hide') : common('swap')}
           </button>
           <button
             onClick={skipExercise}
             style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
           >
-            SKIP
+            {t('skip')}
           </button>
         </div>
         {swapShown && (() => {
@@ -952,22 +1077,22 @@ export default function ActiveSessionScreen({
           if (pendingSwapName) return (
             <div style={{ marginTop: '10px' }}>
               <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '10px', lineHeight: 1.5 }}>
-                Replace <span style={{ color: 'var(--rust)' }}>{currentEx.exerciseName}</span> with <span style={{ color: 'var(--accent)' }}>{pendingSwapName}</span> for this exercise?
+                {t('replaceWith', { oldName: currentEx.exerciseName, newName: pendingSwapName })}
                 <br />
-                <span style={{ color: 'var(--text-secondary)' }}>You&apos;ll be asked to save as default after the session.</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('swapNote')}</span>
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => swapToExercise(pendingSwapName)}
-                  style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--bg)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px', cursor: 'pointer' }}
+                  style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--on-accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px', cursor: 'pointer' }}
                 >
-                  CONFIRM SWAP
+                  {t('confirmSwap')}
                 </button>
                 <button
                   onClick={() => setPendingSwapName(null)}
                   style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '8px 14px', cursor: 'pointer' }}
                 >
-                  CANCEL
+                  {t('cancel2')}
                 </button>
               </div>
             </div>
@@ -975,7 +1100,7 @@ export default function ActiveSessionScreen({
 
           if (!options.length) return (
             <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-              No alternatives available
+              {t('noAlternatives')}
             </p>
           )
           return (
@@ -989,7 +1114,7 @@ export default function ActiveSessionScreen({
                     onClick={() => setPendingSwapName(altName)}
                     style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
                   >
-                    USE NOW
+                    {t('useNow')}
                   </button>
                 </div>
               ))}
@@ -1024,7 +1149,7 @@ export default function ActiveSessionScreen({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span className="section-label">SET {i + 1}</span>
+                <span className="section-label">{t('setLabel', { setNumber: i + 1 })}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {set.completed && <span style={{ color: 'var(--accent)', fontSize: '0.8rem' }}>✓</span>}
                   {isSkipped ? (
@@ -1032,7 +1157,7 @@ export default function ActiveSessionScreen({
                       onClick={() => unskipSet(i)}
                       style={{ background: 'none', border: '1px solid var(--rust-border)', borderRadius: '2px', color: 'var(--rust)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '2px 7px', cursor: 'pointer' }}
                     >
-                      SKIPPED · UNDO
+                      {t('skippedUndo')}
                     </button>
                   ) : (
                     !set.completed && (
@@ -1040,7 +1165,7 @@ export default function ActiveSessionScreen({
                         onClick={() => skipSet(i)}
                         style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '2px 7px', cursor: 'pointer' }}
                       >
-                        SKIP
+                        {t('skip')}
                       </button>
                     )
                   )}
@@ -1048,50 +1173,60 @@ export default function ActiveSessionScreen({
               </div>
 
               {!isSkipped && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                  {/* Weight */}
-                  <button
-                    onClick={() => openWeightPad(i)}
-                    className="weight-btn"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
-                  >
-                    <span className="section-label">{activeUnit === 'pins' ? 'PIN' : 'WEIGHT'}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
-                        {set.weight > 0 ? set.weight : '—'}
-                      </span>
-                      {set.weight > 0 && activeUnit !== 'pins' && (
-                        <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>lbs</span>
-                      )}
-                    </div>
-                  </button>
+                <>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                    {/* Weight */}
+                    <button
+                      onClick={() => openWeightPad(i)}
+                      className="weight-btn"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', padding: 0 }}
+                    >
+                      <span className="section-label">{activeUnit === 'pins' ? t('pin') : t('weight')}</span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                        <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.weight > 0 ? 'var(--text-primary)' : 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                          {set.weight > 0 ? set.weight : '—'}
+                        </span>
+                        {set.weight > 0 && activeUnit !== 'pins' && (
+                          <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('unitLbs').toLowerCase()}</span>
+                        )}
+                      </div>
+                    </button>
 
-                  {/* Reps */}
-                  <button
-                    onClick={() => openRepPad(i)}
-                    className="reps-btn"
-                    style={{
-                      background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
-                      border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
-                      borderRadius: '2px',
-                      padding: '0 16px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 0,
-                      minWidth: '72px',
-                      alignSelf: 'stretch',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <span className="section-label" style={{ paddingTop: '2px' }}>REPS</span>
-                    <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em', paddingBottom: '2px' }}>
-                      {set.reps > 0 ? set.reps : '—'}
-                    </span>
-                  </button>
-                </div>
+                    {/* Reps */}
+                    <button
+                      onClick={() => openRepPad(i)}
+                      className="reps-btn"
+                      style={{
+                        background: set.completed ? 'var(--accent-dim)' : 'var(--surface-2)',
+                        border: `1px solid ${set.completed ? 'var(--accent-border)' : 'var(--border)'}`,
+                        borderRadius: '2px',
+                        padding: '0 16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 0,
+                        minWidth: '72px',
+                        alignSelf: 'stretch',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <span className="section-label" style={{ paddingTop: '2px' }}>{t('reps')}</span>
+                      <span className="font-display" style={{ fontSize: '2.8rem', lineHeight: 1, color: set.reps > 0 ? 'var(--accent)' : 'var(--text-secondary)', letterSpacing: '0.02em', paddingBottom: '2px' }}>
+                        {set.reps > 0 ? set.reps : '—'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* RIR — persistent inline explainer, every set, every time */}
+                  <RirRow
+                    value={set.rir}
+                    explainerOpen={rirExplainerOpen}
+                    onToggleExplainer={() => setRirExplainerOpen(o => !o)}
+                    onSelect={v => selectRir(i, v)}
+                  />
+                </>
               )}
             </div>
           )
@@ -1119,7 +1254,7 @@ export default function ActiveSessionScreen({
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)' }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)' }}
         >
-          + ADD SET
+          {t('addSet')}
         </button>
 
         {/* Notes field */}
@@ -1131,7 +1266,7 @@ export default function ActiveSessionScreen({
         {/* Next exercise preview */}
         {allCurrentSetsDone && !isLastExercise && (
           <div style={{ marginTop: '6px', padding: '16px 14px', background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', borderRadius: '2px' }}>
-            <p className="section-label" style={{ color: 'var(--accent)', margin: '0 0 4px 0' }}>NEXT UP</p>
+            <p className="section-label" style={{ color: 'var(--accent)', margin: '0 0 4px 0' }}>{t('nextUp')}</p>
             <p className="font-sans" style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0' }}>
               {logs[currentExIdx + 1]?.exerciseName ?? ''}
             </p>
@@ -1139,7 +1274,7 @@ export default function ActiveSessionScreen({
               onClick={() => { setCurrentExIdx(i => i + 1); setSwapShown(false) }}
               className="btn-primary"
             >
-              NEXT EXERCISE →
+              {t('nextExercise')}
             </button>
           </div>
         )}
@@ -1151,7 +1286,7 @@ export default function ActiveSessionScreen({
           initialValue={currentEx.sets[activeSetIdx].reps || null}
           onConfirm={confirmReps}
           onCancel={() => { setPadMode(null); setActiveSetIdx(null) }}
-          label={`Set ${activeSetIdx + 1} — reps`}
+          label={numberPadT('repsLabel', { setNumber: activeSetIdx + 1 })}
           maxValue={99}
         />
       )}
