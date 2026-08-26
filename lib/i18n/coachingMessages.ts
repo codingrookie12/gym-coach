@@ -89,6 +89,19 @@ export function useCoachingFlagText(flag: CoachingFlag): RenderedCoachingFlag {
     params.strategy = strategyKind ? strategyT(STRATEGY_KEY[strategyKind]) : ''
   }
 
+  // `volume-under-mev`/`volume-over-mrv` interpolate {muscleGroup} — it's a
+  // top-level CoachingFlag field (scope metadata), not part of flag.params,
+  // so it's missing from the loop above. Without this, next-intl can't
+  // resolve the required ICU argument and silently falls back to rendering
+  // the raw message key (e.g. "coaching.flags.volumeUnderMev.plain")
+  // instead of the actual text — confirmed live via browser verification.
+  // Muscle-group name display stays in English even in es locale for now;
+  // localizing it is Phase 4's closed-vocabulary-translation scope, not
+  // this fix's job.
+  if (flag.muscleGroup) {
+    params.muscleGroup = flag.muscleGroup
+  }
+
   return {
     technical: t(`${key}.technical`, params as any),
     plain: t(`${key}.plain`, params as any),
