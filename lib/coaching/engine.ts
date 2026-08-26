@@ -302,6 +302,27 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
   }
 
   // ─── Muscle-group volume landmarks ──────────────────────────────────────
+  // `muscleVolume` itself stays the full, ungated table (every muscle group
+  // with a landmark for this experience level) — it's the raw data other
+  // consumers (a future full-program stats view) may want untouched. What we
+  // curate into `sessionFlags` (the actionable call-outs THIS session's
+  // screen surfaces) is deliberately narrower, for two reasons found live in
+  // the app (a brand-new user's pre-session screen dumping an under-MEV flag
+  // for all ~17 muscle groups at once):
+  //
+  // 1. A weekly-volume comparison is close to meaningless before the user
+  //    has something like a full month of real logging — `established` is
+  //    the dataMaturity tier that already gates this screen's "still
+  //    learning your baseline" notice (see CoachingContextScreen.tsx), so
+  //    gating volume flags the same way keeps the screen from asserting
+  //    confident volume-deficit claims in the same breath it's telling the
+  //    user their baseline isn't known yet.
+  // 2. Even once established, a muscle group with zero relevance to what's
+  //    actually programmed today (e.g. flagging Glutes/Hamstrings/Calves on
+  //    an upper-body day) is noise on a *pre-session* screen — scope to
+  //    muscles this specific session's routine actually trains.
+  const dataMaturity = computeDataMaturity(programSessions.length)
+  const todaysMuscleGroups = new Set(routine.flatMap(r => [...r.primaryMuscles, ...r.secondaryMuscles]))
   const muscleVolume = buildMuscleVolumeStatus(
     programSessions,
     exerciseMuscles,
@@ -310,40 +331,43 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
     landmarks,
     setCreditingRule
   )
-  for (const status of muscleVolume) {
-    if (status.zone === 'under-mev') {
-      sessionFlags.push(
-        buildFlag({
-          kind: 'volume-under-mev',
-          scope: 'muscle-group',
-          muscleGroup: status.muscleGroup,
-          date: today,
-          params: { weeklyCreditedSets: status.weeklyCreditedSets, mev: status.mev },
-          origin: 'structural',
-          landmarksVersion: status.landmarksVersion,
-          setCreditingVersion: status.setCreditingVersion,
-        })
-      )
-    } else if (status.zone === 'over-mrv') {
-      sessionFlags.push(
-        buildFlag({
-          kind: 'volume-over-mrv',
-          scope: 'muscle-group',
-          muscleGroup: status.muscleGroup,
-          date: today,
-          params: { weeklyCreditedSets: status.weeklyCreditedSets, mrv: status.mrv },
-          origin: 'structural',
-          landmarksVersion: status.landmarksVersion,
-          setCreditingVersion: status.setCreditingVersion,
-        })
-      )
+  if (dataMaturity === 'established') {
+    for (const status of muscleVolume) {
+      if (!todaysMuscleGroups.has(status.muscleGroup)) continue
+      if (status.zone === 'under-mev') {
+        sessionFlags.push(
+          buildFlag({
+            kind: 'volume-under-mev',
+            scope: 'muscle-group',
+            muscleGroup: status.muscleGroup,
+            date: today,
+            params: { weeklyCreditedSets: status.weeklyCreditedSets, mev: status.mev },
+            origin: 'structural',
+            landmarksVersion: status.landmarksVersion,
+            setCreditingVersion: status.setCreditingVersion,
+          })
+        )
+      } else if (status.zone === 'over-mrv') {
+        sessionFlags.push(
+          buildFlag({
+            kind: 'volume-over-mrv',
+            scope: 'muscle-group',
+            muscleGroup: status.muscleGroup,
+            date: today,
+            params: { weeklyCreditedSets: status.weeklyCreditedSets, mrv: status.mrv },
+            origin: 'structural',
+            landmarksVersion: status.landmarksVersion,
+            setCreditingVersion: status.setCreditingVersion,
+          })
+        )
+      }
     }
   }
 
   const context: CoachingContext = {
     lastSessionDate: lastSession?.date ?? null,
     recoveryGapDays,
-    dataMaturity: computeDataMaturity(programSessions.length),
+    dataMaturity,
     deloadRecommended,
     muscleVolume,
     flags: sessionFlags,

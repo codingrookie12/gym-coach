@@ -186,10 +186,13 @@ export default function CoachingContextScreen({
             </div>
           )}
 
-          {/* Session/muscle-group signals — deload, volume landmarks */}
+          {/* Session/muscle-group signals — deload, volume landmarks. Own
+              label (not the shared "watch") since this is program-level
+              (is this session's training balanced?), distinct from the
+              per-exercise watch items below. */}
           {signalFlags.length > 0 && (
             <div className="card-rust p-4">
-              <p className="section-label" style={{ margin: '0 0 8px 0', color: 'var(--rust)' }}>{t('watch')}</p>
+              <p className="section-label" style={{ margin: '0 0 8px 0', color: 'var(--rust)' }}>{t('programBalance')}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {signalFlags.map(flag => (
                   <FlagLine key={flag.id} flag={flag} />
