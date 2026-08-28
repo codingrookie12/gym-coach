@@ -15,7 +15,6 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import ProgressHistoryScreen from '@/components/screens/ProgressHistoryScreen'
 import ExerciseBrowserScreen from '@/components/screens/ExerciseBrowserScreen'
 import MeScreen from '@/components/screens/MeScreen'
-import ReportsLandingScreen from '@/components/screens/ReportsLandingScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
 // NOTE: '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts file,
@@ -871,7 +870,11 @@ export default function App() {
               }}
             />
           ) : showProgressHistory ? (
-            <ProgressHistoryScreen onBack={() => setShowProgressHistory(false)} />
+            <ProgressHistoryScreen
+              onBack={() => setShowProgressHistory(false)}
+              userId={appState.user?.id}
+              userProgramSplitId={appState.userProgramSplitId ?? undefined}
+            />
           ) : showExerciseBrowser && appState.user ? (
             <ExerciseBrowserScreen
               userId={appState.user.id}
@@ -898,9 +901,16 @@ export default function App() {
           )}
         </div>
 
-        {/* Reports tab — GYM-19/Section 6: standalone 4th tab, landing stub only (Phase 4 rebuilds ProgressHistoryScreen here) */}
+        {/* Reports tab — GYM-19/Section 6 + Phase 4: ProgressHistoryScreen is
+            now the real landing screen (no back arrow — a top-level tab, not
+            an overlay). It stays reachable from Library → History too (the
+            `showProgressHistory` branch above) — that entry point still
+            works and wasn't removed, just no longer the only way in. */}
         <div style={{ height: '100%', display: activeTab === 'reports' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <ReportsLandingScreen />
+          <ProgressHistoryScreen
+            userId={appState.user?.id}
+            userProgramSplitId={appState.userProgramSplitId ?? undefined}
+          />
         </div>
 
         {/* Me tab */}

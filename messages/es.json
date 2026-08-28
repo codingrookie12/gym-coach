@@ -368,7 +368,29 @@
       "splitPush": "EMPUJE",
       "splitPull": "JALÓN",
       "splitLegs": "PIERNAS",
-      "splitMixed": "MIXTO"
+      "splitMixed": "MIXTO",
+      "streakLabel": "DÍAS ENTRENADOS · ÚLTIMOS 7",
+      "dayStreak": "{count} DÍAS SEGUIDOS",
+      "weekdayMon": "L",
+      "weekdayTue": "M",
+      "weekdayWed": "X",
+      "weekdayThu": "J",
+      "weekdayFri": "V",
+      "weekdaySat": "S",
+      "weekdaySun": "D",
+      "lbsAbbrev": "LBS",
+      "steady": "— ESTABLE",
+      "sessionsCaption": "{count, plural, one {# SESIÓN · 30D} other {# SESIONES · 30D}}",
+      "notTrainedCaption": "SIN ENTRENAR · 30D",
+      "noGroupSessions": "Sin sesiones de {group} en los últimos 90 días",
+      "daysAgoShort": "HACE {count}D",
+      "weeksAgoShort": "HACE {count}SEM",
+      "coachingSignalsHeading": "SEÑALES DE COACHING",
+      "frequencyHeading": "FRECUENCIA DE ENTRENO · 90D",
+      "volumeHeading": "VOLUMEN TOTAL · TENDENCIA",
+      "muscleBalanceHeading": "BALANCE MUSCULAR · ESTA SEMANA",
+      "progressionHeading": "PROGRESIÓN · POR MÚSCULO",
+      "technicalLabel": "TÉCNICO"
     }
   },
   "coaching": {
@@ -425,5 +447,15 @@
       "developing": "Construyendo un panorama de tu entrenamiento"
     },
     "provenanceInferred": "estimado — sin RIR registrado"
+  },
+  "vocab": {
+    "muscleGroups": {
+      "chest": "PECHO",
+      "back": "ESPALDA",
+      "shoulders": "HOMBROS",
+      "arms": "BRAZOS",
+      "legs": "PIERNAS",
+      "core": "CORE"
+    }
   }
 }
