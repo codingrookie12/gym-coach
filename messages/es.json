@@ -301,7 +301,16 @@
       "exercises": "EJERCICIOS",
       "tapToCompleteHint": "Toca para completar — necesario para el historial",
       "browseAndSearch": "EXPLORAR Y BUSCAR",
-      "recent": "RECIENTES"
+      "recent": "RECIENTES",
+      "select": "SELECCIONAR →",
+      "myPrograms": "MIS\nPROGRAMAS",
+      "explorePrograms": "EXPLORAR\nPROGRAMAS",
+      "buildMyOwn": "CREAR\nEL MÍO",
+      "viewProgress": "VER PROGRESO →",
+      "total": "{count} EN TOTAL",
+      "browse": "EXPLORAR →",
+      "customNeedsMetadata": "{count, plural, one {PERSONALIZADO · # NECESITA DATOS} other {PERSONALIZADO · # NECESITAN DATOS}}",
+      "daysAbbrev": "D"
     },
     "exerciseBrowser": {
       "browse": "EXPLORAR",
@@ -321,7 +330,18 @@
       "noCustomExercises": "SIN EJERCICIOS PERSONALIZADOS",
       "searchPlaceholder": "Buscar ejercicios...",
       "cannotDeleteLogged": "No se puede eliminar — ya tiene series registradas. Renómbralo en su lugar.",
-      "deleteFailed": "Error al eliminar. Intenta de nuevo."
+      "deleteFailed": "Error al eliminar. Intenta de nuevo.",
+      "title": "EJERCICIOS",
+      "total": "{count} EN TOTAL",
+      "filter": "FILTRAR",
+      "resultsCount": "{count, plural, one {# EJERCICIO} other {# EJERCICIOS}}",
+      "searchQuerySuffix": " · \"{query}\"",
+      "newCustomExercise": "+ NUEVO EJERCICIO PERSONALIZADO",
+      "tapToAddOwn": "Toca \"+ NUEVO EJERCICIO PERSONALIZADO\" para agregar el tuyo",
+      "needsMetadata": "NECESITA DATOS · {count}",
+      "needsMetadataHint": "Toca para completar — no aparecerán en el historial hasta hacerlo.",
+      "yourExercises": "TUS EJERCICIOS · {count}",
+      "customTag": "Personalizado"
     },
     "manageWeights": {
       "title": "Administrar Pesos",
@@ -458,6 +478,54 @@
       "arms": "BRAZOS",
       "legs": "PIERNAS",
       "core": "CORE"
+    },
+    "programStyle": {
+      "hypertrophy": "HIPERTROFIA",
+      "strength": "FUERZA",
+      "endurance": "RESISTENCIA",
+      "powerlifting": "POWERLIFTING"
+    },
+    "programLevel": {
+      "beginner": "PRINCIPIANTE",
+      "intermediate": "INTERMEDIO",
+      "advanced": "AVANZADO"
+    },
+    "muscles": {
+      "abdominals": "Abdominales",
+      "abductors": "Abductores",
+      "adductors": "Aductores",
+      "biceps": "Bíceps",
+      "calves": "Pantorrillas",
+      "chest": "Pecho",
+      "forearms": "Antebrazos",
+      "glutes": "Glúteos",
+      "hamstrings": "Isquiotibiales",
+      "lats": "Dorsales",
+      "lowerBack": "Espalda Baja",
+      "middleBack": "Espalda Media",
+      "neck": "Cuello",
+      "quadriceps": "Cuádriceps",
+      "shoulders": "Hombros",
+      "traps": "Trapecios",
+      "triceps": "Tríceps"
+    },
+    "equipment": {
+      "barbell": "Barra",
+      "dumbbell": "Mancuerna",
+      "cable": "Polea",
+      "machine": "Máquina",
+      "ezBar": "Barra Z",
+      "bands": "Bandas",
+      "kettlebell": "Pesa Rusa",
+      "bodyweight": "Peso Corporal",
+      "exerciseBall": "Balón de Ejercicio",
+      "foamRoll": "Rodillo de Espuma",
+      "medicineBall": "Balón Medicinal",
+      "other": "Otro"
+    },
+    "mechanic": {
+      "compound": "Compuesto",
+      "isolation": "Aislamiento"
     }
   }
 }

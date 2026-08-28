@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { ALL_EXERCISES } from '@/lib/exerciseLibrary'
 import { type Split } from '@/lib/routines'
 import { type Program } from '@/lib/programs'
@@ -51,6 +52,9 @@ export default function ExerciseLibraryScreen({
   onOpenCustomExercises,
   pendingCustomCount = 0,
 }: ExerciseLibraryScreenProps) {
+  const t = useTranslations('screens.exerciseLibrary')
+  const vocabStyle = useTranslations('vocab.programStyle')
+  const vocabLevel = useTranslations('vocab.programLevel')
   const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
   const [switching, setSwitching] = useState<string | null>(null)
   const [historySummary, setHistorySummary] = useState<HistorySummary | null>(null)
@@ -86,14 +90,14 @@ export default function ExerciseLibraryScreen({
         {onBack && (
           <button
             onClick={onBack}
-            style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px', minWidth: '44px', minHeight: '44px' }}
           >
             ←
           </button>
         )}
         <div style={{ flex: 1 }}>
           <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
-            LIBRARY
+            {t('library')}
           </span>
         </div>
       </div>
@@ -104,7 +108,7 @@ export default function ExerciseLibraryScreen({
         {/* ── PROGRAMS SECTION ── */}
         <div style={{ borderBottom: '1px solid var(--border)' }}>
           <div style={{ padding: '14px 20px 0' }}>
-            <span className="section-label">PROGRAMS</span>
+            <span className="section-label">{t('programs')}</span>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', padding: '10px 16px 14px', overflowX: 'auto' }}>
@@ -143,26 +147,26 @@ export default function ExerciseLibraryScreen({
                   }}
                 >
                   {isActive && (
-                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>ACTIVE</span>
+                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>{t('active')}</span>
                   )}
                   {switching === program.id && (
-                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>SWITCHING...</span>
+                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>{t('switching')}</span>
                   )}
                   <span className="font-display" style={{ fontSize: '0.95rem', color: 'var(--text-primary)', letterSpacing: '0.06em', lineHeight: 1 }}>
                     {program.name}
                   </span>
                   {style && (
                     <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: styleColor[style] ?? 'var(--text-secondary)' }}>
-                      {style.toUpperCase()}
+                      {vocabStyle(style)}
                     </span>
                   )}
                   {level && (
                     <span className="font-mono" style={{ fontSize: '0.5rem', letterSpacing: '0.08em', color: levelColor[level] ?? 'var(--text-secondary)' }}>
-                      {level.toUpperCase()}
+                      {vocabLevel(level)}
                     </span>
                   )}
                   {!isActive && switching !== program.id && (
-                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '2px' }}>SELECT →</span>
+                    <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '2px' }}>{t('select')}</span>
                   )}
                 </button>
               )
@@ -178,7 +182,7 @@ export default function ExerciseLibraryScreen({
                   borderRadius: '2px', textAlign: 'left', cursor: 'pointer',
                 }}
               >
-                <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4 }}>MY{'\n'}PROGRAMS</span>
+                <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4, whiteSpace: 'pre-line' }}>{t('myPrograms')}</span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>›</span>
               </button>
             )}
@@ -193,7 +197,7 @@ export default function ExerciseLibraryScreen({
               }}
             >
               <span style={{ fontSize: '1.2rem', color: 'var(--accent)' }}>+</span>
-              <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.08em', lineHeight: 1.4 }}>EXPLORE{'\n'}PROGRAMS</span>
+              <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.08em', lineHeight: 1.4, whiteSpace: 'pre-line' }}>{t('explorePrograms')}</span>
             </button>
 
             <button
@@ -206,7 +210,7 @@ export default function ExerciseLibraryScreen({
               }}
             >
               <span style={{ fontSize: '1.2rem', color: 'var(--text-mid)' }}>+</span>
-              <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4 }}>BUILD{'\n'}MY OWN</span>
+              <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-mid)', letterSpacing: '0.08em', lineHeight: 1.4, whiteSpace: 'pre-line' }}>{t('buildMyOwn')}</span>
             </button>
           </div>
 
@@ -236,7 +240,7 @@ export default function ExerciseLibraryScreen({
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
-              EDIT ROUTINE
+              {t('editRoutine')}
             </button>
           )}
         </div>
@@ -244,7 +248,7 @@ export default function ExerciseLibraryScreen({
         {/* ── HISTORY SECTION ── */}
         <div style={{ borderBottom: '1px solid var(--border)' }}>
           <div style={{ padding: '14px 20px 0' }}>
-            <span className="section-label">HISTORY</span>
+            <span className="section-label">{t('history')}</span>
           </div>
 
           <button
@@ -265,12 +269,12 @@ export default function ExerciseLibraryScreen({
                   {trainedOf7}<span style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>/7</span>
                 </span>
                 <span className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
-                  DAYS TRAINED
+                  {t('daysTrained')}
                 </span>
                 <div style={{ flex: 1 }} />
                 {streak >= 2 && (
                   <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', letterSpacing: '0.08em' }}>
-                    🔥 {streak}D
+                    🔥 {streak}{t('daysAbbrev')}
                   </span>
                 )}
               </div>
@@ -296,7 +300,7 @@ export default function ExerciseLibraryScreen({
               {historySummary?.recentPR && (
                 <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <span className="tag accent">PR</span>
+                    <span className="tag accent">{t('pr')}</span>
                     <span className="font-body" style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                       {historySummary.recentPR.exerciseName}
                     </span>
@@ -310,14 +314,14 @@ export default function ExerciseLibraryScreen({
               {trainedOf7 === 0 && !historySummary?.recentPR && (
                 <div style={{ marginTop: '10px' }}>
                   <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>
-                    NO SESSIONS LOGGED YET
+                    {t('noSessionsLoggedYet')}
                   </span>
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
                 <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                  VIEW PROGRESS →
+                  {t('viewProgress')}
                 </span>
               </div>
             </div>
@@ -327,7 +331,7 @@ export default function ExerciseLibraryScreen({
         {/* ── EXERCISES SECTION (collapsed entry) ── */}
         <div>
           <div style={{ padding: '14px 20px 0' }}>
-            <span className="section-label">EXERCISES</span>
+            <span className="section-label">{t('exercises')}</span>
           </div>
 
           {pendingCustomCount > 0 && (
@@ -349,10 +353,10 @@ export default function ExerciseLibraryScreen({
               >
                 <div>
                   <div className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                    CUSTOM · {pendingCustomCount} NEED{pendingCustomCount === 1 ? 'S' : ''} METADATA
+                    {t('customNeedsMetadata', { count: pendingCustomCount })}
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.52rem', color: 'var(--text-secondary)', letterSpacing: '0.08em', marginTop: '3px' }}>
-                    Tap to complete — required for history tracking
+                    {t('tapToCompleteHint')}
                   </div>
                 </div>
                 <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em', flexShrink: 0 }}>→</span>
@@ -377,21 +381,21 @@ export default function ExerciseLibraryScreen({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: historySummary?.recentExerciseNames.length ? '12px' : 0 }}>
                 <div>
                   <div className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
-                    {totalCount} TOTAL
+                    {t('total', { count: totalCount })}
                   </div>
                   <div className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', marginTop: '4px' }}>
-                    BROWSE & SEARCH
+                    {t('browseAndSearch')}
                   </div>
                 </div>
                 <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
-                  BROWSE →
+                  {t('browse')}
                 </span>
               </div>
 
               {historySummary?.recentExerciseNames && historySummary.recentExerciseNames.length > 0 && (
                 <div style={{ paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
                   <div className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', letterSpacing: '0.12em', marginBottom: '6px' }}>
-                    RECENT
+                    {t('recent')}
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {historySummary.recentExerciseNames.map(name => (

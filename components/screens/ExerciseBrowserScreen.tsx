@@ -1,13 +1,17 @@
 'use client'
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   ALL_EXERCISES,
   ExerciseDefinition,
   Equipment,
+  Muscle,
   filterExercises,
   getUniqueEquipment,
   getUniqueMuscles,
+  MUSCLE_VOCAB_KEY,
+  EQUIPMENT_VOCAB_KEY,
 } from '@/lib/exerciseLibrary'
 import { getAllExercisesForProgram, Split } from '@/lib/routines'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
@@ -52,6 +56,11 @@ function pendingToDefinition(p: PendingExercise): ExerciseDefinition {
   }
 }
 
+// `label` is already the display-ready (translated, if applicable) string —
+// this primitive stays translation-agnostic; callers resolve i18n/vocab
+// keys before passing it in (Tier 1: keeps this reusable across
+// split/equipment/muscle chips, which draw from three different message
+// namespaces).
 function SplitChip({
   label, active, onClick,
 }: { label: string; active: boolean; onClick: () => void }) {
@@ -60,10 +69,13 @@ function SplitChip({
       onClick={onClick}
       style={{
         background: active ? 'var(--accent)' : 'var(--surface-2)',
-        color: active ? '#0C0B09' : 'var(--text-mid)',
+        color: active ? 'var(--on-accent)' : 'var(--text-mid)',
         border: active ? '1px solid var(--accent)' : '1px solid var(--border-2)',
         borderRadius: '2px',
         padding: '5px 12px',
+        minHeight: '44px',
+        display: 'flex',
+        alignItems: 'center',
         fontFamily: 'Space Mono, monospace',
         fontSize: '0.6rem',
         letterSpacing: '0.1em',
@@ -71,6 +83,7 @@ function SplitChip({
         transition: 'all 0.1s',
         flexShrink: 0,
         userSelect: 'none',
+        whiteSpace: 'nowrap',
       }}
     >
       {label.toUpperCase()}
@@ -89,6 +102,10 @@ function ExerciseRow({
   isCustom: boolean
   onTap: (ex: ExerciseDefinition) => void
 }) {
+  const t = useTranslations('screens.exerciseBrowser')
+  const vocabEquipment = useTranslations('vocab.equipment')
+  const vocabMuscles = useTranslations('vocab.muscles')
+  const vocabMechanic = useTranslations('vocab.mechanic')
   return (
     <button
       onClick={() => onTap(exercise)}
@@ -132,12 +149,12 @@ function ExerciseRow({
           {exercise.name}
         </div>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <span className="tag">{exercise.equipment}</span>
+          <span className="tag">{vocabEquipment(EQUIPMENT_VOCAB_KEY[exercise.equipment])}</span>
           {exercise.primaryMuscles.slice(0, 2).map(m => (
-            <span key={m} className="tag">{m}</span>
+            <span key={m} className="tag">{vocabMuscles(MUSCLE_VOCAB_KEY[m])}</span>
           ))}
-          {isCustom && <span className="tag accent">Custom</span>}
-          {inProgram && <span className="tag accent">In Program</span>}
+          {isCustom && <span className="tag accent">{t('customTag')}</span>}
+          {inProgram && <span className="tag accent">{t('inProgram')}</span>}
         </div>
       </div>
       {exercise.mechanic && (
@@ -145,7 +162,7 @@ function ExerciseRow({
           className="font-mono"
           style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', flexShrink: 0 }}
         >
-          {exercise.mechanic.toUpperCase()}
+          {vocabMechanic(exercise.mechanic).toUpperCase()}
         </span>
       )}
     </button>
@@ -159,6 +176,10 @@ function BrowseTab({
   onSelectExercise: (ex: ExerciseDefinition) => void
   programExerciseNames: Set<string>
 }) {
+  const t = useTranslations('screens.exerciseBrowser')
+  const vocabEquipment = useTranslations('vocab.equipment')
+  const vocabMuscles = useTranslations('vocab.muscles')
+  const SPLIT_LABEL: Record<SplitFilter, string> = { All: t('all'), Push: t('push'), Pull: t('pull'), Legs: t('legs') }
   const [query, setQuery] = useState('')
   const [splitFilter, setSplitFilter] = useState<SplitFilter>('All')
   const [equipmentFilter, setEquipmentFilter] = useState<Equipment | 'All'>('All')
@@ -208,7 +229,7 @@ function BrowseTab({
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search exercises..."
+            placeholder={t('searchPlaceholder')}
             className="input-field"
             style={{ paddingLeft: '36px', paddingRight: query ? '36px' : '12px' }}
           />
@@ -230,7 +251,7 @@ function BrowseTab({
       <div style={{ flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '6px', padding: '10px 16px', overflowX: 'auto', borderBottom: '1px solid var(--border)' }}>
           {SPLITS.map(s => (
-            <SplitChip key={s} label={s} active={splitFilter === s} onClick={() => setSplitFilter(s)} />
+            <SplitChip key={s} label={SPLIT_LABEL[s]} active={splitFilter === s} onClick={() => setSplitFilter(s)} />
           ))}
           <div style={{ flexShrink: 0, width: '1px', background: 'var(--border-2)', margin: '0 4px' }} />
           <button
@@ -241,6 +262,7 @@ function BrowseTab({
               border: activeFilterCount > 0 ? '1px solid var(--accent-border)' : '1px solid var(--border-2)',
               borderRadius: '2px',
               padding: '5px 12px',
+              minHeight: '44px',
               fontFamily: 'Space Mono, monospace',
               fontSize: '0.6rem',
               letterSpacing: '0.1em',
@@ -249,15 +271,16 @@ function BrowseTab({
               display: 'flex',
               alignItems: 'center',
               gap: '5px',
+              whiteSpace: 'nowrap',
             }}
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
-            FILTER
+            {t('filter')}
             {activeFilterCount > 0 && (
               <span style={{
-                background: 'var(--accent)', color: '#0C0B09',
+                background: 'var(--accent)', color: 'var(--on-accent)',
                 borderRadius: '50%', width: '14px', height: '14px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.5rem', fontWeight: 700,
@@ -271,29 +294,29 @@ function BrowseTab({
         {showFilters && (
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <div className="section-label" style={{ marginBottom: '6px' }}>Equipment</div>
+              <div className="section-label" style={{ marginBottom: '6px' }}>{t('equipment')}</div>
               <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-                <SplitChip label="All" active={equipmentFilter === 'All'} onClick={() => setEquipmentFilter('All')} />
+                <SplitChip label={t('all')} active={equipmentFilter === 'All'} onClick={() => setEquipmentFilter('All')} />
                 {EQUIPMENT_OPTIONS.map(eq => (
-                  <SplitChip key={eq} label={eq} active={equipmentFilter === eq} onClick={() => setEquipmentFilter(eq)} />
+                  <SplitChip key={eq} label={vocabEquipment(EQUIPMENT_VOCAB_KEY[eq])} active={equipmentFilter === eq} onClick={() => setEquipmentFilter(eq)} />
                 ))}
               </div>
             </div>
             <div>
-              <div className="section-label" style={{ marginBottom: '6px' }}>Primary Muscle</div>
+              <div className="section-label" style={{ marginBottom: '6px' }}>{t('primaryMuscle')}</div>
               <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
-                <SplitChip label="All" active={muscleFilter === 'All'} onClick={() => setMuscleFilter('All')} />
+                <SplitChip label={t('all')} active={muscleFilter === 'All'} onClick={() => setMuscleFilter('All')} />
                 {MUSCLE_OPTIONS.map(m => (
-                  <SplitChip key={m} label={m} active={muscleFilter === m} onClick={() => setMuscleFilter(m)} />
+                  <SplitChip key={m} label={vocabMuscles(MUSCLE_VOCAB_KEY[m as Muscle])} active={muscleFilter === m} onClick={() => setMuscleFilter(m)} />
                 ))}
               </div>
             </div>
             {activeFilterCount > 0 && (
               <button
                 onClick={() => { setSplitFilter('All'); setEquipmentFilter('All'); setMuscleFilter('All') }}
-                style={{ background: 'none', border: '1px solid var(--rust-border)', color: 'var(--rust)', borderRadius: '2px', padding: '7px 12px', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', cursor: 'pointer', letterSpacing: '0.08em', alignSelf: 'flex-start' }}
+                style={{ background: 'none', border: '1px solid var(--rust-border)', color: 'var(--rust)', borderRadius: '2px', padding: '7px 12px', minHeight: '44px', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', cursor: 'pointer', letterSpacing: '0.08em', alignSelf: 'flex-start' }}
               >
-                CLEAR FILTERS
+                {t('clearFilters')}
               </button>
             )}
           </div>
@@ -302,8 +325,8 @@ function BrowseTab({
 
       <div style={{ padding: '8px 16px', flexShrink: 0 }}>
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-          {results.length} EXERCISE{results.length !== 1 ? 'S' : ''}
-          {query && ` · "${query}"`}
+          {t('resultsCount', { count: results.length })}
+          {query && t('searchQuerySuffix', { query })}
         </span>
       </div>
 
@@ -311,10 +334,10 @@ function BrowseTab({
         {results.length === 0 ? (
           <div style={{ padding: '48px 20px', textAlign: 'center' }}>
             <div className="font-display" style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '8px' }}>
-              NO RESULTS
+              {t('noResults')}
             </div>
             <div className="font-body" style={{ fontSize: '0.85rem', color: 'var(--border-2)' }}>
-              Try adjusting your search or filters
+              {t('tryAdjusting')}
             </div>
           </div>
         ) : (
@@ -340,6 +363,7 @@ export default function ExerciseBrowserScreen({
   preselectedExerciseName,
   defaultTab = 'browse',
 }: Props) {
+  const t = useTranslations('screens.exerciseBrowser')
   const [tab, setTab] = useState<Tab>(defaultTab)
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinition | null>(null)
   const [customRows, setCustomRows] = useState<PendingExercise[]>([])
@@ -382,36 +406,37 @@ export default function ExerciseBrowserScreen({
       >
         <button
           onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px', minWidth: '44px', minHeight: '44px' }}
         >
           ←
         </button>
         <div style={{ flex: 1 }}>
           <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
-            EXERCISES
+            {t('title')}
           </span>
         </div>
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-          {totalCount} TOTAL
+          {t('total', { count: totalCount })}
         </span>
       </div>
 
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         {([
-          { id: 'browse' as Tab, label: 'BROWSE' },
-          { id: 'custom' as Tab, label: 'CUSTOM', count: totalCustomCount },
-        ]).map(t => (
+          { id: 'browse' as Tab, label: t('browse') },
+          { id: 'custom' as Tab, label: t('custom'), count: totalCustomCount },
+        ]).map(tabDef => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tabDef.id}
+            onClick={() => setTab(tabDef.id)}
             style={{
               flex: 1,
               background: 'none',
               border: 'none',
-              borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
+              borderBottom: tab === tabDef.id ? '2px solid var(--accent)' : '2px solid transparent',
               padding: '12px 8px 10px',
-              color: tab === t.id ? 'var(--text-primary)' : 'var(--text-secondary)',
+              minHeight: '44px',
+              color: tab === tabDef.id ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontFamily: 'Space Mono, monospace',
               fontSize: '0.58rem',
               letterSpacing: '0.1em',
@@ -423,18 +448,18 @@ export default function ExerciseBrowserScreen({
               gap: '6px',
             }}
           >
-            {t.label}
-            {t.count !== undefined && t.count > 0 && (
+            {tabDef.label}
+            {tabDef.count !== undefined && tabDef.count > 0 && (
               <span style={{
-                background: tab === t.id ? 'var(--accent)' : 'var(--surface-2)',
-                color: tab === t.id ? '#0C0B09' : 'var(--text-secondary)',
+                background: tab === tabDef.id ? 'var(--accent)' : 'var(--surface-2)',
+                color: tab === tabDef.id ? 'var(--on-accent)' : 'var(--text-secondary)',
                 borderRadius: '2px',
                 padding: '1px 5px',
                 fontSize: '0.5rem',
                 fontWeight: 700,
                 transition: 'all 0.1s',
               }}>
-                {t.count}
+                {tabDef.count}
               </span>
             )}
           </button>
@@ -460,11 +485,12 @@ export default function ExerciseBrowserScreen({
                 fontSize: '0.65rem',
                 letterSpacing: '0.1em',
                 padding: '10px',
+                minHeight: '44px',
                 cursor: 'pointer',
                 transition: 'all 0.1s',
               }}
             >
-              + NEW CUSTOM EXERCISE
+              {t('newCustomExercise')}
             </button>
           </div>
 
@@ -472,10 +498,10 @@ export default function ExerciseBrowserScreen({
             {totalCustomCount === 0 ? (
               <div style={{ padding: '48px 20px', textAlign: 'center' }}>
                 <div className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                  NO CUSTOM EXERCISES
+                  {t('noCustomExercises')}
                 </div>
                 <div className="font-body" style={{ fontSize: '0.85rem', color: 'var(--border-2)' }}>
-                  Tap &ldquo;+ NEW CUSTOM EXERCISE&rdquo; to add your own
+                  {t('tapToAddOwn')}
                 </div>
               </div>
             ) : (
@@ -484,10 +510,10 @@ export default function ExerciseBrowserScreen({
                   <>
                     <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
                       <p className="section-label" style={{ margin: 0 }}>
-                        NEEDS METADATA · {pendingCustom.length}
+                        {t('needsMetadata', { count: pendingCustom.length })}
                       </p>
                       <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', margin: '4px 0 0', letterSpacing: '0.04em' }}>
-                        Tap to complete — these won&apos;t appear in history aggregations until done.
+                        {t('needsMetadataHint')}
                       </p>
                     </div>
                     {pendingCustom.map(p => (
@@ -506,7 +532,7 @@ export default function ExerciseBrowserScreen({
                   <>
                     <div style={{ padding: '14px 20px 6px', borderBottom: '1px solid var(--border)' }}>
                       <p className="section-label" style={{ margin: 0 }}>
-                        YOUR EXERCISES · {completeCustom.length}
+                        {t('yourExercises', { count: completeCustom.length })}
                       </p>
                     </div>
                     {completeCustom.map(p => (
@@ -565,9 +591,9 @@ export default function ExerciseBrowserScreen({
               await reloadCustom()
             } catch (e) {
               if (e instanceof CustomExerciseInUseError) {
-                setDeleteError("Can't delete — sets have been logged. Rename instead.")
+                setDeleteError(t('cannotDeleteLogged'))
               } else {
-                setDeleteError('Delete failed. Try again.')
+                setDeleteError(t('deleteFailed'))
               }
             }
           }}

@@ -301,7 +301,16 @@
       "exercises": "EXERCISES",
       "tapToCompleteHint": "Tap to complete — required for history tracking",
       "browseAndSearch": "BROWSE & SEARCH",
-      "recent": "RECENT"
+      "recent": "RECENT",
+      "select": "SELECT →",
+      "myPrograms": "MY\nPROGRAMS",
+      "explorePrograms": "EXPLORE\nPROGRAMS",
+      "buildMyOwn": "BUILD\nMY OWN",
+      "viewProgress": "VIEW PROGRESS →",
+      "total": "{count} TOTAL",
+      "browse": "BROWSE →",
+      "customNeedsMetadata": "{count, plural, one {CUSTOM · # NEEDS METADATA} other {CUSTOM · # NEED METADATA}}",
+      "daysAbbrev": "D"
     },
     "exerciseBrowser": {
       "browse": "BROWSE",
@@ -321,7 +330,18 @@
       "noCustomExercises": "NO CUSTOM EXERCISES",
       "searchPlaceholder": "Search exercises...",
       "cannotDeleteLogged": "Can't delete — sets have been logged. Rename instead.",
-      "deleteFailed": "Delete failed. Try again."
+      "deleteFailed": "Delete failed. Try again.",
+      "title": "EXERCISES",
+      "total": "{count} TOTAL",
+      "filter": "FILTER",
+      "resultsCount": "{count, plural, one {# EXERCISE} other {# EXERCISES}}",
+      "searchQuerySuffix": " · \"{query}\"",
+      "newCustomExercise": "+ NEW CUSTOM EXERCISE",
+      "tapToAddOwn": "Tap \"+ NEW CUSTOM EXERCISE\" to add your own",
+      "needsMetadata": "NEEDS METADATA · {count}",
+      "needsMetadataHint": "Tap to complete — these won't appear in history aggregations until done.",
+      "yourExercises": "YOUR EXERCISES · {count}",
+      "customTag": "Custom"
     },
     "manageWeights": {
       "title": "Manage Weights",
@@ -458,6 +478,54 @@
       "arms": "ARMS",
       "legs": "LEGS",
       "core": "CORE"
+    },
+    "programStyle": {
+      "hypertrophy": "HYPERTROPHY",
+      "strength": "STRENGTH",
+      "endurance": "ENDURANCE",
+      "powerlifting": "POWERLIFTING"
+    },
+    "programLevel": {
+      "beginner": "BEGINNER",
+      "intermediate": "INTERMEDIATE",
+      "advanced": "ADVANCED"
+    },
+    "muscles": {
+      "abdominals": "Abdominals",
+      "abductors": "Abductors",
+      "adductors": "Adductors",
+      "biceps": "Biceps",
+      "calves": "Calves",
+      "chest": "Chest",
+      "forearms": "Forearms",
+      "glutes": "Glutes",
+      "hamstrings": "Hamstrings",
+      "lats": "Lats",
+      "lowerBack": "Lower Back",
+      "middleBack": "Middle Back",
+      "neck": "Neck",
+      "quadriceps": "Quadriceps",
+      "shoulders": "Shoulders",
+      "traps": "Traps",
+      "triceps": "Triceps"
+    },
+    "equipment": {
+      "barbell": "Barbell",
+      "dumbbell": "Dumbbell",
+      "cable": "Cable",
+      "machine": "Machine",
+      "ezBar": "EZ Bar",
+      "bands": "Bands",
+      "kettlebell": "Kettlebell",
+      "bodyweight": "Bodyweight",
+      "exerciseBall": "Exercise Ball",
+      "foamRoll": "Foam Roll",
+      "medicineBall": "Medicine Ball",
+      "other": "Other"
+    },
+    "mechanic": {
+      "compound": "Compound",
+      "isolation": "Isolation"
     }
   }
 }
