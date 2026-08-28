@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { getAllExercises, Exercise, Split } from '@/lib/routines'
 import NumberPad from '@/components/ui/NumberPad'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -19,21 +20,25 @@ type SplitFilter = Split | 'All'
 
 const EMPTY_ENTRY: WeightEntry = { override: null, lastUsed: null, lastUsedAt: null }
 
-function formatLastUsedDate(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
 export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps) {
+  const t = useTranslations('screens.manageWeights')
+  const common = useTranslations('common')
+
   const [weights, setWeights] = useState<Record<string, WeightEntry>>({})
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
   const [filter, setFilter] = useState<SplitFilter>('All')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const allExercises = getAllExercises()
+
+  function formatLastUsedDate(iso: string | null): string {
+    if (!iso) return ''
+    const d = new Date(iso)
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -51,6 +56,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
     const name = editingExercise.name
     setSaving(name)
     setEditingExercise(null)
+    setErrorMessage(null)
 
     try {
       const res = await fetch('/api/weights/update', {
@@ -61,8 +67,9 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       // Confirm from server rather than optimistic update
       setRefreshKey(k => k + 1)
-    } catch (e) {
+    } catch (e: any) {
       console.error('Save failed:', e)
+      setErrorMessage(t('saveFailed', { reason: e?.message ?? common('genericError') }))
       // Revert optimistic state — re-fetch current values
       setRefreshKey(k => k + 1)
     }
@@ -73,6 +80,12 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
     ? allExercises
     : allExercises.filter(ex => ex.split === filter)
 
+  const SPLIT_LABEL: Record<Split, string> = {
+    Push: t('push'),
+    Pull: t('pull'),
+    Legs: t('legs'),
+  } as Record<Split, string>
+
   const splitGroups: { split: Split; exercises: Exercise[] }[] = (
     [
       { split: 'Push' as Split, exercises: filteredExercises.filter(e => e.split === 'Push') },
@@ -81,7 +94,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
     ] as { split: Split; exercises: Exercise[] }[]
   ).filter(g => g.exercises.length > 0)
 
-  if (loading) return <LoadingScreen message="Loading weights..." />
+  if (loading) return <LoadingScreen message={t('loadingWeights')} />
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100dvh' }}>
@@ -93,28 +106,39 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
       >
         <button
           onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px', minWidth: '44px', minHeight: '44px' }}
         >
           ←
         </button>
-        <div style={{ flex: 1 }}>
-          <p className="section-label" style={{ margin: '0 0 2px 0' }}>SETTINGS</p>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p className="section-label" style={{ margin: '0 0 2px 0' }}>{t('settings')}</p>
           <h1 className="font-display" style={{ fontSize: '1.7rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em', lineHeight: 1 }}>
-            Manage Weights
+            {t('title')}
           </h1>
         </div>
         <button
           onClick={() => setRefreshKey(k => k + 1)}
-          style={{ background: 'none', border: '1px solid var(--border-2)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Bebas Neue, sans-serif', fontSize: '0.9rem', letterSpacing: '0.1em', padding: '6px 12px', cursor: 'pointer' }}
+          style={{ background: 'none', border: '1px solid var(--border-2)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Bebas Neue, sans-serif', fontSize: '0.9rem', letterSpacing: '0.1em', padding: '6px 12px', cursor: 'pointer', minHeight: '44px' }}
         >
-          ↻ SYNC
+          ↻ {t('sync')}
         </button>
       </div>
+
+      {errorMessage && (
+        <div
+          className="px-5"
+          style={{ paddingTop: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--surface)' }}
+        >
+          <p className="font-mono" style={{ fontSize: '0.62rem', color: 'var(--rust)', margin: 0, letterSpacing: '0.02em' }}>
+            {errorMessage}
+          </p>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div
         className="flex px-5 py-3"
-        style={{ borderBottom: '1px solid var(--border)', gap: '6px', flexShrink: 0 }}
+        style={{ borderBottom: '1px solid var(--border)', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}
       >
         {(['All', 'Push', 'Pull', 'Legs'] as SplitFilter[]).map(f => (
           <button
@@ -122,19 +146,21 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
             onClick={() => setFilter(f)}
             style={{
               background: filter === f ? 'var(--accent)' : 'var(--surface-2)',
-              color: filter === f ? '#0C0B09' : 'var(--text-secondary)',
+              color: filter === f ? 'var(--on-accent)' : 'var(--text-secondary)',
               border: `1px solid ${filter === f ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: '2px',
               padding: '6px 14px',
+              minHeight: '44px',
               fontFamily: 'Bebas Neue, sans-serif',
               fontSize: '0.95rem',
               fontWeight: filter === f ? 700 : 400,
               letterSpacing: '0.1em',
               cursor: 'pointer',
               transition: 'all 0.1s',
+              whiteSpace: 'nowrap',
             }}
           >
-            {f.toUpperCase()}
+            {f === 'All' ? t('all').toUpperCase() : SPLIT_LABEL[f as Split].toUpperCase()}
           </button>
         ))}
       </div>
@@ -146,7 +172,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
             {filter === 'All' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', paddingBottom: '6px', borderBottom: '1px solid var(--border)' }}>
                 <span className="font-display" style={{ fontSize: '1rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-                  {group.split.toUpperCase()}
+                  {SPLIT_LABEL[group.split].toUpperCase()}
                 </span>
                 <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
               </div>
@@ -167,9 +193,10 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                       justifyContent: 'space-between',
                       padding: '11px 0',
                       borderBottom: '1px solid var(--border)',
+                      gap: '12px',
                     }}
                   >
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <p className="font-sans" style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 2px 0' }}>
                         {ex.name}
                       </p>
@@ -177,7 +204,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                         <p className="section-label" style={{ margin: 0 }}>{ex.weightConvention}</p>
                       ) : !isOverride && entry.lastUsed !== null ? (
                         <p className="font-mono" style={{ fontSize: '0.58rem', color: 'var(--text-mid)', margin: 0, letterSpacing: '0.04em' }}>
-                          last: {entry.lastUsed} · {formatLastUsedDate(entry.lastUsedAt)}
+                          {t('lastUsed', { weight: entry.lastUsed, date: formatLastUsedDate(entry.lastUsedAt) })}
                         </p>
                       ) : null}
                     </div>
@@ -193,6 +220,10 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                         alignItems: 'center',
                         gap: '4px',
                         padding: '8px 0 8px 14px',
+                        minHeight: '44px',
+                        minWidth: '44px',
+                        justifyContent: 'flex-end',
+                        flexShrink: 0,
                       }}
                     >
                       {isSaving ? (
@@ -212,7 +243,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                             {displayWeight !== null ? `${displayWeight}` : '—'}
                           </span>
                           {displayWeight !== null && (
-                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{ex.weightUnit === 'pins' ? 'pins' : 'lbs'}</span>
+                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{ex.weightUnit === 'pins' ? common('pins') : common('lbs')}</span>
                           )}
                           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--border-2)', marginLeft: '6px' }}>
                             ✎

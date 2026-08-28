@@ -331,7 +331,9 @@
       "pull": "Jalón",
       "legs": "Piernas",
       "loadingWeights": "Cargando pesos...",
-      "saveFailed": "Error al guardar: {reason}"
+      "saveFailed": "Error al guardar: {reason}",
+      "sync": "SINCRONIZAR",
+      "lastUsed": "última: {weight} · {date}"
     },
     "routineEditor": {
       "title": "EDITOR DE RUTINA",

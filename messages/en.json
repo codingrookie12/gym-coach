@@ -331,7 +331,9 @@
       "pull": "Pull",
       "legs": "Legs",
       "loadingWeights": "Loading weights...",
-      "saveFailed": "Save failed: {reason}"
+      "saveFailed": "Save failed: {reason}",
+      "sync": "SYNC",
+      "lastUsed": "last: {weight} · {date}"
     },
     "routineEditor": {
       "title": "ROUTINE EDITOR",
