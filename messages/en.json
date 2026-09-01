@@ -161,6 +161,7 @@
       "preSessionIntel": "PRE-SESSION INTEL",
       "deload": "DELOAD",
       "lastSession": "LAST SESSION",
+      "lastSessionExerciseCount": "{count, plural, one {# exercise logged} other {# exercises logged}}",
       "trendingUp": "TRENDING UP",
       "programBalance": "PROGRAM BALANCE",
       "watch": "WATCH",

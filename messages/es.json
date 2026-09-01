@@ -161,6 +161,7 @@
       "preSessionIntel": "ANTES DE ENTRENAR",
       "deload": "DESCARGA",
       "lastSession": "ÚLTIMA SESIÓN",
+      "lastSessionExerciseCount": "{count, plural, one {# ejercicio registrado} other {# ejercicios registrados}}",
       "trendingUp": "EN ASCENSO",
       "programBalance": "BALANCE DEL PROGRAMA",
       "watch": "ATENCIÓN",

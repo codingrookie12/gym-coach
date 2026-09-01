@@ -382,6 +382,10 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
 
   const context: CoachingContext = {
     lastSessionDate: lastSession?.date ?? null,
+    // GYM-97 fix #10: cheaply derivable from data already in scope here —
+    // no new plumbing needed, unlike a name-based "top lift" recap (the
+    // engine has no exerciseId->name mapping; that lives in the UI layer).
+    lastSessionExerciseCount: lastSession ? Object.keys(lastSession.exercises).length : null,
     recoveryGapDays,
     dataMaturity,
     deloadRecommended,
