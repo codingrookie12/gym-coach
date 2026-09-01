@@ -322,7 +322,23 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
   //    an upper-body day) is noise on a *pre-session* screen — scope to
   //    muscles this specific session's routine actually trains.
   const dataMaturity = computeDataMaturity(programSessions.length)
-  const todaysMuscleGroups = new Set(routine.flatMap(r => [...r.primaryMuscles, ...r.secondaryMuscles]))
+  // GYM-97 fix #4: `routine[i].primaryMuscles/secondaryMuscles` come from
+  // muscleTagging.ts's `wireRoutineToMuscles`, which resolves against the
+  // client-bundled static catalog by name match — it silently returns []
+  // for anything that doesn't resolve there (e.g. a kept custom exercise
+  // with no catalog entry), even when that same exercise DOES have muscle
+  // tags in `exerciseMuscles` (the DB-backed map, keyed by exerciseId, that
+  // the rest of this volume calculation already uses via
+  // buildMuscleVolumeStatus). Using the weaker source here would silently
+  // drop this session's legitimate volume flags for any such exercise —
+  // undermining the over-flagging fix this filter exists for. Build from
+  // the same DB-backed source instead.
+  const todaysMuscleGroups = new Set(
+    routine.flatMap(r => {
+      const dbMuscles = exerciseMuscles[r.exerciseId]
+      return dbMuscles ? [...dbMuscles.primaryMuscles, ...dbMuscles.secondaryMuscles] : []
+    })
+  )
   const muscleVolume = buildMuscleVolumeStatus(
     programSessions,
     exerciseMuscles,
