@@ -26,14 +26,14 @@ vi.mock('@/lib/supabase.server', () => ({
   })),
 }))
 
-const getExerciseIdMock = vi.fn(async () => 'exercise-1')
-const getOrCreateWorkoutMock = vi.fn(async () => 'workout-1')
-const upsertWeightOverrideMock = vi.fn(async () => {})
+const getExerciseIdMock = vi.fn(async (..._args: any[]) => 'exercise-1')
+const getOrCreateWorkoutMock = vi.fn(async (..._args: any[]) => 'workout-1')
+const upsertWeightOverrideMock = vi.fn(async (..._args: any[]) => {})
 
 vi.mock('@/lib/supabase.queries', () => ({
-  getExerciseId: (...args: unknown[]) => getExerciseIdMock(...args),
-  getOrCreateWorkout: (...args: unknown[]) => getOrCreateWorkoutMock(...args),
-  upsertWeightOverride: (...args: unknown[]) => upsertWeightOverrideMock(...args),
+  getExerciseId: (...args: any[]) => getExerciseIdMock(...args),
+  getOrCreateWorkout: (...args: any[]) => getOrCreateWorkoutMock(...args),
+  upsertWeightOverride: (...args: any[]) => upsertWeightOverrideMock(...args),
 }))
 
 import { POST } from './route'
