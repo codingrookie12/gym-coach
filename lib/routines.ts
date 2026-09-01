@@ -205,6 +205,89 @@ const SL_DAY_B_ROUTINE: Exercise[] = [
   { name: 'Barbell Deadlift',           canonicalName: 'Barbell Deadlift',           sets: 1, repRange: [5, 5], backup: 'Romanian Deadlift',        split: 'Day B', availableWeights: BARBELL },
 ]
 
+// ─── GZCLP (GZCL Linear Progression) ──────────────────────────────────────────
+// Tier system: T1 (main lift, heavy) / T2 (secondary lift, moderate) / T3
+// (accessory, high-rep). T1's real progression is staged (5×3 → 6×2 → 10×1,
+// last set AMRAP, reset the cycle on a miss) — this app's Exercise shape has
+// one fixed sets/repRange per exercise, so the staged scheme is documented in
+// programNote (same pattern Wendler's routines already use for wave-cycle
+// info) rather than modeled as three separate exercise rows. Squat/bench/
+// press/deadlift rotate as T1 and T2 across the 4 days per the real program.
+const GZCLP_T1_NOTE = 'T1: 5×3, last set AMRAP. Hit the AMRAP target (typically 3+) → add weight next cycle. Miss it → repeat, or drop to the 6×2 / 10×1 stage per GZCLP\'s standard reset ladder.'
+
+const GZCLP_A1_ROUTINE: Exercise[] = [
+  { name: 'Barbell Squat',              canonicalName: 'Barbell Squat',              sets: 5, repRange: [1, 3],   backup: 'Hack Squat',        split: 'A1', availableWeights: BARBELL, programNote: GZCLP_T1_NOTE },
+  { name: 'Wide-grip Barbell Bench Press', canonicalName: 'Wide-grip Barbell Bench Press', sets: 3, repRange: [10, 10], backup: 'Dumbbell Bench Press', split: 'A1', availableWeights: BARBELL, programNote: 'T2: 3×10 — moderate load, stop 1-2 reps shy of failure.' },
+  { name: 'Wide-grip Lat Pulldown',     canonicalName: 'Wide-grip Lat Pulldown',     sets: 3, repRange: [15, 20], backup: null,                 split: 'A1', availableWeights: CABLE_HEAVY, programNote: 'T3: 3×15+ — chase the pump, add reps before adding weight.' },
+  { name: 'Hanging Leg Raise',          canonicalName: 'Hanging Leg Raise',          sets: 3, repRange: [15, 20], backup: 'Flat Bench Lying Leg Raise', split: 'A1', availableWeights: [], programNote: 'T3: 3×15+' },
+]
+
+const GZCLP_B1_ROUTINE: Exercise[] = [
+  { name: 'Standing Military Press',    canonicalName: 'Standing Military Press',    sets: 5, repRange: [1, 3],   backup: 'Dumbbell Shoulder Press', split: 'B1', availableWeights: BARBELL, programNote: GZCLP_T1_NOTE },
+  { name: 'Barbell Deadlift',           canonicalName: 'Barbell Deadlift',           sets: 3, repRange: [10, 10], backup: 'Romanian Deadlift', split: 'B1', availableWeights: BARBELL, programNote: 'T2: 3×10 — lighter than T1 deadlift days elsewhere; this is volume work, not a max effort.' },
+  { name: 'Face Pull',                  canonicalName: 'Face Pull',                  sets: 3, repRange: [15, 20], backup: null,                 split: 'B1', availableWeights: CABLE_FULL, programNote: 'T3: 3×15+' },
+  { name: 'Standing Biceps Cable Curl', canonicalName: 'Standing Biceps Cable Curl', sets: 3, repRange: [15, 20], backup: 'Ez-bar Curl',        split: 'B1', availableWeights: CABLE_FULL, programNote: 'T3: 3×15+' },
+]
+
+const GZCLP_A2_ROUTINE: Exercise[] = [
+  { name: 'Wide-grip Barbell Bench Press', canonicalName: 'Wide-grip Barbell Bench Press', sets: 5, repRange: [1, 3], backup: 'Dumbbell Bench Press', split: 'A2', availableWeights: BARBELL, programNote: GZCLP_T1_NOTE },
+  { name: 'Barbell Squat',              canonicalName: 'Barbell Squat',              sets: 3, repRange: [10, 10], backup: 'Hack Squat',         split: 'A2', availableWeights: BARBELL, programNote: 'T2: 3×10' },
+  { name: 'Triceps Pushdown - Rope Attachment', canonicalName: 'Triceps Pushdown - Rope Attachment', sets: 3, repRange: [15, 20], backup: 'Standing Low-pulley One-arm Triceps Extension', split: 'A2', availableWeights: CABLE_FULL, programNote: 'T3: 3×15+' },
+  { name: 'Seated Cable Rows',          canonicalName: 'Seated Cable Rows',          sets: 3, repRange: [15, 20], backup: 'One-arm Dumbbell Row', split: 'A2', availableWeights: CABLE_HEAVY, programNote: 'T3: 3×15+' },
+]
+
+const GZCLP_B2_ROUTINE: Exercise[] = [
+  { name: 'Barbell Deadlift',           canonicalName: 'Barbell Deadlift',           sets: 5, repRange: [1, 3],   backup: 'Romanian Deadlift', split: 'B2', availableWeights: BARBELL, programNote: GZCLP_T1_NOTE },
+  { name: 'Standing Military Press',    canonicalName: 'Standing Military Press',    sets: 3, repRange: [10, 10], backup: 'Dumbbell Shoulder Press', split: 'B2', availableWeights: BARBELL, programNote: 'T2: 3×10' },
+  { name: 'Wide-grip Lat Pulldown',     canonicalName: 'Wide-grip Lat Pulldown',     sets: 3, repRange: [15, 20], backup: null,                 split: 'B2', availableWeights: CABLE_HEAVY, programNote: 'T3: 3×15+' },
+  { name: 'Standing Biceps Cable Curl', canonicalName: 'Standing Biceps Cable Curl', sets: 3, repRange: [15, 20], backup: 'Ez-bar Curl',        split: 'B2', availableWeights: CABLE_FULL, programNote: 'T3: 3×15+' },
+]
+
+// ─── PHUL (Power Hypertrophy Upper Lower) ─────────────────────────────────────
+// Power days: heavy compounds, low reps (3-5 / 5-8). Hypertrophy days: lighter
+// loads, higher reps (8-15), more isolation volume. 4 days/week.
+
+const PHUL_UPPER_POWER_ROUTINE: Exercise[] = [
+  { name: 'Wide-grip Barbell Bench Press', canonicalName: 'Wide-grip Barbell Bench Press', sets: 4, repRange: [3, 5], backup: 'Dumbbell Bench Press', split: 'Upper Power', availableWeights: BARBELL },
+  { name: 'Bent Over Barbell Row',      canonicalName: 'Bent Over Barbell Row',      sets: 4, repRange: [3, 5],   backup: 'Seated Cable Rows', split: 'Upper Power', availableWeights: BARBELL },
+  { name: 'Standing Military Press',    canonicalName: 'Standing Military Press',    sets: 3, repRange: [6, 8],   backup: 'Dumbbell Shoulder Press', split: 'Upper Power', availableWeights: BARBELL },
+  { name: 'Wide-grip Lat Pulldown',     canonicalName: 'Wide-grip Lat Pulldown',     sets: 3, repRange: [6, 8],   backup: null,                 split: 'Upper Power', availableWeights: CABLE_HEAVY },
+  { name: 'Triceps Pushdown - Rope Attachment', canonicalName: 'Triceps Pushdown - Rope Attachment', sets: 2, repRange: [6, 8], backup: 'Standing Low-pulley One-arm Triceps Extension', split: 'Upper Power', availableWeights: CABLE_FULL },
+  { name: 'Standing Biceps Cable Curl', canonicalName: 'Standing Biceps Cable Curl', sets: 2, repRange: [6, 8],   backup: 'Ez-bar Curl',        split: 'Upper Power', availableWeights: CABLE_FULL },
+]
+
+const PHUL_LOWER_POWER_ROUTINE: Exercise[] = [
+  { name: 'Barbell Squat',              canonicalName: 'Barbell Squat',              sets: 4, repRange: [3, 5],   backup: 'Hack Squat',         split: 'Lower Power', availableWeights: BARBELL },
+  { name: 'Romanian Deadlift',          canonicalName: 'Romanian Deadlift',          sets: 3, repRange: [5, 8],   backup: 'Barbell Deadlift',   split: 'Lower Power', availableWeights: RDL },
+  { name: 'Leg Press',                  canonicalName: 'Leg Press',                  sets: 3, repRange: [6, 8],   backup: 'Hack Squat',         split: 'Lower Power', availableWeights: LEG_PRESS, weightConvention: 'per side' },
+  { name: 'Seated Leg Curl',            canonicalName: 'Seated Leg Curl',            sets: 3, repRange: [6, 8],   backup: null,                 split: 'Lower Power', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
+  { name: 'Standing Calf Raises',       canonicalName: 'Standing Calf Raises',       sets: 4, repRange: [6, 8],   backup: null,                 split: 'Lower Power', availableWeights: CALF_RAISE },
+]
+
+const PHUL_UPPER_HYPERTROPHY_ROUTINE: Exercise[] = [
+  { name: 'Incline Dumbbell Press',     canonicalName: 'Incline Dumbbell Press',     sets: 3, repRange: [8, 12],  backup: 'Leverage Incline Chest Press', split: 'Upper Hypertrophy', availableWeights: DB },
+  { name: 'Seated Cable Rows',          canonicalName: 'Seated Cable Rows',          sets: 3, repRange: [8, 12],  backup: 'Bent Over Barbell Row', split: 'Upper Hypertrophy', availableWeights: CABLE_HEAVY },
+  { name: 'Side Lateral Raise',         canonicalName: 'Side Lateral Raise',         sets: 3, repRange: [12, 15], backup: 'Bent Over Low-pulley Side Lateral', split: 'Upper Hypertrophy', availableWeights: DB },
+  { name: 'Face Pull',                  canonicalName: 'Face Pull',                  sets: 3, repRange: [12, 15], backup: null,                 split: 'Upper Hypertrophy', availableWeights: CABLE_FULL },
+  { name: 'Preacher Hammer Dumbbell Curl', canonicalName: 'Preacher Hammer Dumbbell Curl', sets: 3, repRange: [10, 12], backup: 'Standing Biceps Cable Curl', split: 'Upper Hypertrophy', availableWeights: DB },
+  { name: 'Standing Low-pulley One-arm Triceps Extension', canonicalName: 'Standing Low-Pulley One-Arm Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - Rope Attachment', split: 'Upper Hypertrophy', availableWeights: CABLE_LIGHT },
+]
+
+const PHUL_LOWER_HYPERTROPHY_ROUTINE: Exercise[] = [
+  // NOTE: LEGS_ROUTINE's existing 'Hack Squat' entry (above, ~line 88) uses
+  // canonicalName: 'Linear Hack Press', which does NOT resolve against
+  // lib/exercises.json (confirmed — no such entry exists; the catalog's real
+  // name is just 'Hack Squat'). That's a pre-existing bug predating Phase 4,
+  // out of this phase's declared scope (not one of the 8 screens, not the
+  // programs I'm adding) — flagged in the Phase 4 report rather than fixed
+  // here. This new entry uses the real catalog name so it doesn't inherit
+  // the same bug.
+  { name: 'Hack Squat',                 canonicalName: 'Hack Squat',                  sets: 3, repRange: [10, 12], backup: 'Barbell Hack Squat', split: 'Lower Hypertrophy', availableWeights: HACK_PRESS },
+  { name: 'Leg Extensions',             canonicalName: 'Leg Extensions',             sets: 3, repRange: [12, 15], backup: 'Single-leg Leg Extension', split: 'Lower Hypertrophy', availableWeights: LEG_EXT },
+  { name: 'Seated Leg Curl',            canonicalName: 'Seated Leg Curl',            sets: 3, repRange: [10, 15], backup: 'Lying Leg Curls',    split: 'Lower Hypertrophy', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
+  { name: 'Standing Calf Raises',       canonicalName: 'Standing Calf Raises',       sets: 4, repRange: [12, 15], backup: 'Seated Calf Raise', split: 'Lower Hypertrophy', availableWeights: CALF_RAISE },
+]
+
 // ─── Program routine registry ─────────────────────────────────────────────────
 
 const PROGRAM_ROUTINES: Record<string, Record<string, Exercise[]>> = {
@@ -233,6 +316,18 @@ const PROGRAM_ROUTINES: Record<string, Record<string, Exercise[]>> = {
   'stronglifts-5x5': {
     'Day A': SL_DAY_A_ROUTINE,
     'Day B': SL_DAY_B_ROUTINE,
+  },
+  'gzclp': {
+    A1: GZCLP_A1_ROUTINE,
+    B1: GZCLP_B1_ROUTINE,
+    A2: GZCLP_A2_ROUTINE,
+    B2: GZCLP_B2_ROUTINE,
+  },
+  'phul': {
+    'Upper Power': PHUL_UPPER_POWER_ROUTINE,
+    'Lower Power': PHUL_LOWER_POWER_ROUTINE,
+    'Upper Hypertrophy': PHUL_UPPER_HYPERTROPHY_ROUTINE,
+    'Lower Hypertrophy': PHUL_LOWER_HYPERTROPHY_ROUTINE,
   },
 }
 
@@ -278,4 +373,14 @@ export const CARDIO_RECOMMENDATION: Record<string, string> = {
   // StrongLifts
   'Day A': '15-20 min low-intensity — protect linear progression recovery',
   'Day B': '15-20 min low-intensity — protect linear progression recovery',
+  // GZCLP
+  A1: 'Incline walk or light bike — protect recovery for the T1 lift',
+  B1: 'Incline walk or light bike — protect recovery for the T1 lift',
+  A2: 'Incline walk or light bike — protect recovery for the T1 lift',
+  B2: 'Incline walk or light bike — protect recovery for the T1 lift',
+  // PHUL
+  'Upper Power': 'Any cardio, 10-15 min — keep it light before/after heavy pressing',
+  'Lower Power': 'Stairmaster or Incline Walk — light, protect squat/deadlift recovery',
+  'Upper Hypertrophy': '15-20 min steady state — any machine',
+  'Lower Hypertrophy': '15-20 min steady state — any machine',
 }
