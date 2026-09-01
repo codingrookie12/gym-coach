@@ -59,9 +59,20 @@ export function resolveExerciseId(
  *  Deliberately prefixed and never equal to a real UUID, so any code path
  *  that accidentally treats it as a real exercise_id fails loudly (a UUID FK
  *  lookup against `unresolved:...` will simply never match a row) rather
- *  than silently corrupting data. */
-export function unresolvedExerciseId(canonicalName: string): string {
-  return `unresolved:${canonicalName.trim().toLowerCase()}`
+ *  than silently corrupting data.
+ *
+ *  GYM-97 fix #3: a pure lowercased-name hash collides whenever two
+ *  independently added/swapped plan items share a name (e.g. two mid-session
+ *  quick-adds both named "Cable Curl"), corrupting React keys and the
+ *  `weightDecisions`/`onWeightDecision` map in app/page.tsx, which key off
+ *  this id. Callers that mint one per plan-item *instance* (session swap,
+ *  mid-session add) should pass a per-instance `instanceSalt` (e.g.
+ *  `crypto.randomUUID()`) to guarantee uniqueness even for same-named
+ *  items. Omitted for backward-compat call sites that only need a stable,
+ *  human-readable placeholder (no risk of a same-name collision there). */
+export function unresolvedExerciseId(canonicalName: string, instanceSalt?: string): string {
+  const base = `unresolved:${canonicalName.trim().toLowerCase()}`
+  return instanceSalt ? `${base}:${instanceSalt}` : base
 }
 
 export function isUnresolvedExerciseId(id: string): boolean {

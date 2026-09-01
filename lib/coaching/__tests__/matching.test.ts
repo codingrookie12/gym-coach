@@ -32,4 +32,20 @@ describe('unresolvedExerciseId', () => {
   it('never collides with a real UUID shape', () => {
     expect(isUnresolvedExerciseId('uuid-1')).toBe(false)
   })
+
+  // GYM-97 fix #3: two independently added/swapped plan items sharing a
+  // name (e.g. two mid-session quick-adds both named "Cable Curl") must
+  // not collide on exerciseId — that corrupts React keys and the
+  // weightDecisions/onWeightDecision map in app/page.tsx, which key off it.
+  it('does not collide for two same-named instances when a per-instance salt is passed', () => {
+    const first = unresolvedExerciseId('Cable Curl', 'salt-1')
+    const second = unresolvedExerciseId('Cable Curl', 'salt-2')
+    expect(first).not.toBe(second)
+    expect(isUnresolvedExerciseId(first)).toBe(true)
+    expect(isUnresolvedExerciseId(second)).toBe(true)
+  })
+
+  it('still collides on a bare call with no salt (documents why callers that mint one per instance must pass one)', () => {
+    expect(unresolvedExerciseId('Cable Curl')).toBe(unresolvedExerciseId('Cable Curl'))
+  })
 })
