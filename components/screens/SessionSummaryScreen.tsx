@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ExercisePlan } from '@/lib/coaching'
+import { useTranslations } from 'next-intl'
+import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog } from '@/lib/store'
-import { SessionRecord } from '@/lib/supabase.queries'
+import { useCoachingFlagText } from '@/lib/i18n/coachingMessages'
 import { Equipment, Muscle } from '@/lib/exerciseLibrary'
 import {
   getPendingExercises,
@@ -11,13 +12,13 @@ import {
   PendingExercise,
 } from '@/lib/customExercises'
 import ExerciseMetadataFields from '@/components/ExerciseMetadataFields'
+import { pickPriorityFlag } from '@/lib/coaching/index'
 
 interface SessionSummaryScreenProps {
   userId: string
   split: string
   exerciseLogs: ExerciseLog[]
-  plan: ExercisePlan[]
-  previousSessions: SessionRecord[]
+  plan: SessionExercisePlan[]
   syncStatus?: 'confirmed' | 'partial' | 'queued'
   onDone: () => void
 }
@@ -31,6 +32,8 @@ function MetadataSheet({
   onSave: (name: string, equipment: Equipment, muscles: Muscle[], split: string | null) => void
   onSkip: () => void
 }) {
+  const t = useTranslations('screens.sessionSummary')
+  const common = useTranslations('common')
   const [equipment, setEquipment] = useState<Equipment | ''>('')
   const [muscles, setMuscles] = useState<Muscle[]>([])
   const [split, setSplit] = useState<string>('None')
@@ -39,7 +42,7 @@ function MetadataSheet({
 
   return (
     <>
-      <div onClick={onSkip} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }} />
+      <div onClick={onSkip} style={{ position: 'fixed', inset: 0, background: 'var(--overlay)', zIndex: 40 }} />
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'var(--surface)',
@@ -57,12 +60,12 @@ function MetadataSheet({
         </div>
 
         <div style={{ flexShrink: 0, marginBottom: '16px' }}>
-          <p className="section-label" style={{ margin: '0 0 2px 0' }}>COMPLETE EXERCISE</p>
+          <p className="section-label" style={{ margin: '0 0 2px 0' }}>{t('completeExercise')}</p>
           <h3 className="font-display" style={{ fontSize: '1.4rem', color: 'var(--text-primary)', margin: 0, letterSpacing: '0.04em', lineHeight: 1 }}>
             {exercise.name}
           </h3>
           <p className="font-mono" style={{ fontSize: '0.62rem', color: 'var(--text-secondary)', margin: '6px 0 0', letterSpacing: '0.04em' }}>
-            Add details to save to your exercise library
+            {t('addDetailsToSaveLibrary')}
           </p>
         </div>
 
@@ -93,7 +96,7 @@ function MetadataSheet({
               cursor: 'pointer',
             }}
           >
-            LATER
+            {t('later')}
           </button>
           <button
             onClick={() => canSave && onSave(
@@ -108,7 +111,7 @@ function MetadataSheet({
               background: canSave ? 'var(--accent)' : 'var(--surface-2)',
               border: `1px solid ${canSave ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: '2px',
-              color: canSave ? '#0C0B09' : 'var(--text-secondary)',
+              color: canSave ? 'var(--on-accent)' : 'var(--text-secondary)',
               fontFamily: 'Bebas Neue, sans-serif',
               fontSize: '1rem',
               letterSpacing: '0.1em',
@@ -117,7 +120,7 @@ function MetadataSheet({
               transition: 'all 0.15s',
             }}
           >
-            SAVE TO LIBRARY
+            {t('saveToLibrary')}
           </button>
         </div>
       </div>
@@ -126,30 +129,37 @@ function MetadataSheet({
   )
 }
 
+function NextSessionFlag({ exerciseName, flag }: { exerciseName: string; flag: SessionExercisePlan['flags'][number] }) {
+  const { plain } = useCoachingFlagText(flag)
+  const accent = flag.kind === 'progress-ready'
+  return (
+    <p className="font-mono" style={{ fontSize: '0.68rem', color: accent ? 'var(--accent)' : 'var(--rust)', margin: '0 0 6px 0' }}>
+      {accent ? '↑' : '⚠'} {exerciseName} — {plain}
+    </p>
+  )
+}
+
 export default function SessionSummaryScreen({
-  userId, split, exerciseLogs, plan, previousSessions, syncStatus, onDone,
+  userId, split, exerciseLogs, plan, syncStatus, onDone,
 }: SessionSummaryScreenProps) {
-  const progressFlags: string[] = []
-  const stallFlags: string[] = []
+  const t = useTranslations('screens.sessionSummary')
+  const common = useTranslations('common')
 
-  for (const item of plan) {
-    const log = exerciseLogs.find(l => l.exerciseName === item.exercise.name)
-    if (!log) continue
-    const completedSets = log.sets.filter(s => s.completed)
-    if (!completedSets.length) continue
-
-    const topOfRange = item.exercise.repRange[1]
-    const allHitTop = completedSets.every(s => s.reps >= topOfRange)
-
-    if (allHitTop && item.coachingNote?.includes('increase')) {
-      progressFlags.push(`${item.exercise.name} — increase weight next session`)
-    } else if (completedSets.length > 0 && !allHitTop) {
-      const avgReps = completedSets.reduce((a, b) => a + b.reps, 0) / completedSets.length
-      if (avgReps < topOfRange * 0.8) {
-        stallFlags.push(`${item.exercise.name} — below target range`)
-      }
-    }
-  }
+  // Next-session signals — read directly from Phase 2's already-computed
+  // flags on each plan item, not re-derived from raw logs (the old engine's
+  // re-derivation here was a second, independent, and looser copy of logic
+  // the coaching engine already owns). GYM-97 fix #6: picks via the shared
+  // lib/coaching/flagPriority.ts ordering — previously a raw `.find()` over
+  // a different, unordered kind list, which could show a different "the"
+  // flag than WorkoutOverviewScreen for the same exercise state.
+  const flaggedItems = plan
+    .map(item => {
+      const log = exerciseLogs.find(l => l.exerciseName === item.exercise.name)
+      if (!log || !log.sets.some(s => s.completed)) return null
+      const flag = pickPriorityFlag(item.flags)
+      return flag ? { exerciseName: item.exercise.name, flag } : null
+    })
+    .filter((x): x is { exerciseName: string; flag: SessionExercisePlan['flags'][number] } => x !== null)
 
   const totalSets = exerciseLogs.reduce((a, ex) => a + ex.sets.filter(s => s.completed).length, 0)
 
@@ -197,31 +207,31 @@ export default function SessionSummaryScreen({
         className="safe-top px-5"
         style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}
       >
-        <p className="section-label" style={{ margin: '0 0 4px 0' }}>SESSION COMPLETE</p>
+        <p className="section-label" style={{ margin: '0 0 4px 0' }}>{t('sessionComplete')}</p>
         {syncStatus === 'confirmed' && (
           <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
-            ✓ SAVED TO HISTORY
+            {t('syncedConfirmed')}
           </p>
         )}
         {syncStatus === 'partial' && (
           <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
-            ⚠ PARTIAL SYNC — queued for auto-retry
+            {t('syncedPartial')}
           </p>
         )}
         {syncStatus === 'queued' && (
           <p className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', margin: '0 0 8px 0', letterSpacing: '0.1em' }}>
-            SAVED ON DEVICE — will sync to your account when you&apos;re back online.
+            {t('syncedQueued')}
           </p>
         )}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <h1 className="font-display" style={{ fontSize: '2.4rem', margin: 0, color: 'var(--accent)', letterSpacing: '0.04em', lineHeight: 1 }}>
-            {split} Done
+            {common('splitDone', { split })}
           </h1>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
             <span className="font-display" style={{ fontSize: '1.8rem', color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '0.02em' }}>
               {totalSets}
             </span>
-            <span className="section-label">sets logged</span>
+            <span className="section-label">{t('setsLogged', { count: totalSets })}</span>
           </div>
         </div>
       </div>
@@ -232,7 +242,7 @@ export default function SessionSummaryScreen({
 
           {/* Full workout log */}
           <div className="card p-4">
-            <p className="section-label" style={{ margin: '0 0 12px 0' }}>WORKOUT LOG</p>
+            <p className="section-label" style={{ margin: '0 0 12px 0' }}>{t('workoutLog')}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {exerciseLogs.map((ex, exIdx) => {
                 const completedSets = ex.sets.filter(s => s.completed)
@@ -244,7 +254,7 @@ export default function SessionSummaryScreen({
                         {ex.exerciseName}
                       </p>
                       {ex.isCustom && (
-                        <span className="tag" style={{ color: 'var(--text-secondary)', fontSize: '0.5rem' }}>CUSTOM</span>
+                        <span className="tag" style={{ color: 'var(--text-secondary)', fontSize: '0.5rem' }}>{t('custom')}</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -262,7 +272,7 @@ export default function SessionSummaryScreen({
                               padding: '4px 9px',
                             }}
                           >
-                            {set.weight}×{set.reps}
+                            {set.weight}×{set.reps}{set.rir != null ? ` · RIR ${set.rir}` : ''}
                           </span>
                         ) : null
                       )}
@@ -273,19 +283,12 @@ export default function SessionSummaryScreen({
             </div>
           </div>
 
-          {/* Next session flags */}
-          {(progressFlags.length > 0 || stallFlags.length > 0) && (
+          {/* Next session flags — read from Phase 2's engine output */}
+          {flaggedItems.length > 0 && (
             <div className="card p-4">
-              <p className="section-label" style={{ margin: '0 0 10px 0' }}>NEXT SESSION</p>
-              {progressFlags.map((f, i) => (
-                <p key={i} className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--accent)', margin: '0 0 6px 0' }}>
-                  ↑ {f}
-                </p>
-              ))}
-              {stallFlags.map((f, i) => (
-                <p key={i} className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--rust)', margin: '0 0 6px 0' }}>
-                  ⚠ {f}
-                </p>
+              <p className="section-label" style={{ margin: '0 0 10px 0' }}>{t('nextSession')}</p>
+              {flaggedItems.map(({ exerciseName, flag }) => (
+                <NextSessionFlag key={flag.id} exerciseName={exerciseName} flag={flag} />
               ))}
             </div>
           )}
@@ -305,10 +308,10 @@ export default function SessionSummaryScreen({
             }}>
               <div>
                 <p className="font-mono" style={{ fontSize: '0.62rem', color: 'var(--accent)', margin: '0 0 2px 0', letterSpacing: '0.05em' }}>
-                  {pendingForSession.length === 1 ? '1 CUSTOM EXERCISE' : `${pendingForSession.length} CUSTOM EXERCISES`}
+                  {t('customExerciseCount', { count: pendingForSession.length })}
                 </p>
                 <p className="font-body" style={{ fontSize: '0.82rem', color: 'var(--text-mid)', margin: 0 }}>
-                  Add details to save to your library
+                  {t('addDetailsToSaveLibraryShort')}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
@@ -316,7 +319,7 @@ export default function SessionSummaryScreen({
                   onClick={() => setBannerDismissed(true)}
                   style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '4px', cursor: 'pointer' }}
                 >
-                  LATER
+                  {t('later')}
                 </button>
                 <button
                   onClick={() => setSheetOpen(true)}
@@ -332,7 +335,7 @@ export default function SessionSummaryScreen({
                     cursor: 'pointer',
                   }}
                 >
-                  ADD DETAILS
+                  {t('addDetails')}
                 </button>
               </div>
             </div>
@@ -347,7 +350,7 @@ export default function SessionSummaryScreen({
         style={{ paddingTop: '14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}
       >
         <button className="btn-secondary" onClick={onDone}>
-          DONE
+          {t('done')}
         </button>
       </div>
 

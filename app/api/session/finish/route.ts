@@ -7,15 +7,25 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { date, userProgramSplitId }: { date: string; userProgramSplitId: string } = await request.json()
+    const { date, userProgramSplitId, sessionRpe }: { date: string; userProgramSplitId: string; sessionRpe?: number | null } =
+      await request.json()
 
     if (!userProgramSplitId) {
       return NextResponse.json({ error: 'Missing userProgramSplitId' }, { status: 400 })
     }
 
+    // sessionRpe: Phase 1's workouts.session_rpe (Borg CR10-style, 1-10),
+    // optional single session-level tap — Phase 2's fatigue-deload signal
+    // (computeSessionRpeFatigueSignal) consumes it, degrades gracefully to
+    // structural-only signals when it's never logged.
+    const updates: Record<string, unknown> = { finished_at: new Date().toISOString() }
+    if (typeof sessionRpe === 'number' && sessionRpe >= 1 && sessionRpe <= 10) {
+      updates.session_rpe = sessionRpe
+    }
+
     const { error } = await supabase
       .from('workouts')
-      .update({ finished_at: new Date().toISOString() })
+      .update(updates)
       .eq('user_id', user.id)
       .eq('date', date)
       .eq('user_program_split_id', userProgramSplitId)

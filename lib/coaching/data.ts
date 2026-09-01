@@ -184,6 +184,28 @@ export async function fetchMuscleTagsByExerciseId(
   return result
 }
 
+/**
+ * Weight overrides keyed by exercise_id — the exercise_id-based replacement
+ * for supabase.queries.ts's fetchWeightOverrides (which keys by exercise
+ * name via a join, matching the old name-based engine). Phase 3 wiring:
+ * `exercise_weight_override.exercise_id` is already the real FK, so this is
+ * a direct query with no join needed at all.
+ */
+export async function fetchWeightOverridesByExerciseId(
+  supabase: Supabase,
+  userId: string
+): Promise<Record<string, number>> {
+  const { data } = await supabase
+    .from('exercise_weight_override')
+    .select('exercise_id, override_weight')
+    .eq('user_id', userId)
+  const result: Record<string, number> = {}
+  for (const row of data ?? []) {
+    result[row.exercise_id as string] = Number(row.override_weight)
+  }
+  return result
+}
+
 export async function fetchExperienceLevel(supabase: Supabase, userId: string): Promise<ExperienceLevel | null> {
   const { data } = await supabase.from('users').select('experience_level').eq('id', userId).maybeSingle()
   return (data?.experience_level as ExperienceLevel | null) ?? null

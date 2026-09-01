@@ -163,6 +163,14 @@ export interface ExercisePlan {
 
 export interface CoachingContext {
   lastSessionDate: string | null
+  /** GYM-97 fix #10: exercise count for the last session on this split —
+   *  restores a brief "LAST SESSION" recap after Phase 3's rebuild dropped
+   *  the old engine's `lastSessionSummary` string with no replacement.
+   *  Deliberately a plain number, not a pre-formatted string (this module's
+   *  no-string-concatenation contract) — the UI layer (CoachingContextScreen)
+   *  renders the locale-specific sentence via next-intl's ICU plural syntax.
+   *  Null when there's no last session. */
+  lastSessionExerciseCount: number | null
   recoveryGapDays: number | null
   dataMaturity: DataMaturity
   deloadRecommended: boolean

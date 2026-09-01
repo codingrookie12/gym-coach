@@ -2,9 +2,11 @@
  * lib/coaching/ — public API.
  *
  * The old lib/coaching.ts (analyzeCoaching, CoachingFlag, CoachingContext,
- * ExercisePlan) is untouched and stays importable at its old path — this
- * module is a parallel, clean-room engine, not a replacement import. Callers
- * migrate deliberately (Phase 3), not via a silent re-export swap.
+ * ExercisePlan) was a parallel, clean-room engine's predecessor — every real
+ * call site migrated here during Phase 3, and GYM-97 fix #9 deleted the old
+ * file once nothing referenced it (it had become an unblocked bare-import
+ * footgun: '@/lib/coaching' used to silently resolve to it instead of this
+ * directory's index.ts).
  */
 
 export * from './types'
@@ -24,3 +26,4 @@ export { resolveExerciseId, unresolvedExerciseId, isUnresolvedExerciseId } from 
 export type { MatchableCatalogEntry } from './matching'
 export { wireRoutineToMuscles, buildExerciseMuscleMap } from './muscleTagging'
 export type { RoutineExerciseInput, CatalogMuscleEntry, WireResult } from './muscleTagging'
+export { EXERCISE_FLAG_PRIORITY, pickPriorityFlag } from './flagPriority'
