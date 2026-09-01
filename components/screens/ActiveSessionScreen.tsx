@@ -22,6 +22,11 @@ interface ActiveSessionScreenProps {
   initialExIdx?: number
   initialSnapshot?: SavedSnapshot
   startedAt?: string
+  /** GYM-97 fix #1: required to persist the mid-session per-exercise
+   *  autosave (see the effect below) — without it, /api/session/write's
+   *  group key has no userProgramSplitId and the insert is silently
+   *  skipped even though the route still returns success:true. */
+  userProgramSplitId?: string
   onFinish: (logs: ExerciseLog[], snapshot: SavedSnapshot) => void
   onBack: (logs: ExerciseLog[], exIdx: number, snapshot: SavedSnapshot) => void
   onSessionSwap?: (oldName: string, newName: string) => void
@@ -404,21 +409,24 @@ function WeightInput({
 }
 
 // ── RIR Row — Phase 3: persistent inline explainer, not one-time onboarding ──
+// GYM-97 fix #5: `explainerOpen` lives inside this component (not lifted to
+// the screen) — RirRow renders once per set, and nothing outside it needs to
+// read this toggle, so scoping it here keeps each set's "?" independent
+// instead of one boolean toggling every set's explainer at once.
 function RirRow({
-  value, explainerOpen, onToggleExplainer, onSelect,
+  value, onSelect,
 }: {
   value: number | null | undefined
-  explainerOpen: boolean
-  onToggleExplainer: () => void
   onSelect: (v: number | null) => void
 }) {
   const t = useTranslations('screens.activeSession')
+  const [explainerOpen, setExplainerOpen] = useState(false)
   return (
     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
         <span className="section-label">{t('rirLabel')}</span>
         <button
-          onClick={onToggleExplainer}
+          onClick={() => setExplainerOpen(o => !o)}
           aria-label={t('rirExplainerAriaLabel')}
           style={{
             background: explainerOpen ? 'var(--accent-dim)' : 'none',
@@ -446,34 +454,17 @@ function RirRow({
           {t('rirExplainerText')}
         </p>
       )}
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-        {RIR_CHOICES.map(choice => {
-          const isSelected = value === choice
-          const label = choice === 5 ? '5+' : String(choice)
-          return (
-            <button
-              key={choice}
-              onClick={() => onSelect(isSelected ? null : choice)}
-              style={{
-                minWidth: '38px',
-                minHeight: '38px',
-                padding: '0 8px',
-                borderRadius: '2px',
-                cursor: 'pointer',
-                background: isSelected ? 'var(--accent)' : 'var(--surface-2)',
-                color: isSelected ? 'var(--on-accent)' : 'var(--text-mid)',
-                border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
-                fontFamily: 'Space Mono, monospace',
-                fontSize: '0.75rem',
-                fontWeight: isSelected ? 700 : 400,
-                transition: 'all 0.1s',
-              }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
+      {/* GYM-97 fix #8: reuse ChipGrid (already used below for WeightInput)
+         instead of a bespoke button grid — it enforces the 44×44px tap-target
+         floor (the Phase 1 checker gate); the old grid was 38px. */}
+      <ChipGrid
+        values={RIR_CHOICES as unknown as number[]}
+        selectedValue={value ?? null}
+        onSelect={v => onSelect(value === v ? null : v)}
+        formatValue={v => (v === 5 ? '5+' : String(v))}
+        columns={6}
+        maxWidth="100%"
+      />
     </div>
   )
 }
@@ -558,7 +549,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ActiveSessionScreen({
-  userId, split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, onFinish, onBack, onSessionSwap,
+  userId, split, plan, initialLogs, initialExIdx = 0, initialSnapshot, startedAt, userProgramSplitId, onFinish, onBack, onSessionSwap,
 }: ActiveSessionScreenProps) {
   const t = useTranslations('screens.activeSession')
   const common = useTranslations('common')
@@ -592,10 +583,6 @@ export default function ActiveSessionScreen({
   const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
-  // Persistent per the plan's requirement ("reachable every time it's
-  // shown, not once") — a plain toggle, not a one-time onboarding flag; no
-  // dismiss-forever state anywhere.
-  const [rirExplainerOpen, setRirExplainerOpen] = useState(false)
   // GYM-95: pending in-memory logs op with 3s Undo. Mid-session is today-only;
   // no routine prompt (per plan). `flush` is a no-op — there's no DB write to
   // defer for mid-session add/remove.
@@ -705,6 +692,10 @@ export default function ActiveSessionScreen({
         notes: ex.notes || undefined,
         unit: (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
         rir: set.rir ?? undefined,
+        // GYM-97 fix #1: without this, /api/session/write's group key
+        // falls back to '' and the insert is silently skipped — see the
+        // prop docstring above.
+        userProgramSplitId,
       })
       setIndices.push(si + 1)  // 1-indexed set number
     }
@@ -717,6 +708,16 @@ export default function ActiveSessionScreen({
     })
       .then(r => r.json())
       .then(data => {
+        // GYM-97 fix #1 (defense-in-depth): the route now returns
+        // success:false when it can't persist (e.g. missing
+        // userProgramSplitId) instead of lying with success:true. Never
+        // flash "✓ SAVED" — or mark this exercise as saved — on that path;
+        // allow the next logs change to retry the autosave.
+        if (data.success === false) {
+          savedExIndices.current.delete(currentExIdx)
+          console.error('Auto-save reported failure:', data.error ?? data)
+          return
+        }
         // Store set IDs in snapshot keyed by "exerciseName:setNum"
         if (data.pageIds && Array.isArray(data.pageIds)) {
           data.pageIds.forEach((pageId: string, i: number) => {
@@ -732,8 +733,11 @@ export default function ActiveSessionScreen({
         }
         flashSaved()
       })
-      .catch(e => console.error('Auto-save failed:', e))
-  }, [logs, currentExIdx, split, exerciseDef])
+      .catch(e => {
+        savedExIndices.current.delete(currentExIdx)
+        console.error('Auto-save failed:', e)
+      })
+  }, [logs, currentExIdx, split, exerciseDef, userProgramSplitId])
 
   function toggleUnit() {
     setUnitOverrides(prev => ({
@@ -1222,8 +1226,6 @@ export default function ActiveSessionScreen({
                   {/* RIR — persistent inline explainer, every set, every time */}
                   <RirRow
                     value={set.rir}
-                    explainerOpen={rirExplainerOpen}
-                    onToggleExplainer={() => setRirExplainerOpen(o => !o)}
                     onSelect={v => selectRir(i, v)}
                   />
                 </>
