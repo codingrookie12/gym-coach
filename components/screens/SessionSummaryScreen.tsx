@@ -12,6 +12,7 @@ import {
   PendingExercise,
 } from '@/lib/customExercises'
 import ExerciseMetadataFields from '@/components/ExerciseMetadataFields'
+import { pickPriorityFlag } from '@/lib/coaching/index'
 
 interface SessionSummaryScreenProps {
   userId: string
@@ -147,12 +148,15 @@ export default function SessionSummaryScreen({
   // Next-session signals — read directly from Phase 2's already-computed
   // flags on each plan item, not re-derived from raw logs (the old engine's
   // re-derivation here was a second, independent, and looser copy of logic
-  // the coaching engine already owns).
+  // the coaching engine already owns). GYM-97 fix #6: picks via the shared
+  // lib/coaching/flagPriority.ts ordering — previously a raw `.find()` over
+  // a different, unordered kind list, which could show a different "the"
+  // flag than WorkoutOverviewScreen for the same exercise state.
   const flaggedItems = plan
     .map(item => {
       const log = exerciseLogs.find(l => l.exerciseName === item.exercise.name)
       if (!log || !log.sets.some(s => s.completed)) return null
-      const flag = item.flags.find(f => ['progress-ready', 'stall', 'weight-too-heavy', 'fatigue'].includes(f.kind))
+      const flag = pickPriorityFlag(item.flags)
       return flag ? { exerciseName: item.exercise.name, flag } : null
     })
     .filter((x): x is { exerciseName: string; flag: SessionExercisePlan['flags'][number] } => x !== null)
