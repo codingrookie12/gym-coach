@@ -107,7 +107,9 @@
     "activeBadge": "ACTIVE",
     "confirmButton": "CONFIRM",
     "cancelButton": "CANCEL",
-    "loading": "LOADING..."
+    "loading": "LOADING...",
+    "programSummary": "{splitCount, plural, one {# split} other {# splits}} · {exerciseCount, plural, one {# exercise} other {# exercises}}",
+    "backButton": "← BACK"
   },
   "explorer": {
     "title": "EXPLORE PROGRAMS",
@@ -117,7 +119,8 @@
     "addingButton": "ADDING...",
     "splitsHeader": "SPLITS & EXERCISES",
     "errorGeneric": "Something went wrong. Try again.",
-    "cloneFailed": "Clone failed"
+    "cloneFailed": "Clone failed",
+    "attributionBy": "by {name}"
   },
   "onboarding": {
     "title": "Choose Your Program",
@@ -366,7 +369,11 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "loadFailed": "Failed to load routine",
-      "reorderFailed": "Couldn't save order"
+      "reorderFailed": "Couldn't save order",
+      "tapToSwap": "tap to swap",
+      "exerciseRemoved": "{name} removed",
+      "exerciseAdded": "{name} added to {split}",
+      "exerciseSwapped": "{from} → {to}"
     },
     "customProgramBuilder": {
       "loading": "LOADING...",
@@ -376,7 +383,17 @@
       "cancel": "CANCEL",
       "noExercises": "No exercises yet",
       "title": "Program Builder",
-      "loadFailed": "Failed to load program"
+      "loadFailed": "Failed to load program",
+      "namePlaceholder": "e.g. My Custom Split",
+      "addSplitButton": "+ ADD SPLIT",
+      "splitNamePlaceholder": "Split name",
+      "addExerciseButton": "+ ADD EXERCISE",
+      "setsLabel": "S",
+      "saveButton": "CREATE PROGRAM",
+      "saveButtonEdit": "DONE",
+      "savingButton": "SAVING...",
+      "archiveNotice": "This split has logged workouts and was archived",
+      "saveFailed": "Failed to save"
     },
     "progressHistory": {
       "pr": "PR",

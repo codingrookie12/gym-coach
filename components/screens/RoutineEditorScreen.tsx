@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import {
   getUserRoutineForSplit,
@@ -41,6 +42,7 @@ interface PendingOp {
 }
 
 export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBack }: RoutineEditorScreenProps) {
+  const t = useTranslations('screens.routineEditor')
   const [activeSplitId, setActiveSplitId] = useState(splits[0]?.id ?? '')
   const [exerciseMap, setExerciseMap] = useState<Map<string, RoutineExerciseRow[]>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
         setExerciseMap(new Map(entries))
         setLoading(false)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load routine')
+        setError(err instanceof Error ? err.message : t('loadFailed'))
         setLoading(false)
       }
     }
@@ -164,7 +166,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
       pendingOpRef.current = null
     }, 3000)
 
-    startPendingOp({ splitId, message: `${exerciseName} removed`, timeoutId, flush, undo })
+    startPendingOp({ splitId, message: t('exerciseRemoved', { name: exerciseName }), timeoutId, flush, undo })
   }
 
   // GYM-83: Reorder via ▲/▼. Optimistic local swap → PATCH /api/routine/[splitId]
@@ -217,7 +219,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
         next.set(splitId, snapshot)
         return next
       })
-      setReorderError("Couldn't save order")
+      setReorderError(t('reorderFailed'))
       setTimeout(() => setReorderError(null), 3000)
     } finally {
       setReordering(false)
@@ -288,7 +290,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
       pendingOpRef.current = null
     }, 3000)
 
-    startPendingOp({ splitId, message: `${def.name} added to ${splitName}`, timeoutId, flush, undo })
+    startPendingOp({ splitId, message: t('exerciseAdded', { name: def.name, split: splitName }), timeoutId, flush, undo })
   }
 
   function handleSwapExercise(target: RoutineExerciseRow, newDef: ExerciseDefinition) {
@@ -349,7 +351,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 
     startPendingOp({
       splitId,
-      message: `${target.exercise_name} → ${newDef.name}`,
+      message: t('exerciseSwapped', { from: target.exercise_name, to: newDef.name }),
       timeoutId,
       flush,
       undo,
@@ -370,7 +372,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
         <Header onBack={handleBack} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            LOADING...
+            {t('loading')}
           </span>
         </div>
       </div>
@@ -387,9 +389,9 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
           </span>
           <button
             onClick={() => { setError(null); setLoading(true); window.location.reload() }}
-            style={{ background: 'none', border: '1px solid var(--border-2)', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', padding: '8px 16px', borderRadius: '2px', cursor: 'pointer', letterSpacing: '0.08em' }}
+            style={{ background: 'none', border: '1px solid var(--border-2)', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', padding: '8px 16px', minHeight: '44px', borderRadius: '2px', cursor: 'pointer', letterSpacing: '0.08em' }}
           >
-            RETRY
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -420,6 +422,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
               border: 'none',
               borderBottom: activeSplitId === split.id ? '2px solid var(--accent)' : '2px solid transparent',
               padding: '12px 16px 10px',
+              minHeight: '44px',
               color: activeSplitId === split.id ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontFamily: 'Space Mono, monospace',
               fontSize: '0.58rem',
@@ -442,10 +445,10 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
         {currentRows.length === 0 ? (
           <div style={{ padding: '48px 20px', textAlign: 'center' }}>
             <div className="font-display" style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', letterSpacing: '0.06em', marginBottom: '8px' }}>
-              NO EXERCISES
+              {t('noExercises')}
             </div>
             <div className="font-body" style={{ fontSize: '0.85rem', color: 'var(--border-2)' }}>
-              Tap + ADD EXERCISE below
+              {t('tapAddExerciseHint')}
             </div>
           </div>
         ) : (
@@ -494,7 +497,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                   {row.exercise_name}
                 </span>
                 <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
-                  {row.sets}×{row.rep_range_min}–{row.rep_range_max} · tap to swap
+                  {row.sets}×{row.rep_range_min}–{row.rep_range_max} · {t('tapToSwap')}
                 </span>
               </button>
 
@@ -503,13 +506,15 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                 <button
                   onClick={e => { e.stopPropagation(); handleReorder(row.id, 'up') }}
                   disabled={i === 0 || reordering}
-                  aria-label="Move up"
+                  aria-label={t('moveUp')}
                   style={{
                     background: 'none',
                     border: 'none',
                     color: i === 0 ? 'var(--border-2)' : 'var(--text-secondary)',
                     cursor: i === 0 || reordering ? 'default' : 'pointer',
                     padding: '4px 8px',
+                    minHeight: '22px',
+                    minWidth: '44px',
                     fontFamily: 'Space Mono, monospace',
                     fontSize: '0.7rem',
                     lineHeight: 1,
@@ -521,13 +526,15 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                 <button
                   onClick={e => { e.stopPropagation(); handleReorder(row.id, 'down') }}
                   disabled={i === currentRows.length - 1 || reordering}
-                  aria-label="Move down"
+                  aria-label={t('moveDown')}
                   style={{
                     background: 'none',
                     border: 'none',
                     color: i === currentRows.length - 1 ? 'var(--border-2)' : 'var(--text-secondary)',
                     cursor: i === currentRows.length - 1 || reordering ? 'default' : 'pointer',
                     padding: '4px 8px',
+                    minHeight: '22px',
+                    minWidth: '44px',
                     fontFamily: 'Space Mono, monospace',
                     fontSize: '0.7rem',
                     lineHeight: 1,
@@ -547,8 +554,11 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   padding: '14px 20px 14px 8px',
+                  minHeight: '44px',
+                  minWidth: '44px',
                   display: 'flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   lineHeight: 1,
                   flexShrink: 0,
                   transition: 'color 0.1s',
@@ -599,7 +609,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          ADD EXERCISE
+          {t('addExercise')}
         </button>
       </div>
 
@@ -637,11 +647,13 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
               fontSize: '0.65rem',
               letterSpacing: '0.08em',
               cursor: 'pointer',
-              padding: '0',
+              padding: '12px',
+              minHeight: '44px',
+              minWidth: '44px',
               fontWeight: 700,
             }}
           >
-            UNDO
+            {t('undo')}
           </button>
         </div>
       )}
@@ -688,6 +700,7 @@ export default function RoutineEditorScreen({ splits, userId, splitMuscles, onBa
 }
 
 function Header({ onBack }: { onBack: () => void }) {
+  const t = useTranslations('screens.routineEditor')
   return (
     <div
       className="safe-top flex items-center gap-4 px-5"
@@ -695,12 +708,12 @@ function Header({ onBack }: { onBack: () => void }) {
     >
       <button
         onClick={onBack}
-        style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px' }}
+        style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem', padding: '4px', minWidth: '44px', minHeight: '44px' }}
       >
         ←
       </button>
       <span className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
-        ROUTINE EDITOR
+        {t('title')}
       </span>
     </div>
   )

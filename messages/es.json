@@ -107,7 +107,9 @@
     "activeBadge": "ACTIVO",
     "confirmButton": "CONFIRMAR",
     "cancelButton": "CANCELAR",
-    "loading": "CARGANDO..."
+    "loading": "CARGANDO...",
+    "programSummary": "{splitCount, plural, one {# día} other {# días}} · {exerciseCount, plural, one {# ejercicio} other {# ejercicios}}",
+    "backButton": "← ATRÁS"
   },
   "explorer": {
     "title": "EXPLORAR PROGRAMAS",
@@ -117,7 +119,8 @@
     "addingButton": "AGREGANDO...",
     "splitsHeader": "SPLITS Y EJERCICIOS",
     "errorGeneric": "Algo salió mal. Intenta de nuevo.",
-    "cloneFailed": "Error al clonar"
+    "cloneFailed": "Error al clonar",
+    "attributionBy": "por {name}"
   },
   "onboarding": {
     "title": "Elige Tu Programa",
@@ -366,7 +369,11 @@
       "moveUp": "Subir",
       "moveDown": "Bajar",
       "loadFailed": "Error al cargar la rutina",
-      "reorderFailed": "No se pudo guardar el orden"
+      "reorderFailed": "No se pudo guardar el orden",
+      "tapToSwap": "toca para cambiar",
+      "exerciseRemoved": "{name} eliminado",
+      "exerciseAdded": "{name} agregado a {split}",
+      "exerciseSwapped": "{from} → {to}"
     },
     "customProgramBuilder": {
       "loading": "CARGANDO...",
@@ -376,7 +383,17 @@
       "cancel": "CANCELAR",
       "noExercises": "Aún no hay ejercicios",
       "title": "Creador de Programas",
-      "loadFailed": "Error al cargar el programa"
+      "loadFailed": "Error al cargar el programa",
+      "namePlaceholder": "ej. Mi Rutina Personalizada",
+      "addSplitButton": "+ AGREGAR DÍA",
+      "splitNamePlaceholder": "Nombre del día",
+      "addExerciseButton": "+ AGREGAR EJERCICIO",
+      "setsLabel": "S",
+      "saveButton": "CREAR PROGRAMA",
+      "saveButtonEdit": "LISTO",
+      "savingButton": "GUARDANDO...",
+      "archiveNotice": "Este día tiene entrenamientos registrados y fue archivado",
+      "saveFailed": "Error al guardar"
     },
     "progressHistory": {
       "pr": "RP",

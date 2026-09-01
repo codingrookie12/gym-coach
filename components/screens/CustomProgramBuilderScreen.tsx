@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import {
   getUserRoutineForSplit,
@@ -30,6 +31,7 @@ interface SplitState {
 export default function CustomProgramBuilderScreen({
   mode, programId, userId, activeSession, onCancel, onSaved,
 }: CustomProgramBuilderScreenProps) {
+  const t = useTranslations('screens.customProgramBuilder')
   const [programName, setProgramName] = useState('')
   const [splits, setSplits] = useState<SplitState[]>([])
   const [loading, setLoading] = useState(mode === 'edit')
@@ -74,7 +76,7 @@ export default function CustomProgramBuilderScreen({
         setSplits(splitStates)
         setLoading(false)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load program')
+        setError(err instanceof Error ? err.message : t('loadFailed'))
         setLoading(false)
       }
     }
@@ -146,7 +148,7 @@ export default function CustomProgramBuilderScreen({
         })
         const data = await res.json()
         if (data.archived) {
-          setError('This split has logged workouts and was archived')
+          setError(t('archiveNotice'))
           setTimeout(() => setError(null), 3000)
         }
       } catch {}
@@ -275,7 +277,7 @@ export default function CustomProgramBuilderScreen({
         onSaved(programId!)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : t('saveFailed'))
       setSaving(false)
     }
   }
@@ -286,7 +288,7 @@ export default function CustomProgramBuilderScreen({
         <BuilderHeader onCancel={onCancel} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            LOADING...
+            {t('loading')}
           </span>
         </div>
       </div>
@@ -304,8 +306,8 @@ export default function CustomProgramBuilderScreen({
 
       {activeSession && (
         <div style={{ padding: '10px 20px', background: 'var(--rust)', flexShrink: 0 }}>
-          <p className="font-mono" style={{ fontSize: '0.65rem', color: '#fff', margin: 0, textAlign: 'center' }}>
-            Finish your current workout before editing this program.
+          <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--on-rust)', margin: 0, textAlign: 'center' }}>
+            {t('sessionBlockBanner')}
           </p>
         </div>
       )}
@@ -313,21 +315,21 @@ export default function CustomProgramBuilderScreen({
       <div className="scroll-area" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 20px' }}>
         {error && (
           <div style={{ padding: '8px 12px', background: 'var(--rust)', borderRadius: '2px', marginBottom: '12px' }}>
-            <p className="font-mono" style={{ fontSize: '0.65rem', color: '#fff', margin: 0 }}>{error}</p>
+            <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--on-rust)', margin: 0 }}>{error}</p>
           </div>
         )}
 
         {/* Program name */}
         <div style={{ marginBottom: '20px' }}>
           <label className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.1em', display: 'block', marginBottom: '6px' }}>
-            PROGRAM NAME
+            {t('programName')}
           </label>
           <input
             type="text"
             value={programName}
             onChange={e => handleProgramNameChange(e.target.value)}
             disabled={!!activeSession}
-            placeholder="e.g. My Custom Split"
+            placeholder={t('namePlaceholder')}
             maxLength={60}
             style={{
               width: '100%', padding: '10px 12px', background: 'var(--surface)',
@@ -349,7 +351,7 @@ export default function CustomProgramBuilderScreen({
                   onChange={e => handleSplitNameChange(idx, e.target.value)}
                   disabled={!!activeSession}
                   maxLength={40}
-                  placeholder="Split name"
+                  placeholder={t('splitNamePlaceholder')}
                   style={{
                     flex: 1, padding: '6px 8px', background: 'var(--bg)',
                     border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-primary)',
@@ -359,20 +361,20 @@ export default function CustomProgramBuilderScreen({
                 <button
                   onClick={() => handleReorder(idx, 'up')}
                   disabled={idx === 0 || !!activeSession}
-                  style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, color: 'var(--text-mid)', fontSize: '1rem', padding: '4px' }}
+                  style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1, color: 'var(--text-mid)', fontSize: '1rem', padding: '4px', minWidth: '32px', minHeight: '32px' }}
                 >
                   ▲
                 </button>
                 <button
                   onClick={() => handleReorder(idx, 'down')}
                   disabled={idx === splits.length - 1 || !!activeSession}
-                  style={{ background: 'none', border: 'none', cursor: idx === splits.length - 1 ? 'default' : 'pointer', opacity: idx === splits.length - 1 ? 0.3 : 1, color: 'var(--text-mid)', fontSize: '1rem', padding: '4px' }}
+                  style={{ background: 'none', border: 'none', cursor: idx === splits.length - 1 ? 'default' : 'pointer', opacity: idx === splits.length - 1 ? 0.3 : 1, color: 'var(--text-mid)', fontSize: '1rem', padding: '4px', minWidth: '32px', minHeight: '32px' }}
                 >
                   ▼
                 </button>
                 <button
                   onClick={() => setSplits(prev => prev.map((s, i) => i === idx ? { ...s, expanded: !s.expanded } : s))}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-mid)', fontSize: '0.8rem', padding: '4px', fontFamily: 'Space Mono, monospace' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-mid)', fontSize: '0.8rem', padding: '4px', minWidth: '32px', minHeight: '32px', fontFamily: 'Space Mono, monospace' }}
                 >
                   {split.expanded ? '−' : '+'}
                 </button>
@@ -381,22 +383,22 @@ export default function CustomProgramBuilderScreen({
                     <button
                       onClick={() => handleRemoveSplit(idx)}
                       disabled={!!activeSession}
-                      style={{ background: 'var(--rust)', border: 'none', color: '#fff', fontSize: '0.6rem', padding: '4px 8px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Space Mono, monospace' }}
+                      style={{ background: 'var(--rust)', border: 'none', color: 'var(--on-rust)', fontSize: '0.6rem', padding: '4px 8px', minHeight: '44px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Space Mono, monospace' }}
                     >
-                      DELETE
+                      {t('delete')}
                     </button>
                     <button
                       onClick={() => setConfirmDeleteIdx(null)}
-                      style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-mid)', fontSize: '0.6rem', padding: '4px 8px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Space Mono, monospace' }}
+                      style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-mid)', fontSize: '0.6rem', padding: '4px 8px', minHeight: '44px', borderRadius: '2px', cursor: 'pointer', fontFamily: 'Space Mono, monospace' }}
                     >
-                      CANCEL
+                      {t('cancel')}
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => setConfirmDeleteIdx(idx)}
                     disabled={!!activeSession}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', fontSize: '0.7rem', padding: '4px', fontFamily: 'Space Mono, monospace' }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', fontSize: '0.7rem', padding: '4px', minWidth: '32px', minHeight: '32px', fontFamily: 'Space Mono, monospace' }}
                   >
                     ✕
                   </button>
@@ -408,7 +410,7 @@ export default function CustomProgramBuilderScreen({
                 <div style={{ borderTop: '1px solid var(--border)', padding: '8px 12px' }}>
                   {split.exercises.length === 0 && (
                     <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', margin: '8px 0', textAlign: 'center' }}>
-                      No exercises yet
+                      {t('noExercises')}
                     </p>
                   )}
                   {split.exercises.map(exercise => (
@@ -417,7 +419,7 @@ export default function CustomProgramBuilderScreen({
                         {exercise.exercise_name}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <label className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>S</label>
+                        <label className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{t('setsLabel')}</label>
                         <input
                           type="number"
                           value={exercise.sets}
@@ -449,7 +451,7 @@ export default function CustomProgramBuilderScreen({
                       <button
                         onClick={() => handleRemoveExercise(idx, exercise.exercise_name)}
                         disabled={!!activeSession}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', fontSize: '0.7rem', padding: '4px' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', fontSize: '0.7rem', padding: '4px', minWidth: '32px', minHeight: '32px' }}
                       >
                         ✕
                       </button>
@@ -461,12 +463,13 @@ export default function CustomProgramBuilderScreen({
                     className="font-mono"
                     style={{
                       display: 'block', width: '100%', marginTop: '8px', padding: '10px',
+                      minHeight: '44px',
                       background: 'none', border: '1px dashed var(--border-2)',
                       color: 'var(--accent)', fontSize: '0.65rem', cursor: 'pointer',
                       letterSpacing: '0.08em', borderRadius: '2px',
                     }}
                   >
-                    + ADD EXERCISE
+                    {t('addExerciseButton')}
                   </button>
                 </div>
               )}
@@ -481,13 +484,14 @@ export default function CustomProgramBuilderScreen({
           className="font-mono"
           style={{
             display: 'block', width: '100%', marginTop: '16px', padding: '12px',
+            minHeight: '44px',
             background: 'none', border: '1px dashed var(--border-2)',
             color: splits.length >= 7 ? 'var(--text-secondary)' : 'var(--accent)',
             fontSize: '0.7rem', cursor: splits.length >= 7 ? 'default' : 'pointer',
             letterSpacing: '0.08em', borderRadius: '2px',
           }}
         >
-          + ADD SPLIT
+          {t('addSplitButton')}
         </button>
       </div>
 
@@ -499,7 +503,7 @@ export default function CustomProgramBuilderScreen({
           className="btn-primary"
           style={{ opacity: canSave && !saving ? 1 : 0.5 }}
         >
-          {saving ? 'SAVING...' : mode === 'create' ? 'CREATE PROGRAM' : 'DONE'}
+          {saving ? t('savingButton') : mode === 'create' ? t('saveButton') : t('saveButtonEdit')}
         </button>
       </div>
 
@@ -520,6 +524,7 @@ export default function CustomProgramBuilderScreen({
 }
 
 function BuilderHeader({ onCancel }: { onCancel: () => void }) {
+  const t = useTranslations('screens.customProgramBuilder')
   return (
     <div
       className="safe-top flex items-center gap-4 px-5"
@@ -527,13 +532,13 @@ function BuilderHeader({ onCancel }: { onCancel: () => void }) {
     >
       <button
         onClick={onCancel}
-        style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem' }}
+        style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px', minWidth: '44px', minHeight: '44px', fontFamily: 'Space Mono, monospace', fontSize: '0.9rem' }}
       >
         ←
       </button>
       <div style={{ flex: 1 }}>
         <h1 className="font-display" style={{ fontSize: '1.5rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em', lineHeight: 1 }}>
-          Program Builder
+          {t('title')}
         </h1>
       </div>
     </div>
