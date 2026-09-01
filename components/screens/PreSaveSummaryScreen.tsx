@@ -13,7 +13,12 @@ interface PreSaveSummaryScreenProps {
   plan: SessionExercisePlan[]
   logs: ExerciseLog[]
   sessionSwaps?: SessionSwap[]
-  onSave: (logs: ExerciseLog[], sessionRpe: number | null) => Promise<void>
+  /** GYM-97 fix #7: lifted to appState by the caller (app/page.tsx) so
+   *  going back to fix a set and returning here doesn't remount this
+   *  screen back to a blank RPE selection. */
+  sessionRpe: number | null
+  onSessionRpeChange: (value: number | null) => void
+  onSave: (logs: ExerciseLog[]) => Promise<void>
   onBack: () => void
   onSetDefault?: (oldName: string, newName: string) => Promise<void>
 }
@@ -28,7 +33,7 @@ type EditTarget = { exIdx: number; setIdx: number; field: 'weight' | 'reps' } | 
 const RPE_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 export default function PreSaveSummaryScreen({
-  split, plan, logs: initialLogs, sessionSwaps = [], onSave, onBack, onSetDefault,
+  split, plan, logs: initialLogs, sessionSwaps = [], sessionRpe, onSessionRpeChange, onSave, onBack, onSetDefault,
 }: PreSaveSummaryScreenProps) {
   const t = useTranslations('screens.preSaveSummary')
   const common = useTranslations('common')
@@ -39,7 +44,6 @@ export default function PreSaveSummaryScreen({
   const [pendingDefault, setPendingDefault] = useState<SessionSwap | null>(null)
   const [settingDefault, setSettingDefault] = useState(false)
   const [defaultsDone, setDefaultsDone] = useState<Set<string>>(new Set())
-  const [sessionRpe, setSessionRpe] = useState<number | null>(null)
 
   function openEdit(exIdx: number, setIdx: number, field: 'weight' | 'reps') {
     setEditTarget({ exIdx, setIdx, field })
@@ -74,7 +78,7 @@ export default function PreSaveSummaryScreen({
     setSaving(true)
     setSaveError(false)
     try {
-      await onSave(logs, sessionRpe)
+      await onSave(logs)
     } catch {
       setSaveError(true)
       setSaving(false)
@@ -197,7 +201,7 @@ export default function PreSaveSummaryScreen({
             return (
               <button
                 key={choice}
-                onClick={() => setSessionRpe(isSelected ? null : choice)}
+                onClick={() => onSessionRpeChange(isSelected ? null : choice)}
                 style={{
                   minWidth: '32px',
                   minHeight: '36px',

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-// '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts — see
-// app/page.tsx's note. New-engine imports must use the explicit '/index' path.
+// See app/page.tsx's note — the old lib/coaching.ts that used to shadow
+// this directory on a bare import was deleted in GYM-97 fix #9.
 import { CoachingContext, CoachingFlag } from '@/lib/coaching/index'
 import { loadCoachingPlan, SessionExercisePlan } from '@/lib/sessionPlan'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
@@ -16,6 +16,9 @@ interface CoachingContextScreenProps {
   coachingContext: CoachingContext | null
   plan: SessionExercisePlan[] | null
   onDataLoaded: (context: CoachingContext, plan: SessionExercisePlan[]) => void
+  /** GYM-97 fix #2: lifted to appState by the caller (app/page.tsx) so a
+   *  decision survives this screen remounting (navigate away and back). */
+  weightDecisions: Record<string, boolean>
   onWeightDecision?: (exerciseId: string, accepted: boolean) => void
   onViewPlan: () => void
   onBack: () => void
@@ -43,14 +46,13 @@ function FlagLine({ flag, accent }: { flag: CoachingFlag; accent?: boolean }) {
 }
 
 export default function CoachingContextScreen({
-  split, userProgramSplitId, coachingContext, plan, onDataLoaded, onWeightDecision, onViewPlan, onBack,
+  split, userProgramSplitId, coachingContext, plan, onDataLoaded, weightDecisions, onWeightDecision, onViewPlan, onBack,
 }: CoachingContextScreenProps) {
   const t = useTranslations('screens.coachingContext')
   const common = useTranslations('common')
   const locale = useLocale()
   const [loading, setLoading] = useState(!coachingContext)
   const [error, setError] = useState<string | null>(null)
-  const [weightDecisions, setWeightDecisions] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (coachingContext) return
@@ -153,6 +155,13 @@ export default function CoachingContextScreen({
                 <p className="font-display" style={{ fontSize: '1.3rem', color: 'var(--text-primary)', margin: '0 0 3px 0', letterSpacing: '0.04em' }}>
                   {dateFormatter.format(new Date(ctx.lastSessionDate + 'T12:00:00'))}
                 </p>
+                {/* GYM-97 fix #10: brief recap restored after Phase 3 dropped
+                   the old engine's lastSessionSummary string. */}
+                {ctx.lastSessionExerciseCount !== null && (
+                  <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-mid)', margin: '2px 0 0 0' }}>
+                    {t('lastSessionExerciseCount', { count: ctx.lastSessionExerciseCount })}
+                  </p>
+                )}
                 {ctx.recoveryGapDays !== null && ctx.recoveryGapDays < 3 && (
                   <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--rust)', margin: '6px 0 0 0' }}>
                     ⚠ {t('recoveryWarning', { days: ctx.recoveryGapDays })}
@@ -227,20 +236,14 @@ export default function CoachingContextScreen({
                           ) : (
                             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                               <button
-                                onClick={() => {
-                                  setWeightDecisions(prev => ({ ...prev, [item.exerciseId]: true }))
-                                  onWeightDecision?.(item.exerciseId, true)
-                                }}
+                                onClick={() => onWeightDecision?.(item.exerciseId, true)}
                                 className="btn-primary"
                                 style={{ flex: 1, fontSize: '0.6rem', padding: '7px 10px', letterSpacing: '0.08em' }}
                               >
                                 {t('acceptWeight', { from: Number(weightFlag.params.weight), to: item.targetWeight ?? 0 })}
                               </button>
                               <button
-                                onClick={() => {
-                                  setWeightDecisions(prev => ({ ...prev, [item.exerciseId]: false }))
-                                  onWeightDecision?.(item.exerciseId, false)
-                                }}
+                                onClick={() => onWeightDecision?.(item.exerciseId, false)}
                                 style={{ flex: 1, background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.6rem', letterSpacing: '0.08em', padding: '7px 10px', cursor: 'pointer' }}
                               >
                                 {t('keepWeight')}

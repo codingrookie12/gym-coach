@@ -18,10 +18,11 @@ import MeScreen from '@/components/screens/MeScreen'
 import ReportsLandingScreen from '@/components/screens/ReportsLandingScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
-// NOTE: '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts file,
-// not the lib/coaching/ directory's index.ts — Node/webpack resolves a
-// same-named .ts file before a directory index. The new engine's public
-// API must be imported from the explicit '/index' path everywhere.
+// NOTE: the old lib/coaching.ts (which used to shadow this directory on a
+// bare '@/lib/coaching' import — Node/webpack resolves a same-named .ts file
+// before a directory index) was deleted in GYM-97 fix #9 once every call
+// site had migrated to the new engine. Imports still use the explicit
+// '/index' path for clarity, though it's no longer load-bearing.
 import { CoachingContext, unresolvedExerciseId } from '@/lib/coaching/index'
 import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { type Program } from '@/lib/programs'
@@ -79,6 +80,15 @@ export interface AppState {
   sessionSwaps: SessionSwap[]
   sessionSyncStatus: 'confirmed' | 'partial' | 'queued' | null
   workoutStartedAt: string | null
+  /** GYM-97 fix #2: lifted out of CoachingContextScreen's local state so an
+   *  ACCEPT/KEEP WEIGHT decision survives navigating away and back —
+   *  previously a remount reset it to {}, letting a re-tap of KEEP WEIGHT
+   *  silently revert an already-accepted recalibration. */
+  weightDecisions: Record<string, boolean>
+  /** GYM-97 fix #7: lifted out of PreSaveSummaryScreen's local state so
+   *  going back to fix a set and returning doesn't silently drop the
+   *  session RPE (a real input to Phase 2's fatigue-deload signal). */
+  sessionRpe: number | null
   detectedSession: PersistedSession | null
   detectedSplit: string | null
   lastSplit: string | null
@@ -133,6 +143,8 @@ export default function App() {
     sessionSwaps: [],
     sessionSyncStatus: null,
     workoutStartedAt: null,
+    weightDecisions: {},
+    sessionRpe: null,
     detectedSession: null,
     detectedSplit: null,
     lastSplit: null,
@@ -238,6 +250,7 @@ export default function App() {
       split: null, coachingContext: null, plan: null,
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       sessionSwaps: [], sessionSyncStatus: null,
+      weightDecisions: {}, sessionRpe: null,
       detectedSession: null, detectedSplit: null,
       // programId preserved intentionally
     }))
@@ -264,7 +277,10 @@ export default function App() {
                   // engine-derived state rather than carry stale flags
                   // forward under the wrong exerciseId. Recomputed next
                   // time CoachingContextScreen loads.
-                  exerciseId: unresolvedExerciseId(newName),
+                  // GYM-97 fix #3: salted per swap instance so two
+                  // independently swapped-in exercises sharing a name never
+                  // collide on exerciseId (React keys, weightDecisions map).
+                  exerciseId: unresolvedExerciseId(newName, crypto.randomUUID()),
                   targetWeight: null,
                   targetWeightOrigin: null,
                   flags: [],
@@ -430,7 +446,11 @@ export default function App() {
     navigate('pre-save')
   }, [updateState, navigate])
 
-  async function handleSaveSession(logs: ExerciseLog[], sessionRpe: number | null = null) {
+  async function handleSaveSession(logs: ExerciseLog[]) {
+    // GYM-97 fix #7: sessionRpe now lives in appState (see PreSaveSummaryScreen
+    // prop wiring below), not a parameter — lifting it there is what makes it
+    // survive a remount of PreSaveSummaryScreen.
+    const sessionRpe = appState.sessionRpe
     const today = new Date().toISOString().split('T')[0]
     const snapshot = appState.savedSnapshot
 
@@ -676,18 +696,25 @@ export default function App() {
               onDataLoaded={(context, plan) => updateState({ coachingContext: context, plan })}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
+              weightDecisions={appState.weightDecisions}
               onWeightDecision={(exerciseId, accepted) => {
-                if (accepted || !appState.plan) return
-                const item = appState.plan.find(p => p.exerciseId === exerciseId)
-                const flag = item?.flags.find(f => f.kind === 'weight-too-heavy')
-                const originalWeight = flag?.params.weight
-                if (typeof originalWeight !== 'number') return
-                const updatedPlan = appState.plan.map(p =>
-                  p.exerciseId === exerciseId
-                    ? { ...p, targetWeight: originalWeight, targetWeightOrigin: 'structural' as const }
-                    : p
-                )
-                updateState({ plan: updatedPlan })
+                // GYM-97 fix #2: the decision itself now lives in appState
+                // (survives remounting this screen), not just the plan
+                // mutation that "keep weight" (accepted=false) performs.
+                setAppState(prev => {
+                  const weightDecisions = { ...prev.weightDecisions, [exerciseId]: accepted }
+                  if (accepted || !prev.plan) return { ...prev, weightDecisions }
+                  const item = prev.plan.find(p => p.exerciseId === exerciseId)
+                  const flag = item?.flags.find(f => f.kind === 'weight-too-heavy')
+                  const originalWeight = flag?.params.weight
+                  if (typeof originalWeight !== 'number') return { ...prev, weightDecisions }
+                  const updatedPlan = prev.plan.map(p =>
+                    p.exerciseId === exerciseId
+                      ? { ...p, targetWeight: originalWeight, targetWeightOrigin: 'structural' as const }
+                      : p
+                  )
+                  return { ...prev, weightDecisions, plan: updatedPlan }
+                })
               }}
               onViewPlan={() => navigate('workout-overview')}
               onBack={goHome}
@@ -726,7 +753,10 @@ export default function App() {
                   // the DB UUID either — see lib/coaching/matching.ts). The
                   // unresolved-id sentinel makes this loudly non-matching
                   // rather than silently colliding with a real id.
-                  exerciseId: unresolvedExerciseId(name),
+                  // GYM-97 fix #3: salted per add instance so two
+                  // independently added exercises sharing a name never
+                  // collide on exerciseId (React keys, weightDecisions map).
+                  exerciseId: unresolvedExerciseId(name, crypto.randomUUID()),
                   targetWeight: prefillWeight,
                   targetWeightOrigin: null,
                   flags: [],
@@ -815,6 +845,7 @@ export default function App() {
               initialExIdx={appState.savedExIdx}
               initialSnapshot={appState.savedSnapshot}
               startedAt={appState.workoutStartedAt ?? undefined}
+              userProgramSplitId={appState.userProgramSplitId ?? undefined}
               onFinish={handleSessionFinish}
               onBack={handleSessionBack}
               onSessionSwap={handleSessionSwap}
@@ -827,6 +858,8 @@ export default function App() {
               plan={appState.plan}
               logs={appState.exerciseLogs}
               sessionSwaps={appState.sessionSwaps}
+              sessionRpe={appState.sessionRpe}
+              onSessionRpeChange={(v) => updateState({ sessionRpe: v })}
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
               onSetDefault={appState.user && appState.userProgramSplitId ? async (oldName, newName) => {
