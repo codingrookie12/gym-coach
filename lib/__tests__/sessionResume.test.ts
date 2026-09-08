@@ -97,6 +97,36 @@ describe('buildResumeStateFromDb', () => {
     expect(exIdx).toBe(1)
   })
 
+  it('keys the snapshot by display name, not canonicalName, for an exercise where they differ', () => {
+    // Regression coverage: buildResumeStateFromDb used to key its rebuilt
+    // SavedSnapshot map by canonicalName, but every other writer of this same
+    // map (ActiveSessionScreen's autosave: `${ex.exerciseName}:${setNumber}`;
+    // app/page.tsx's handleSaveSession: `${exLog.exerciseName}:${si + 1}`)
+    // keys it by the exercise's display name. For most exercises name ===
+    // canonicalName so this went untested — but lib/routines.ts's LEGS_ROUTINE
+    // has a real exercise where they diverge: { name: 'Hack Squat',
+    // canonicalName: 'Linear Hack Press' }. A DB-fallback resume that keyed
+    // wrong here would silently orphan the snapshot entry (no writer would
+    // ever look it up under the wrong key), risking a duplicate `sets` row if
+    // the user re-visits that already-completed exercise.
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Hack Squat', canonicalName: 'Linear Hack Press', sets: 3 })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      {
+        exerciseName: 'Linear Hack Press',
+        sets: [
+          { setNumber: 1, weight: 90, reps: 10, notes: '', rir: 2, pageId: 'set-1' },
+        ],
+      },
+    ]
+
+    const { snapshot } = buildResumeStateFromDb(plan, dbData)
+
+    expect(snapshot['Hack Squat:1']).toEqual({ pageId: 'set-1', weight: 90, reps: 10, notes: '', rir: 2 })
+    expect(snapshot['Linear Hack Press:1']).toBeUndefined()
+  })
+
   it('matches DB exercises to plan items by canonicalName, not array position', () => {
     const plan: SessionExercisePlan[] = [
       makePlanItem(makeExercise({ name: 'Incline DB Press', canonicalName: 'Incline DB Press', sets: 2 })),

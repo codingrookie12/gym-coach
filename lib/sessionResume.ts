@@ -100,7 +100,18 @@ export function buildResumeStateFromDb(
       if (!dbSet) {
         return { weight: item.targetWeight ?? 0, reps: 0, completed: false, skipped: false, rir: null }
       }
-      snapshot[`${canonicalName}:${setNumber}`] = {
+      // Keyed by display name (item.exercise.name), not canonicalName — this
+      // must match ActiveSessionScreen's autosave effect
+      // (`${ex.exerciseName}:${setIndices[i]}`) and app/page.tsx's
+      // handleSaveSession (`${exLog.exerciseName}:${si + 1}`), the two other
+      // writers of this same SavedSnapshot map. For any exercise where the
+      // display name differs from its canonicalName (e.g. lib/routines.ts's
+      // { name: 'Hack Squat', canonicalName: 'Linear Hack Press' }), keying
+      // by canonicalName here produced a snapshot entry under a key none of
+      // the other paths ever look up — silently orphaned, and re-visiting
+      // that already-completed exercise after a DB-fallback resume could
+      // re-insert a duplicate `sets` row (no dedup guard in the write route).
+      snapshot[`${item.exercise.name}:${setNumber}`] = {
         pageId: dbSet.pageId,
         weight: dbSet.weight,
         reps: dbSet.reps,

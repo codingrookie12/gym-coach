@@ -23,9 +23,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Exercise } from '@/lib/routines'
 import { getRoutineAsExercises } from '@/lib/userProgram'
 import { ALL_EXERCISES } from '@/lib/exerciseLibrary'
-// '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts, not this
-// directory's index.ts (Node/webpack resolves a same-named .ts file before a
-// directory index) — the explicit '/index' path is required here.
+// See app/page.tsx's note — the old lib/coaching.ts that used to shadow
+// this directory on a bare import was deleted in GYM-97 fix #9.
 import {
   analyzeCoaching,
   CoachingContext,

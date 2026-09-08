@@ -11,6 +11,7 @@ import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 import ExerciseProgressionStrip from '@/components/ExerciseProgressionStrip'
 import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import type { ExerciseProgressionStrip as ProgressionData } from '@/lib/supabase.queries'
+import { pickPriorityFlag } from '@/lib/coaching/index'
 
 interface WorkoutOverviewScreenProps {
   split: string
@@ -29,12 +30,11 @@ type PendingSwap = { exIdx: number; oldName: string; newName: string }
 
 function ItemFlags({ item }: { item: SessionExercisePlan }) {
   const t = useTranslations('screens.workoutOverview')
-  // The item's highest-signal flag drives the note line — prioritized
-  // consistent with CoachingContextScreen's focus-cue ordering (Tier 2 UX
-  // choice, not spelled out in the plan): fatigue/stall/weight-too-heavy
-  // before a positive progress-ready note.
-  const priority = ['fatigue', 'stall', 'weight-too-heavy', 'recovery-hold', 'progress-ready']
-  const flag = priority.map(k => item.flags.find(f => f.kind === k)).find(Boolean)
+  // The item's highest-signal flag drives the note line — GYM-97 fix #6:
+  // now the shared lib/coaching/flagPriority.ts ordering, also used by
+  // SessionSummaryScreen, so the two screens never disagree on "the" flag
+  // for the same exercise state.
+  const flag = pickPriorityFlag(item.flags)
   const rendered = useCoachingFlagText(flag ?? item.flags[0] ?? { kind: 'no-history', params: {} } as any)
   if (!flag) return null
   const accent = flag.kind === 'progress-ready'

@@ -20,8 +20,8 @@
  */
 
 import { useTranslations } from 'next-intl'
-// '@/lib/coaching' (bare) resolves to the OLD lib/coaching.ts, not this
-// engine's index.ts — explicit '/index' path required.
+// See app/page.tsx's note — the old lib/coaching.ts that used to shadow
+// this directory on a bare import was deleted in GYM-97 fix #9.
 import type { CoachingFlag, StallStrategyKind } from '@/lib/coaching/index'
 
 const STRATEGY_KEY: Record<StallStrategyKind, string> = {
