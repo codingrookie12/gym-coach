@@ -210,6 +210,7 @@
       "close": "CERRAR",
       "cardio": "CARDIO",
       "savedIndicator": "GUARDADO",
+      "saveErrorIndicator": "ERROR AL GUARDAR · REINTENTANDO",
       "overviewLabel": "RESUMEN",
       "setLabel": "SERIE {setNumber}",
       "skippedUndo": "OMITIDA · DESHACER",

@@ -665,6 +665,20 @@ export default function ActiveSessionScreen({
     savedTimerRef.current = setTimeout(() => setShowSaved(false), 1800)
   }
 
+  // GYM-97 fast-follow: mirrors the flashSaved()/showSaved pattern above,
+  // but for the autosave-failed path (route returned success:false, or the
+  // fetch itself threw). Without this the screen gave no visible feedback —
+  // it just silently waited for the next autosave retry on the next logs
+  // change.
+  const [showSaveError, setShowSaveError] = useState(false)
+  const saveErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function flashSaveError() {
+    setShowSaveError(true)
+    if (saveErrorTimerRef.current) clearTimeout(saveErrorTimerRef.current)
+    saveErrorTimerRef.current = setTimeout(() => setShowSaveError(false), 2600)
+  }
+
   // Auto-save when all sets of an exercise are done
   useEffect(() => {
     const ex = logs[currentExIdx]
@@ -716,6 +730,7 @@ export default function ActiveSessionScreen({
         if (data.success === false) {
           savedExIndices.current.delete(currentExIdx)
           console.error('Auto-save reported failure:', data.error ?? data)
+          flashSaveError()
           return
         }
         // Store set IDs in snapshot keyed by "exerciseName:setNum"
@@ -736,6 +751,7 @@ export default function ActiveSessionScreen({
       .catch(e => {
         savedExIndices.current.delete(currentExIdx)
         console.error('Auto-save failed:', e)
+        flashSaveError()
       })
   }, [logs, currentExIdx, split, exerciseDef, userProgramSplitId])
 
@@ -1004,6 +1020,11 @@ export default function ActiveSessionScreen({
           ←
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {showSaveError && (
+            <span className="save-error-indicator font-mono" style={{ fontSize: '0.55rem', color: 'var(--rust)', letterSpacing: '0.1em' }}>
+              ⚠ {t('saveErrorIndicator')}
+            </span>
+          )}
           {showSaved && (
             <span className="saved-indicator font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.1em' }}>
               ✓ {t('savedIndicator')}
