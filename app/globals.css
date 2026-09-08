@@ -126,6 +126,17 @@
   --on-accent: #0C0B09;
 }
 
+/* --on-rust: text placed on a var(--rust) background (delete-confirm
+   buttons, error/warning banners). Unlike --on-accent, --rust's dark-theme
+   (#E8633A) and light-theme (#CE4318) values are both dark/saturated enough
+   that white text reads fine in either — no per-theme flip needed, same
+   "theme-invariant token" category as --shadow-elevated/--overlay above.
+   Phase 4: tokenizes a hardcoded #fff already in shipped use across several
+   screens (ProgramLibraryScreen, CustomProgramBuilderScreen). */
+:root {
+  --on-rust: #FFFFFF;
+}
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;

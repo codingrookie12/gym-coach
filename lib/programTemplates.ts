@@ -27,6 +27,8 @@ import {
   UPPER_LOWER_PROGRAM,
   FULL_BODY_3X_PROGRAM,
   STRONGLIFTS_5X5_PROGRAM,
+  GZCLP_PROGRAM,
+  PHUL_PROGRAM,
   type Program,
   type ProgramPresentation,
   type ProgramStyle,
@@ -152,12 +154,28 @@ export const STRONGLIFTS_5X5_TEMPLATE: ProgramTemplate = fromProgram(
   buildSplitsViaResolver(STRONGLIFTS_5X5_PROGRAM),
 )
 
+// Tier 2 curated programs (Phase 4 scope item 5). Both follow the resolver
+// pattern (getRoutineForProgram via PROGRAM_ROUTINES in lib/routines.ts) —
+// same wiring as WENDLER_531_TEMPLATE/UPPER_LOWER_TEMPLATE above, not PPL's
+// older buildSplitsFromProgram/hardcoded-registry pattern.
+export const GZCLP_TEMPLATE: ProgramTemplate = fromProgram(
+  GZCLP_PROGRAM,
+  buildSplitsViaResolver(GZCLP_PROGRAM),
+)
+
+export const PHUL_TEMPLATE: ProgramTemplate = fromProgram(
+  PHUL_PROGRAM,
+  buildSplitsViaResolver(PHUL_PROGRAM),
+)
+
 export const PROGRAM_TEMPLATES: ProgramTemplate[] = [
   PPL_TEMPLATE,
   WENDLER_531_TEMPLATE,
   UPPER_LOWER_TEMPLATE,
   FULL_BODY_3X_TEMPLATE,
   STRONGLIFTS_5X5_TEMPLATE,
+  GZCLP_TEMPLATE,
+  PHUL_TEMPLATE,
 ]
 
 export function getTemplateById(id: string): ProgramTemplate | undefined {

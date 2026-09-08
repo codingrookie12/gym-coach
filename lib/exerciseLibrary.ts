@@ -126,6 +126,52 @@ export function getUniqueMuscles(): string[] {
   return Array.from(muscles).sort()
 }
 
+/**
+ * `Muscle`/`Equipment` → `messages/{locale}.json`'s `vocab.muscles.*` /
+ * `vocab.equipment.*` key. Phase 4 scope item 4: exercise NAMES stay English
+ * even in the Spanish UI (locked decision — never translate
+ * exercises.json's name/instructions), but the closed-vocabulary labels
+ * shown alongside them (muscle group chips, equipment tags) do get
+ * translated. Single source of truth for that key mapping — screens look up
+ * `vocab.muscles[MUSCLE_VOCAB_KEY[muscle]]`, never re-deriving a slug
+ * ad hoc (a hand-rolled camelCase conversion of "Lower Back"/"EZ Bar" is an
+ * easy place to drift from the actual messages/*.json key).
+ */
+export const MUSCLE_VOCAB_KEY: Record<Muscle, string> = {
+  Abdominals: 'abdominals',
+  Abductors: 'abductors',
+  Adductors: 'adductors',
+  Biceps: 'biceps',
+  Calves: 'calves',
+  Chest: 'chest',
+  Forearms: 'forearms',
+  Glutes: 'glutes',
+  Hamstrings: 'hamstrings',
+  Lats: 'lats',
+  'Lower Back': 'lowerBack',
+  'Middle Back': 'middleBack',
+  Neck: 'neck',
+  Quadriceps: 'quadriceps',
+  Shoulders: 'shoulders',
+  Traps: 'traps',
+  Triceps: 'triceps',
+}
+
+export const EQUIPMENT_VOCAB_KEY: Record<Equipment, string> = {
+  Barbell: 'barbell',
+  Dumbbell: 'dumbbell',
+  Cable: 'cable',
+  Machine: 'machine',
+  'EZ Bar': 'ezBar',
+  Bands: 'bands',
+  Kettlebell: 'kettlebell',
+  Bodyweight: 'bodyweight',
+  'Exercise Ball': 'exerciseBall',
+  'Foam Roll': 'foamRoll',
+  'Medicine Ball': 'medicineBall',
+  Other: 'other',
+}
+
 export function getUniqueSplits(): Split[] {
   return ['Push', 'Pull', 'Legs']
 }

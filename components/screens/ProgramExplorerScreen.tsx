@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { PROGRAM_TEMPLATES, type ProgramTemplate } from '@/lib/programTemplates'
-import { t } from '@/lib/translations'
+import { useTranslations } from 'next-intl'
 import { findExerciseByName, type ExerciseDefinition } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
@@ -16,6 +16,7 @@ interface ProgramExplorerScreenProps {
 export default function ProgramExplorerScreen({
   ownedTemplateIds, onBack, onAdd, userId,
 }: ProgramExplorerScreenProps) {
+  const t = useTranslations('explorer')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
   const [error, setError] = useState(false)
@@ -54,13 +55,13 @@ export default function ProgramExplorerScreen({
       >
         <button
           onClick={onBack}
-          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.08em' }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px 0', minHeight: '44px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
         >
-          {t.explorer.backButton}
+          {t('backButton')}
         </button>
         <div style={{ flex: 1 }}>
           <div className="font-display" style={{ fontSize: '1.5rem', letterSpacing: '0.08em', color: 'var(--text-primary)', lineHeight: 1 }}>
-            {t.explorer.title}
+            {t('title')}
           </div>
         </div>
       </div>
@@ -69,7 +70,7 @@ export default function ProgramExplorerScreen({
       <div className="scroll-area" style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {error && (
           <div className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--rust)', letterSpacing: '0.06em', padding: '10px 14px', background: 'var(--rust-dim)', border: '1px solid var(--rust-border)', borderRadius: '2px' }}>
-            {t.explorer.errorGeneric}
+            {t('errorGeneric')}
           </div>
         )}
 
@@ -109,6 +110,9 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
   adding: boolean
   onSelectExercise: (ex: ExerciseDefinition) => void
 }) {
+  const t = useTranslations('explorer')
+  const vocabStyle = useTranslations('vocab.programStyle')
+  const vocabLevel = useTranslations('vocab.programLevel')
   const p = template.presentation
 
   return (
@@ -116,10 +120,10 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
       {/* Tags row */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
         <span className="tag rust">
-          {template.style.toUpperCase()}
+          {vocabStyle(template.style)}
         </span>
         <span className="tag">
-          {template.level.toUpperCase()}
+          {vocabLevel(template.level)}
         </span>
       </div>
 
@@ -141,7 +145,7 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
       {/* Attribution */}
       {p.attribution && (
         <div className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', letterSpacing: '0.06em', marginBottom: '4px' }}>
-          by {p.attribution}
+          {t('attributionBy', { name: p.attribution })}
         </div>
       )}
 
@@ -169,7 +173,7 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
           </ul>
 
           {/* Splits & exercises */}
-          <div className="section-label" style={{ marginBottom: '8px' }}>{t.explorer.splitsHeader}</div>
+          <div className="section-label" style={{ marginBottom: '8px' }}>{t('splitsHeader')}</div>
           {template.splits.map(split => (
             <div key={split.name} style={{ marginBottom: '12px' }}>
               <div className="font-sans" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
@@ -209,7 +213,7 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
                 letterSpacing: '0.08em', borderRadius: '2px', cursor: 'default',
               }}
             >
-              {t.explorer.ownedButton}
+              {t('ownedButton')}
             </button>
           ) : (
             <button
@@ -218,7 +222,7 @@ function ExplorerCard({ template, expanded, onToggle, owned, onAdd, adding, onSe
               className="btn-primary"
               style={{ width: '100%', fontSize: '0.8rem', marginTop: '8px' }}
             >
-              {adding ? t.explorer.addingButton : t.explorer.addButton}
+              {adding ? t('addingButton') : t('addButton')}
             </button>
           )}
         </div>

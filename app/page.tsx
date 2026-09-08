@@ -15,7 +15,6 @@ import ExerciseLibraryScreen from '@/components/screens/ExerciseLibraryScreen'
 import ProgressHistoryScreen from '@/components/screens/ProgressHistoryScreen'
 import ExerciseBrowserScreen from '@/components/screens/ExerciseBrowserScreen'
 import MeScreen from '@/components/screens/MeScreen'
-import ReportsLandingScreen from '@/components/screens/ReportsLandingScreen'
 import LoadingScreen from '@/components/LoadingScreen'
 import BottomTabBar, { ActiveTab } from '@/components/BottomTabBar'
 // NOTE: the old lib/coaching.ts (which used to shadow this directory on a
@@ -32,6 +31,7 @@ import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.querie
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
+import { buildResumeStateFromDb } from '@/lib/sessionResume'
 import Toast from '@/components/ui/Toast'
 import {
   loadSessionFromStorage,
@@ -91,6 +91,12 @@ export interface AppState {
   sessionRpe: number | null
   detectedSession: PersistedSession | null
   detectedSplit: string | null
+  // GYM-XX: true from the moment handleResume() takes the DB-fallback branch
+  // (detectedSplit set, no localStorage) until the resulting plan load's
+  // onDataLoaded has fetched + merged the real completed-set data. Gates
+  // that merge so it never fires on an unrelated fresh-session plan load
+  // that happens to still carry a stale detectedSplit from initial detect().
+  pendingDbResume: boolean
   lastSplit: string | null
   showStartFreshConfirm: boolean
 }
@@ -147,6 +153,7 @@ export default function App() {
     sessionRpe: null,
     detectedSession: null,
     detectedSplit: null,
+    pendingDbResume: false,
     lastSplit: null,
     showStartFreshConfirm: false,
   })
@@ -251,7 +258,7 @@ export default function App() {
       exerciseLogs: [], savedLogs: null, savedExIdx: 0, savedSnapshot: {},
       sessionSwaps: [], sessionSyncStatus: null,
       weightDecisions: {}, sessionRpe: null,
-      detectedSession: null, detectedSplit: null,
+      detectedSession: null, detectedSplit: null, pendingDbResume: false,
       // programId preserved intentionally
     }))
     if (appState.user) {
@@ -575,18 +582,32 @@ export default function App() {
     navigate('session-summary')
   }
 
-  // Resume a detected localStorage session
+  // Resume a detected session — either the fast localStorage path (full
+  // data already in memory) or the DB-fallback path (only the split name is
+  // known yet; the real completed-set data is fetched and merged once the
+  // plan resolves, in the CoachingContextScreen onDataLoaded handler below).
   function handleResume() {
     const s = appState.detectedSession
-    if (!s) return
-    updateState({
-      split: s.split,
-      savedLogs: s.logs,
-      savedExIdx: s.exIdx,
-      savedSnapshot: s.snapshot,
-      workoutStartedAt: s.startedAt ?? null,
-    })
-    // Need coaching context + plan — go through coaching screen first
+    if (s) {
+      updateState({
+        split: s.split,
+        savedLogs: s.logs,
+        savedExIdx: s.exIdx,
+        savedSnapshot: s.snapshot,
+        workoutStartedAt: s.startedAt ?? null,
+      })
+      navigate('coaching-context')
+      return
+    }
+
+    // No localStorage session — fall back to the DB-detected split
+    // (detectedSplit). This is the case a fresh device/cleared storage
+    // produces: ResumePromptScreen rendered off detectedSplit alone, and
+    // "Continue Today" must actually resume, not no-op and strand the user
+    // on a screen whose only other button (Start Fresh) deletes real data.
+    const split = appState.detectedSplit
+    if (!split) return
+    updateState({ split, pendingDbResume: true })
     navigate('coaching-context')
   }
 
@@ -597,7 +618,7 @@ export default function App() {
       return
     }
     if (appState.user) clearSessionFromStorage(appState.user.id)
-    updateState({ detectedSession: null, detectedSplit: null })
+    updateState({ detectedSession: null, detectedSplit: null, pendingDbResume: false })
     navigate('home')
   }
 
@@ -611,7 +632,7 @@ export default function App() {
       }
     }
     if (appState.user) clearSessionFromStorage(appState.user.id)
-    updateState({ detectedSession: null, detectedSplit: null, showStartFreshConfirm: false })
+    updateState({ detectedSession: null, detectedSplit: null, pendingDbResume: false, showStartFreshConfirm: false })
     navigate('home')
   }
 
@@ -678,7 +699,7 @@ export default function App() {
               onSelectSplit={async (splitName) => {
                 // Resolve the split's UUID from the hydrated program
                 const splitId = await resolveSplitIdByName(appState.userProgramId, splitName)
-                updateState({ split: splitName, userProgramSplitId: splitId, savedLogs: null, savedExIdx: 0, savedSnapshot: {} })
+                updateState({ split: splitName, userProgramSplitId: splitId, savedLogs: null, savedExIdx: 0, savedSnapshot: {}, pendingDbResume: false })
                 navigate('coaching-context')
               }}
               onSettings={() => navigate('manage-weights')}
@@ -693,7 +714,39 @@ export default function App() {
             <CoachingContextScreen
               split={appState.split}
               userProgramSplitId={appState.userProgramSplitId ?? undefined}
-              onDataLoaded={(context, plan) => updateState({ coachingContext: context, plan })}
+              onDataLoaded={async (context, plan) => {
+                // DB-fallback resume in flight (see handleResume): the plan
+                // just resolved for the first time, so this is the one
+                // moment to fetch the real completed-set data and merge it
+                // in — never leave the user on a blank/default plan when
+                // Supabase actually has their logged sets for today.
+                if (appState.pendingDbResume && appState.userProgramSplitId) {
+                  try {
+                    const res = await fetch(
+                      `/api/session/today/details?userProgramSplitId=${encodeURIComponent(appState.userProgramSplitId)}`
+                    )
+                    const data = await res.json()
+                    if (data.found) {
+                      const { logs, exIdx, snapshot } = buildResumeStateFromDb(plan, data.exercises ?? [])
+                      updateState({
+                        coachingContext: context, plan,
+                        savedLogs: logs, savedExIdx: exIdx, savedSnapshot: snapshot,
+                        workoutStartedAt: data.startedAt ?? null,
+                        pendingDbResume: false, detectedSplit: null,
+                      })
+                      return
+                    }
+                  } catch (err) {
+                    console.error('Failed to hydrate DB-fallback resume:', err)
+                  }
+                  // Fetch failed or nothing found server-side after all —
+                  // still proceed with the plan (never strand the user),
+                  // just without resumable progress to merge in.
+                  updateState({ coachingContext: context, plan, pendingDbResume: false, detectedSplit: null })
+                  return
+                }
+                updateState({ coachingContext: context, plan })
+              }}
               coachingContext={appState.coachingContext}
               plan={appState.plan}
               weightDecisions={appState.weightDecisions}
@@ -904,7 +957,11 @@ export default function App() {
               }}
             />
           ) : showProgressHistory ? (
-            <ProgressHistoryScreen onBack={() => setShowProgressHistory(false)} />
+            <ProgressHistoryScreen
+              onBack={() => setShowProgressHistory(false)}
+              userId={appState.user?.id}
+              userProgramSplitId={appState.userProgramSplitId ?? undefined}
+            />
           ) : showExerciseBrowser && appState.user ? (
             <ExerciseBrowserScreen
               userId={appState.user.id}
@@ -931,9 +988,16 @@ export default function App() {
           )}
         </div>
 
-        {/* Reports tab — GYM-19/Section 6: standalone 4th tab, landing stub only (Phase 4 rebuilds ProgressHistoryScreen here) */}
+        {/* Reports tab — GYM-19/Section 6 + Phase 4: ProgressHistoryScreen is
+            now the real landing screen (no back arrow — a top-level tab, not
+            an overlay). It stays reachable from Library → History too (the
+            `showProgressHistory` branch above) — that entry point still
+            works and wasn't removed, just no longer the only way in. */}
         <div style={{ height: '100%', display: activeTab === 'reports' ? 'flex' : 'none', flexDirection: 'column' }}>
-          <ReportsLandingScreen />
+          <ProgressHistoryScreen
+            userId={appState.user?.id}
+            userProgramSplitId={appState.userProgramSplitId ?? undefined}
+          />
         </div>
 
         {/* Me tab */}

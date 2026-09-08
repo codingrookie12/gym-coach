@@ -178,8 +178,50 @@ export interface HistorySummary {
 }
 
 export interface HistoryProgress {
-  exercises: { name: string; sets: { date: string; weight: number; reps: number; unit: string }[] }[]
+  // exerciseId: the DB `exercises.id` (uuid) this group of sets was logged
+  // against — null only for legacy rows with no FK (pre-migration edge
+  // case). GYM-92 fix (Phase 4): callers resolve muscle-group tagging by
+  // this id (works for custom exercises, not just the static catalog),
+  // never by `name` alone — see lib/progressAggregation.ts.
+  exercises: { exerciseId: string | null; name: string; sets: { date: string; weight: number; reps: number; unit: string }[] }[]
   days: { date: string; count: number }[]
+}
+
+export interface ExerciseMuscleMeta {
+  primaryMuscles: string[]
+  secondaryMuscles: string[]
+  split: string | null
+}
+
+/**
+ * Muscle-group + split metadata for a set of exercise IDs, queried directly
+ * from the `exercises` table — uniform for catalog-seeded AND custom rows
+ * (both carry primary_muscles/secondary_muscles/split columns), unlike the
+ * client-bundled static catalog (lib/exerciseLibrary.ts's ALL_EXERCISES),
+ * which only knows about catalog exercises and uses a completely different
+ * id space than the DB (see lib/sessionPlan.ts's docstring on that gotcha).
+ * GYM-92 fix (Phase 4 scope item 1): this is what lets
+ * ProgressHistoryScreen correctly group a custom exercise's sets into
+ * muscle-balance aggregation instead of silently dropping them.
+ */
+export async function fetchExerciseMuscleMetaByIds(
+  supabase: Supabase,
+  exerciseIds: string[]
+): Promise<Record<string, ExerciseMuscleMeta>> {
+  if (!exerciseIds.length) return {}
+  const { data } = await supabase
+    .from('exercises')
+    .select('id, primary_muscles, secondary_muscles, split')
+    .in('id', exerciseIds)
+  const result: Record<string, ExerciseMuscleMeta> = {}
+  for (const row of data ?? []) {
+    result[row.id as string] = {
+      primaryMuscles: (row.primary_muscles as string[] | null) ?? [],
+      secondaryMuscles: (row.secondary_muscles as string[] | null) ?? [],
+      split: (row.split as string | null) ?? null,
+    }
+  }
+  return result
 }
 
 function isoDay(d: Date): string {
@@ -286,7 +328,7 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
 
   const { data: sets } = await supabase
     .from('sets')
-    .select('workout_id, weight, reps, unit, exercises(name)')
+    .select('workout_id, weight, reps, unit, exercise_id, exercises(name)')
     .in('workout_id', workoutIds)
     .eq('completed', true)
     .eq('skipped', false)
@@ -299,12 +341,18 @@ export async function fetchHistoryProgress(supabase: Supabase, userId: string): 
     if (!date) continue
     const exName = (row.exercises as any)?.name as string | undefined
     if (!exName) continue
+    const exerciseId = (row.exercise_id as string | null) ?? null
     const weight = Number(row.weight) || 0
     const reps = Number(row.reps) || 0
     const unit = (row.unit as string) ?? 'Lbs'
 
-    if (!byExercise.has(exName)) byExercise.set(exName, { name: exName, sets: [] })
-    byExercise.get(exName)!.sets.push({ date, weight, reps, unit })
+    // Group by exercise_id when present (GYM-92: the real FK, not the
+    // display name) so a rename or name collision can never merge/split two
+    // exercises incorrectly. Falls back to a name-keyed bucket only for the
+    // rare legacy row with no exercise_id.
+    const key = exerciseId ?? `name:${exName}`
+    if (!byExercise.has(key)) byExercise.set(key, { exerciseId, name: exName, sets: [] })
+    byExercise.get(key)!.sets.push({ date, weight, reps, unit })
   }
 
   for (const w of workouts ?? []) {

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import CustomProgramBuilderScreen from './CustomProgramBuilderScreen'
 import ProgramExplorerScreen from './ProgramExplorerScreen'
-import { t } from '@/lib/translations'
 
 interface UserProgramSummary {
   id: string
@@ -25,6 +25,7 @@ interface ProgramLibraryScreenProps {
 export default function ProgramLibraryScreen({
   onSelect, selectedId, onBack, userId, activeSession, initialMode,
 }: ProgramLibraryScreenProps) {
+  const t = useTranslations('library')
   const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [builderMode, setBuilderMode] = useState<'create' | 'edit' | null>(initialMode === 'builder' ? 'create' : null)
@@ -116,14 +117,14 @@ export default function ProgramLibraryScreen({
         {onBack && (
           <button
             onClick={onBack}
-            style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px 0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.08em' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-mid)', cursor: 'pointer', padding: '4px 0', minHeight: '44px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
           >
-            ← BACK
+            {t('backButton')}
           </button>
         )}
         <div style={{ flex: 1 }}>
           <div className="font-display" style={{ fontSize: '1.5rem', letterSpacing: '0.08em', color: 'var(--text-primary)', lineHeight: 1 }}>
-            {t.library.title}
+            {t('title')}
           </div>
         </div>
       </div>
@@ -133,16 +134,16 @@ export default function ProgramLibraryScreen({
 
         {/* MY PROGRAMS section */}
         <section>
-          <div className="section-label" style={{ marginBottom: '10px' }}>{t.library.myProgramsHeader}</div>
+          <div className="section-label" style={{ marginBottom: '10px' }}>{t('myProgramsHeader')}</div>
           {loading ? (
-            <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>{t.library.loading}</p>
+            <p className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', letterSpacing: '0.08em' }}>{t('loading')}</p>
           ) : userPrograms.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
               <div className="font-display" style={{ fontSize: '1.2rem', letterSpacing: '0.08em', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                {t.library.emptyStateHeading}
+                {t('emptyStateHeading')}
               </div>
               <p className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 16px 0' }}>
-                {t.library.emptyStateBody}
+                {t('emptyStateBody')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <button
@@ -150,7 +151,7 @@ export default function ProgramLibraryScreen({
                   className="btn-primary"
                   style={{ width: '100%', fontSize: '0.8rem' }}
                 >
-                  {t.library.exploreProgramsCta}
+                  {t('exploreProgramsCta')}
                 </button>
                 {userId && (
                   <button
@@ -163,7 +164,7 @@ export default function ProgramLibraryScreen({
                       letterSpacing: '0.1em', borderRadius: '2px', fontWeight: 600,
                     }}
                   >
-                    {t.library.buildMyOwnCta}
+                    {t('buildMyOwnCta')}
                   </button>
                 )}
               </div>
@@ -178,11 +179,11 @@ export default function ProgramLibraryScreen({
                         {program.name}
                       </p>
                       <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>
-                        {program.splitCount} splits · {program.exerciseCount} exercises
+                        {t('programSummary', { splitCount: program.splitCount, exerciseCount: program.exerciseCount })}
                       </p>
                     </div>
                     {selectedId === program.id && (
-                      <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.08em' }}>{t.library.activeBadge}</span>
+                      <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.08em' }}>{t('activeBadge')}</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
@@ -190,9 +191,9 @@ export default function ProgramLibraryScreen({
                       <button
                         onClick={() => { setEditProgramId(program.id); setBuilderMode('edit') }}
                         className="font-mono"
-                        style={{ fontSize: '0.6rem', padding: '6px 12px', background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', cursor: 'pointer', letterSpacing: '0.08em' }}
+                        style={{ fontSize: '0.6rem', padding: '6px 12px', minHeight: '44px', background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', cursor: 'pointer', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
                       >
-                        {t.library.editButton}
+                        {t('editButton')}
                       </button>
                     )}
                     {confirmDeleteId === program.id ? (
@@ -201,34 +202,34 @@ export default function ProgramLibraryScreen({
                           onClick={() => handleDelete(program.id)}
                           disabled={deleting}
                           className="font-mono"
-                          style={{ fontSize: '0.6rem', padding: '6px 12px', background: 'var(--rust)', border: 'none', borderRadius: '2px', color: '#fff', cursor: 'pointer', letterSpacing: '0.08em' }}
+                          style={{ fontSize: '0.6rem', padding: '6px 12px', minHeight: '44px', background: 'var(--rust)', border: 'none', borderRadius: '2px', color: 'var(--on-rust)', cursor: 'pointer', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
                         >
-                          {deleting ? '...' : t.library.deleteConfirmButton}
+                          {deleting ? '...' : t('deleteConfirmButton')}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(null)}
                           className="font-mono"
-                          style={{ fontSize: '0.6rem', padding: '6px 12px', background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', cursor: 'pointer', letterSpacing: '0.08em' }}
+                          style={{ fontSize: '0.6rem', padding: '6px 12px', minHeight: '44px', background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-mid)', cursor: 'pointer', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
                         >
-                          {t.library.deleteCancelButton}
+                          {t('deleteCancelButton')}
                         </button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setConfirmDeleteId(program.id)}
                         className="font-mono"
-                        style={{ fontSize: '0.6rem', padding: '6px 12px', background: 'none', border: '1px solid var(--rust-border)', borderRadius: '2px', color: 'var(--rust)', cursor: 'pointer', letterSpacing: '0.08em' }}
+                        style={{ fontSize: '0.6rem', padding: '6px 12px', minHeight: '44px', background: 'none', border: '1px solid var(--rust-border)', borderRadius: '2px', color: 'var(--rust)', cursor: 'pointer', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
                       >
-                        {t.library.deleteButton}
+                        {t('deleteButton')}
                       </button>
                     )}
                     {selectedId !== program.id && onSelect && (
                       <button
                         onClick={() => handleSelectProgram(program.id)}
                         className="font-mono"
-                        style={{ fontSize: '0.6rem', padding: '6px 12px', background: 'var(--accent)', border: 'none', borderRadius: '2px', color: '#fff', cursor: 'pointer', letterSpacing: '0.08em', marginLeft: 'auto' }}
+                        style={{ fontSize: '0.6rem', padding: '6px 12px', minHeight: '44px', background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--on-accent)', cursor: 'pointer', letterSpacing: '0.08em', marginLeft: 'auto', whiteSpace: 'nowrap' }}
                       >
-                        {t.library.selectButton}
+                        {t('selectButton')}
                       </button>
                     )}
                   </div>
@@ -250,7 +251,7 @@ export default function ProgramLibraryScreen({
                   letterSpacing: '0.1em', borderRadius: '2px', fontWeight: 600,
                 }}
               >
-                {t.library.exploreProgramsCta}
+                {t('exploreProgramsCta')}
               </button>
               {userId && (
                 <button
@@ -263,7 +264,7 @@ export default function ProgramLibraryScreen({
                     letterSpacing: '0.1em', borderRadius: '2px', fontWeight: 600,
                   }}
                 >
-                  {t.library.buildMyOwnCta}
+                  {t('buildMyOwnCta')}
                 </button>
               )}
             </div>

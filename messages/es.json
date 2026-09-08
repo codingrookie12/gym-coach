@@ -107,7 +107,9 @@
     "activeBadge": "ACTIVO",
     "confirmButton": "CONFIRMAR",
     "cancelButton": "CANCELAR",
-    "loading": "CARGANDO..."
+    "loading": "CARGANDO...",
+    "programSummary": "{splitCount, plural, one {# día} other {# días}} · {exerciseCount, plural, one {# ejercicio} other {# ejercicios}}",
+    "backButton": "← ATRÁS"
   },
   "explorer": {
     "title": "EXPLORAR PROGRAMAS",
@@ -117,7 +119,8 @@
     "addingButton": "AGREGANDO...",
     "splitsHeader": "SPLITS Y EJERCICIOS",
     "errorGeneric": "Algo salió mal. Intenta de nuevo.",
-    "cloneFailed": "Error al clonar"
+    "cloneFailed": "Error al clonar",
+    "attributionBy": "por {name}"
   },
   "onboarding": {
     "title": "Elige Tu Programa",
@@ -303,7 +306,16 @@
       "exercises": "EJERCICIOS",
       "tapToCompleteHint": "Toca para completar — necesario para el historial",
       "browseAndSearch": "EXPLORAR Y BUSCAR",
-      "recent": "RECIENTES"
+      "recent": "RECIENTES",
+      "select": "SELECCIONAR →",
+      "myPrograms": "MIS\nPROGRAMAS",
+      "explorePrograms": "EXPLORAR\nPROGRAMAS",
+      "buildMyOwn": "CREAR\nEL MÍO",
+      "viewProgress": "VER PROGRESO →",
+      "total": "{count} EN TOTAL",
+      "browse": "EXPLORAR →",
+      "customNeedsMetadata": "{count, plural, one {PERSONALIZADO · # NECESITA DATOS} other {PERSONALIZADO · # NECESITAN DATOS}}",
+      "daysAbbrev": "D"
     },
     "exerciseBrowser": {
       "browse": "EXPLORAR",
@@ -323,7 +335,18 @@
       "noCustomExercises": "SIN EJERCICIOS PERSONALIZADOS",
       "searchPlaceholder": "Buscar ejercicios...",
       "cannotDeleteLogged": "No se puede eliminar — ya tiene series registradas. Renómbralo en su lugar.",
-      "deleteFailed": "Error al eliminar. Intenta de nuevo."
+      "deleteFailed": "Error al eliminar. Intenta de nuevo.",
+      "title": "EJERCICIOS",
+      "total": "{count} EN TOTAL",
+      "filter": "FILTRAR",
+      "resultsCount": "{count, plural, one {# EJERCICIO} other {# EJERCICIOS}}",
+      "searchQuerySuffix": " · \"{query}\"",
+      "newCustomExercise": "+ NUEVO EJERCICIO PERSONALIZADO",
+      "tapToAddOwn": "Toca \"+ NUEVO EJERCICIO PERSONALIZADO\" para agregar el tuyo",
+      "needsMetadata": "NECESITA DATOS · {count}",
+      "needsMetadataHint": "Toca para completar — no aparecerán en el historial hasta hacerlo.",
+      "yourExercises": "TUS EJERCICIOS · {count}",
+      "customTag": "Personalizado"
     },
     "manageWeights": {
       "title": "Administrar Pesos",
@@ -333,7 +356,9 @@
       "pull": "Jalón",
       "legs": "Piernas",
       "loadingWeights": "Cargando pesos...",
-      "saveFailed": "Error al guardar: {reason}"
+      "saveFailed": "Error al guardar: {reason}",
+      "sync": "SINCRONIZAR",
+      "lastUsed": "última: {weight} · {date}"
     },
     "routineEditor": {
       "title": "EDITOR DE RUTINA",
@@ -346,7 +371,11 @@
       "moveUp": "Subir",
       "moveDown": "Bajar",
       "loadFailed": "Error al cargar la rutina",
-      "reorderFailed": "No se pudo guardar el orden"
+      "reorderFailed": "No se pudo guardar el orden",
+      "tapToSwap": "toca para cambiar",
+      "exerciseRemoved": "{name} eliminado",
+      "exerciseAdded": "{name} agregado a {split}",
+      "exerciseSwapped": "{from} → {to}"
     },
     "customProgramBuilder": {
       "loading": "CARGANDO...",
@@ -356,7 +385,17 @@
       "cancel": "CANCELAR",
       "noExercises": "Aún no hay ejercicios",
       "title": "Creador de Programas",
-      "loadFailed": "Error al cargar el programa"
+      "loadFailed": "Error al cargar el programa",
+      "namePlaceholder": "ej. Mi Rutina Personalizada",
+      "addSplitButton": "+ AGREGAR DÍA",
+      "splitNamePlaceholder": "Nombre del día",
+      "addExerciseButton": "+ AGREGAR EJERCICIO",
+      "setsLabel": "S",
+      "saveButton": "CREAR PROGRAMA",
+      "saveButtonEdit": "LISTO",
+      "savingButton": "GUARDANDO...",
+      "archiveNotice": "Este día tiene entrenamientos registrados y fue archivado",
+      "saveFailed": "Error al guardar"
     },
     "progressHistory": {
       "pr": "RP",
@@ -370,7 +409,87 @@
       "splitPush": "EMPUJE",
       "splitPull": "JALÓN",
       "splitLegs": "PIERNAS",
-      "splitMixed": "MIXTO"
+      "splitMixed": "MIXTO",
+      "streakLabel": "DÍAS ENTRENADOS · ÚLTIMOS 7",
+      "dayStreak": "{count} DÍAS SEGUIDOS",
+      "weekdayMon": "L",
+      "weekdayTue": "M",
+      "weekdayWed": "X",
+      "weekdayThu": "J",
+      "weekdayFri": "V",
+      "weekdaySat": "S",
+      "weekdaySun": "D",
+      "lbsAbbrev": "LBS",
+      "steady": "— ESTABLE",
+      "sessionsCaption": "{count, plural, one {# SESIÓN · 30D} other {# SESIONES · 30D}}",
+      "notTrainedCaption": "SIN ENTRENAR · 30D",
+      "noGroupSessions": "Sin sesiones de {group} en los últimos 90 días",
+      "daysAgoShort": "HACE {count}D",
+      "weeksAgoShort": "HACE {count}SEM",
+      "coachingSignalsHeading": "SEÑALES DE COACHING",
+      "frequencyHeading": "FRECUENCIA DE ENTRENO · 90D",
+      "volumeHeading": "VOLUMEN TOTAL · TENDENCIA",
+      "muscleBalanceHeading": "BALANCE MUSCULAR · ESTA SEMANA",
+      "progressionHeading": "PROGRESIÓN · POR MÚSCULO",
+      "technicalLabel": "TÉCNICO"
+    }
+  },
+  "vocab": {
+    "muscleGroups": {
+      "chest": "PECHO",
+      "back": "ESPALDA",
+      "shoulders": "HOMBROS",
+      "arms": "BRAZOS",
+      "legs": "PIERNAS",
+      "core": "CORE"
+    },
+    "programStyle": {
+      "hypertrophy": "HIPERTROFIA",
+      "strength": "FUERZA",
+      "endurance": "RESISTENCIA",
+      "powerlifting": "POWERLIFTING"
+    },
+    "programLevel": {
+      "beginner": "PRINCIPIANTE",
+      "intermediate": "INTERMEDIO",
+      "advanced": "AVANZADO"
+    },
+    "muscles": {
+      "abdominals": "Abdominales",
+      "abductors": "Abductores",
+      "adductors": "Aductores",
+      "biceps": "Bíceps",
+      "calves": "Pantorrillas",
+      "chest": "Pecho",
+      "forearms": "Antebrazos",
+      "glutes": "Glúteos",
+      "hamstrings": "Isquiotibiales",
+      "lats": "Dorsales",
+      "lowerBack": "Espalda Baja",
+      "middleBack": "Espalda Media",
+      "neck": "Cuello",
+      "quadriceps": "Cuádriceps",
+      "shoulders": "Hombros",
+      "traps": "Trapecios",
+      "triceps": "Tríceps"
+    },
+    "equipment": {
+      "barbell": "Barra",
+      "dumbbell": "Mancuerna",
+      "cable": "Polea",
+      "machine": "Máquina",
+      "ezBar": "Barra Z",
+      "bands": "Bandas",
+      "kettlebell": "Pesa Rusa",
+      "bodyweight": "Peso Corporal",
+      "exerciseBall": "Balón de Ejercicio",
+      "foamRoll": "Rodillo de Espuma",
+      "medicineBall": "Balón Medicinal",
+      "other": "Otro"
+    },
+    "mechanic": {
+      "compound": "Compuesto",
+      "isolation": "Aislamiento"
     }
   },
   "coaching": {

@@ -185,6 +185,68 @@ export const STRONGLIFTS_5X5_PROGRAM: Program = {
   },
 }
 
+export const GZCLP_PROGRAM: Program = {
+  id: 'gzclp',
+  name: 'GZCLP',
+  shortName: 'GZCLP',
+  splits: ['A1', 'B1', 'A2', 'B2'],
+  splitMuscles: {
+    A1: ['Quads', 'Chest', 'Back'],
+    B1: ['Shoulders', 'Hamstrings', 'Glutes'],
+    A2: ['Chest', 'Quads', 'Triceps'],
+    B2: ['Hamstrings', 'Shoulders', 'Back'],
+  },
+  tier: 2,
+  style: 'strength',
+  level: 'intermediate',
+  daysPerWeek: 4,
+  source: 'curated',
+  presentation: {
+    tagline: 'Tiered progression that never fully stalls',
+    overview: 'GZCL Linear Progression runs three tiers per session — a heavy T1 main lift (5×3, AMRAP-topped), a moderate T2 secondary lift, and high-rep T3 accessories. Squat, bench, deadlift, and overhead press rotate across four sessions, so every lift gets trained as both a T1 driver and a T2 volume builder each week — when T1 finally stalls, it steps down to 6×2 then 10×1 before resetting, so linear progress lasts far longer than a straight add-weight-every-session scheme.',
+    whatToExpect: [
+      'Two main lifts per session — one heavy (T1), one moderate-volume (T2) — plus 2 high-rep T3 accessories',
+      'T1 progresses in stages (5×3 → 6×2 → 10×1) before resetting, so progress rarely fully stalls',
+      '45-60 minutes, 4 days a week — squat/bench/deadlift/press each hit twice weekly',
+    ],
+    daysLabel: '4 DAYS / WEEK',
+    sessionLength: '45-60 MIN',
+    periodization: 'TIERED LOADING',
+    attribution: 'Cody Lefever',
+  },
+}
+
+export const PHUL_PROGRAM: Program = {
+  id: 'phul',
+  name: 'Power Hypertrophy Upper Lower',
+  shortName: 'PHUL',
+  splits: ['Upper Power', 'Lower Power', 'Upper Hypertrophy', 'Lower Hypertrophy'],
+  splitMuscles: {
+    'Upper Power': ['Chest', 'Back', 'Shoulders'],
+    'Lower Power': ['Quads', 'Hamstrings', 'Glutes'],
+    'Upper Hypertrophy': ['Chest', 'Back', 'Arms'],
+    'Lower Hypertrophy': ['Quads', 'Hamstrings', 'Calves'],
+  },
+  tier: 2,
+  style: 'hypertrophy',
+  level: 'intermediate',
+  daysPerWeek: 4,
+  source: 'curated',
+  presentation: {
+    tagline: 'Get strong, then get big — same week',
+    overview: 'Power Hypertrophy Upper Lower splits each week into two phases: Power days (3-8 reps, heavy compounds, long rest) build raw strength on the big lifts, while Hypertrophy days (8-15 reps, more isolation, shorter rest) drive the muscle growth that heavier future power work needs. Upper and lower body each get one day of each phase, so nothing goes more than a few days without direct work.',
+    whatToExpect: [
+      'Power days: 3-6 exercises, heavy compounds, 3-8 rep range',
+      'Hypertrophy days: 4-6 exercises, higher volume, 8-15 rep range',
+      '50-65 minutes, 4 days a week — every muscle group trained twice',
+    ],
+    daysLabel: '4 DAYS / WEEK',
+    sessionLength: '50-65 MIN',
+    periodization: 'DUAL PHASE',
+    attribution: 'Brandon Campbell',
+  },
+}
+
 // ─── Library ──────────────────────────────────────────────────────────────────
 
 export const PROGRAM_LIBRARY: Program[] = [
@@ -193,6 +255,8 @@ export const PROGRAM_LIBRARY: Program[] = [
   UPPER_LOWER_PROGRAM,
   FULL_BODY_3X_PROGRAM,
   STRONGLIFTS_5X5_PROGRAM,
+  GZCLP_PROGRAM,
+  PHUL_PROGRAM,
 ]
 
 export function getProgramById(id: string): Program | undefined {
