@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { ExercisePlan } from '@/lib/coaching'
+import { useTranslations } from 'next-intl'
+import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/ui/NumberPad'
 
@@ -9,9 +10,14 @@ interface SessionSwap { oldName: string; newName: string }
 
 interface PreSaveSummaryScreenProps {
   split: string
-  plan: ExercisePlan[]
+  plan: SessionExercisePlan[]
   logs: ExerciseLog[]
   sessionSwaps?: SessionSwap[]
+  /** GYM-97 fix #7: lifted to appState by the caller (app/page.tsx) so
+   *  going back to fix a set and returning here doesn't remount this
+   *  screen back to a blank RPE selection. */
+  sessionRpe: number | null
+  onSessionRpeChange: (value: number | null) => void
   onSave: (logs: ExerciseLog[]) => Promise<void>
   onBack: () => void
   onSetDefault?: (oldName: string, newName: string) => Promise<void>
@@ -19,9 +25,18 @@ interface PreSaveSummaryScreenProps {
 
 type EditTarget = { exIdx: number; setIdx: number; field: 'weight' | 'reps' } | null
 
+// Session-level RPE (Borg CR10-style, 1-10) — Phase 1's workouts.session_rpe
+// column, Phase 2's fatigue-deload signal input. A single optional tap here
+// (Tier 2 placement choice, not spelled out by name in the plan — the
+// review point before save is where "how did the whole session feel"
+// naturally belongs). Skippable; never blocks save.
+const RPE_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
 export default function PreSaveSummaryScreen({
-  split, plan, logs: initialLogs, sessionSwaps = [], onSave, onBack, onSetDefault,
+  split, plan, logs: initialLogs, sessionSwaps = [], sessionRpe, onSessionRpeChange, onSave, onBack, onSetDefault,
 }: PreSaveSummaryScreenProps) {
+  const t = useTranslations('screens.preSaveSummary')
+  const common = useTranslations('common')
   const [logs, setLogs] = useState<ExerciseLog[]>(initialLogs)
   const [editTarget, setEditTarget] = useState<EditTarget>(null)
   const [saving, setSaving] = useState(false)
@@ -85,21 +100,21 @@ export default function PreSaveSummaryScreen({
           ←
         </button>
         <div style={{ flex: 1 }}>
-          <p className="section-label" style={{ margin: '0 0 2px 0' }}>REVIEW SESSION</p>
+          <p className="section-label" style={{ margin: '0 0 2px 0' }}>{t('reviewSession')}</p>
           <h1 className="font-display" style={{ fontSize: '1.7rem', margin: 0, color: 'var(--text-primary)', letterSpacing: '0.04em', lineHeight: 1 }}>
-            {split} Day
+            {common('splitDay', { split })}
           </h1>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
-          <span className="tag accent">{totalCompleted} sets</span>
+          <span className="tag accent">{t('setsTag', { count: totalCompleted })}</span>
           {totalSkipped > 0 && (
-            <span className="tag rust">{totalSkipped} skipped</span>
+            <span className="tag rust">{t('skippedTag', { count: totalSkipped })}</span>
           )}
         </div>
       </div>
 
       <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: '10px 20px 0', flexShrink: 0, letterSpacing: '0.06em' }}>
-        TAP ANY VALUE TO EDIT BEFORE SAVING
+        {t('tapToEdit')}
       </p>
 
       {/* Exercise list */}
@@ -119,14 +134,14 @@ export default function PreSaveSummaryScreen({
                     if (set.skipped) {
                       return (
                         <div key={si} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.4 }}>
-                          <span className="section-label" style={{ minWidth: '40px' }}>SET {si + 1}</span>
-                          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)' }}>SKIPPED</span>
+                          <span className="section-label" style={{ minWidth: '40px' }}>{t('setIndex', { setNumber: si + 1 })}</span>
+                          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)' }}>{t('skipped')}</span>
                         </div>
                       )
                     }
                     return (
-                      <div key={si} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="section-label" style={{ minWidth: '40px' }}>SET {si + 1}</span>
+                      <div key={si} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="section-label" style={{ minWidth: '40px' }}>{t('setIndex', { setNumber: si + 1 })}</span>
                         {/* Weight */}
                         <button
                           onClick={() => openEdit(exIdx, si, 'weight')}
@@ -141,7 +156,7 @@ export default function PreSaveSummaryScreen({
                             {(() => {
                               // Match plan by canonicalName to handle swapped exercises
                               const matchedPlan = plan.find(p => p.exercise.canonicalName === ex.canonicalName) ?? plan[exIdx]
-                              return matchedPlan?.exercise.weightUnit === 'pins' ? 'pin' : 'lbs'
+                              return matchedPlan?.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')
                             })()}
                           </span>
                         </button>
@@ -156,8 +171,14 @@ export default function PreSaveSummaryScreen({
                           }}
                         >
                           {set.reps}
-                          <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginLeft: '3px' }}>reps</span>
+                          <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginLeft: '3px' }}>{common('reps')}</span>
                         </button>
+                        {/* RIR — read-only display here; captured live in ActiveSessionScreen */}
+                        {set.rir != null && (
+                          <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>
+                            RIR {set.rir}
+                          </span>
+                        )}
                       </div>
                     )
                   })}
@@ -168,10 +189,44 @@ export default function PreSaveSummaryScreen({
         </div>
       </div>
 
+      {/* Session RPE — optional, single tap */}
+      <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        <p className="section-label" style={{ margin: '0 0 4px 0' }}>{t('sessionRpeHeading')}</p>
+        <p className="font-mono" style={{ fontSize: '0.58rem', color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
+          {t('sessionRpeOptional')}
+        </p>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {RPE_CHOICES.map(choice => {
+            const isSelected = sessionRpe === choice
+            return (
+              <button
+                key={choice}
+                onClick={() => onSessionRpeChange(isSelected ? null : choice)}
+                style={{
+                  minWidth: '32px',
+                  minHeight: '36px',
+                  padding: '0 6px',
+                  borderRadius: '2px',
+                  cursor: 'pointer',
+                  background: isSelected ? 'var(--accent)' : 'var(--surface-2)',
+                  color: isSelected ? 'var(--on-accent)' : 'var(--text-mid)',
+                  border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                  fontFamily: 'Space Mono, monospace',
+                  fontSize: '0.72rem',
+                  fontWeight: isSelected ? 700 : 400,
+                }}
+              >
+                {choice}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Session swaps — make default? */}
       {sessionSwaps.length > 0 && onSetDefault && (
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span className="section-label">SESSION SWAPS — MAKE DEFAULT?</span>
+          <span className="section-label">{t('sessionSwapsHeading')}</span>
           {sessionSwaps.map(swap => {
             const done = defaultsDone.has(swap.oldName)
             const isPending = pendingDefault?.oldName === swap.oldName
@@ -180,23 +235,23 @@ export default function PreSaveSummaryScreen({
                 {isPending ? (
                   <div style={{ background: 'var(--surface)', border: '1px solid var(--accent-border)', borderRadius: '2px', padding: '10px 12px' }}>
                     <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', marginBottom: '8px', lineHeight: 1.5 }}>
-                      Replace <span style={{ color: 'var(--rust)' }}>{swap.oldName}</span> with <span style={{ color: 'var(--accent)' }}>{swap.newName}</span> permanently?
+                      {t('replaceWith', { oldName: swap.oldName, newName: swap.newName })}
                       <br />
-                      <span style={{ color: 'var(--text-secondary)' }}>Your routine will always use {swap.newName} in its place.</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{t('replacePermanentlyBody', { newName: swap.newName })}</span>
                     </p>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button
                         onClick={() => confirmSetDefault(swap)}
                         disabled={settingDefault}
-                        style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--bg)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '7px', cursor: 'pointer', opacity: settingDefault ? 0.6 : 1 }}
+                        style={{ flex: 1, background: 'var(--accent)', border: 'none', borderRadius: '2px', color: 'var(--on-accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '7px', cursor: 'pointer', opacity: settingDefault ? 0.6 : 1 }}
                       >
-                        {settingDefault ? 'SAVING...' : 'CONFIRM'}
+                        {settingDefault ? common('saving') : common('confirm')}
                       </button>
                       <button
                         onClick={() => setPendingDefault(null)}
                         style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.65rem', letterSpacing: '0.08em', padding: '7px 12px', cursor: 'pointer' }}
                       >
-                        SKIP
+                        {t('skip')}
                       </button>
                     </div>
                   </div>
@@ -206,14 +261,14 @@ export default function PreSaveSummaryScreen({
                       {swap.oldName} → {swap.newName}
                     </span>
                     {done ? (
-                      <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.06em' }}>SAVED</span>
+                      <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '0.06em' }}>{t('saved')}</span>
                     ) : (
                       <button
                         className="swap-badge"
                         onClick={() => setPendingDefault(swap)}
                         style={{ fontSize: '0.55rem' }}
                       >
-                        SET DEFAULT
+                        {t('setDefault')}
                       </button>
                     )}
                   </div>
@@ -228,7 +283,7 @@ export default function PreSaveSummaryScreen({
       <div className="safe-bottom px-5" style={{ paddingTop: '14px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         {saveError && (
           <p style={{ color: 'var(--rust)', fontFamily: 'Space Mono, monospace', fontSize: '0.75rem', margin: '0 0 10px 0', textAlign: 'center' }}>
-            SAVE FAILED — check your connection and try again
+            {t('saveFailed')}
           </p>
         )}
         <button
@@ -237,7 +292,7 @@ export default function PreSaveSummaryScreen({
           className="btn-primary"
           style={{ opacity: saving ? 0.6 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}
         >
-          {saving ? 'SAVING...' : saveError ? 'RETRY SAVE →' : 'SAVE SESSION →'}
+          {saving ? t('saving') : saveError ? t('retrySave') : t('saveSession')}
         </button>
       </div>
 
@@ -251,7 +306,7 @@ export default function PreSaveSummaryScreen({
           }
           onConfirm={confirmEdit}
           onCancel={() => setEditTarget(null)}
-          label={`Set ${editTarget.setIdx + 1} — ${editTarget.field}`}
+          label={`${t('setIndex', { setNumber: editTarget.setIdx + 1 })} — ${editTarget.field === 'weight' ? common('lbs') : common('reps')}`}
           maxValue={editTarget.field === 'weight' ? 999 : 99}
           allowDecimal={editTarget.field === 'weight'}
         />

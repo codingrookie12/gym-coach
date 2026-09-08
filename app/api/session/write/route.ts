@@ -17,6 +17,9 @@ interface SessionEntry {
   notes?: string
   unit?: 'Lbs' | 'Pins'
   userProgramSplitId?: string
+  /** Phase 1/2/3 joint contract (sets.rir): integer 0-5+, omitted/null =
+   *  not logged. See lib/coaching/types.ts's RirValue docstring. */
+  rir?: number | null
 }
 
 export async function POST(request: NextRequest) {
@@ -52,9 +55,17 @@ export async function POST(request: NextRequest) {
     entries.forEach((e, i) => entryIndexMap.set(e, i))
 
     const skipped: string[] = []
+    // GYM-97 fix #1 (defense-in-depth): a group with no userProgramSplitId
+    // can't be persisted (getOrCreateWorkout requires it) — track it so the
+    // response is honest instead of returning success:true while silently
+    // dropping every entry in the group.
+    const noSplitId: string[] = []
 
     for (const { date, userProgramSplitId, splitName, entries: groupEntries } of Array.from(groups.values())) {
-      if (!userProgramSplitId) continue
+      if (!userProgramSplitId) {
+        for (const e of groupEntries) if (!noSplitId.includes(e.exercise)) noSplitId.push(e.exercise)
+        continue
+      }
       const workoutId = await getOrCreateWorkout(supabase, user.id, date, userProgramSplitId, startedAt)
 
       type InsertRow = {
@@ -65,6 +76,7 @@ export async function POST(request: NextRequest) {
         reps: number
         unit: string
         notes?: string
+        rir?: number
         _entry: SessionEntry
       }
 
@@ -83,6 +95,7 @@ export async function POST(request: NextRequest) {
           reps: entry.reps,
           unit: entry.unit ?? 'Lbs',
           ...(entry.notes ? { notes: entry.notes } : {}),
+          ...(entry.rir !== undefined && entry.rir !== null ? { rir: entry.rir } : {}),
           _entry: entry,
         })
       }
@@ -127,10 +140,27 @@ export async function POST(request: NextRequest) {
       })()
     }
 
+    if (noSplitId.length > 0) {
+      void (async () => {
+        try {
+          await supabase.from('failed_syncs').insert({
+            user_id: user.id,
+            payload: { entries: entries.filter((e: SessionEntry) => noSplitId.includes(e.exercise)), noSplitIdNames: noSplitId },
+            error_message: `Missing userProgramSplitId, entries not persisted: ${noSplitId.join(', ')}`,
+          })
+        } catch {}
+      })()
+    }
+
+    // GYM-97 fix #1 (defense-in-depth): never report success when part of
+    // the batch couldn't be persisted for lack of a split id — the caller
+    // (ActiveSessionScreen's autosave, handleSaveSession) must see this as
+    // a failure rather than flashing "✓ SAVED" over silently-dropped sets.
     return NextResponse.json({
-      success: true,
+      success: noSplitId.length === 0,
       pageIds: pageIds.filter(id => id !== ''),
       ...(skipped.length > 0 ? { skipped } : {}),
+      ...(noSplitId.length > 0 ? { error: `Missing userProgramSplitId — not saved: ${noSplitId.join(', ')}`, unsaved: noSplitId } : {}),
     })
   } catch (error) {
     console.error('Write error:', error)

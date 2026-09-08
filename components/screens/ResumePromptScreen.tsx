@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Split } from '@/lib/routines'
 import { PersistedSession } from '@/lib/sessionStorage'
 
@@ -18,6 +19,8 @@ export default function ResumePromptScreen({
   detectedSession, detectedSplit, onResume, onFresh, onSettings,
   showStartFreshConfirm, onConfirmStartFresh, onCancelStartFresh,
 }: ResumePromptScreenProps) {
+  const t = useTranslations('screens.resumePrompt')
+  const common = useTranslations('common')
   const split = detectedSession?.split ?? detectedSplit
   const hasFullData = !!detectedSession
 
@@ -37,9 +40,9 @@ export default function ResumePromptScreen({
         const now = new Date()
         const diffMs = now.getTime() - d.getTime()
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-        if (diffDays === 0) return 'Started today'
-        if (diffDays === 1) return 'Started yesterday'
-        return `Started ${diffDays} days ago`
+        if (diffDays === 0) return t('startedToday')
+        if (diffDays === 1) return t('startedYesterday')
+        return t('startedDaysAgo', { days: diffDays })
       })()
     : null
 
@@ -53,10 +56,10 @@ export default function ResumePromptScreen({
       >
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
           <span className="font-display" style={{ fontSize: '1.5rem', color: 'var(--text-primary)', letterSpacing: '0.08em' }}>
-            GYM COACH
+            {t('appName')}
           </span>
           <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.1em' }}>
-            v4.0
+            v1.0
           </span>
         </div>
         <button
@@ -72,7 +75,7 @@ export default function ResumePromptScreen({
             <circle cx="12" cy="12" r="3" />
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
-          WEIGHTS
+          {t('weightsLink')}
         </button>
       </div>
 
@@ -81,7 +84,7 @@ export default function ResumePromptScreen({
 
         {/* Session label */}
         <p className="section-label" style={{ margin: '0 0 12px 0', textAlign: 'center' }}>
-          {hasFullData ? 'UNFINISHED SESSION FOUND' : 'SESSION LOGGED TODAY'}
+          {hasFullData ? t('unfinishedFound') : t('sessionLoggedToday')}
         </p>
 
         {/* Split name — big */}
@@ -99,7 +102,7 @@ export default function ResumePromptScreen({
           {split ?? '—'}
         </h1>
         <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: '0 0 32px 0', letterSpacing: '0.1em' }}>
-          DAY
+          {t('dayLabel')}
         </p>
 
         {/* Progress detail — only if we have full local data */}
@@ -110,14 +113,14 @@ export default function ResumePromptScreen({
             width: '100%', maxWidth: '280px', textAlign: 'center',
           }}>
             <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: '0 0 6px 0', letterSpacing: '0.08em' }}>
-              PROGRESS
+              {t('progressLabel')}
             </p>
             <p className="font-display" style={{ fontSize: '2rem', color: 'var(--text-primary)', margin: '0 0 4px 0', letterSpacing: '0.04em' }}>
-              {completedCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {totalCount} sets</span>
+              {completedCount} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>/ {totalCount} {common('sets')}</span>
             </p>
             {currentExName && (
               <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-mid)', margin: '0 0 2px 0', letterSpacing: '0.06em' }}>
-                LEFT OFF AT: {currentExName.toUpperCase()}
+                {t('leftOffAt', { exercise: currentExName.toUpperCase() })}
               </p>
             )}
             {startedAtLabel && (
@@ -136,7 +139,7 @@ export default function ResumePromptScreen({
             width: '100%', maxWidth: '280px',
           }}>
             <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', margin: 0, lineHeight: 1.6 }}>
-              Entries found for today. Start fresh or continue from where you think you left off.
+              {t('dbOnlyFallback')}
             </p>
           </div>
         )}
@@ -144,39 +147,36 @@ export default function ResumePromptScreen({
         {/* CTAs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
           <button className="btn-primary" onClick={onResume}>
-            {hasFullData ? 'RESUME SESSION →' : 'CONTINUE TODAY →'}
+            {hasFullData ? t('resumeSession') : t('continueToday')}
           </button>
           <button className="btn-secondary" onClick={onFresh}>
-            START FRESH
+            {t('startFresh')}
           </button>
         </div>
       </div>
 
       {/* Footer */}
       <div
-        className="safe-bottom flex items-center justify-between px-5"
+        className="safe-bottom flex items-center px-5"
         style={{ paddingTop: '12px', borderTop: '1px solid var(--border)' }}
       >
         <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', letterSpacing: '0.12em' }}>
-          TODAY&apos;S SESSION
-        </span>
-        <span className="font-mono" style={{ fontSize: '0.55rem', color: 'var(--border-2)', letterSpacing: '0.1em' }}>
-          PUSH · PULL · LEGS
+          {t('todaySession')}
         </span>
       </div>
 
       {showStartFreshConfirm && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(12,11,9,0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
-          <p className="section-label" style={{ margin: '0 0 10px 0' }}>DISCARD TODAY&apos;S SESSION?</p>
+          <p className="section-label" style={{ margin: '0 0 10px 0' }}>{t('startFreshConfirmLabel')}</p>
           <h2 className="font-display" style={{ fontSize: '2.5rem', fontWeight: 400, color: 'var(--text-primary)', margin: '0 0 8px 0', textAlign: 'center', letterSpacing: '0.04em' }}>
-            Start Fresh?
+            {t('startFreshConfirmTitle')}
           </h2>
           <p className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-mid)', margin: '0 0 32px 0', textAlign: 'center', lineHeight: 1.7, maxWidth: '280px' }}>
-            This will permanently delete the exercises you&apos;ve already logged today for this split.
+            {t('startFreshConfirmBody')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '280px' }}>
-            <button className="btn-secondary" onClick={onCancelStartFresh}>CANCEL</button>
-            <button className="btn-primary" onClick={onConfirmStartFresh}>DISCARD &amp; START FRESH</button>
+            <button className="btn-secondary" onClick={onCancelStartFresh}>{t('startFreshCancel')}</button>
+            <button className="btn-primary" onClick={onConfirmStartFresh}>{t('startFreshConfirmAction')}</button>
           </div>
         </div>
       )}

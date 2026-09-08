@@ -1,13 +1,12 @@
-// Simple in-memory session state (no localStorage — all in-session)
-import { Split } from './routines'
-import { CoachingContext, ExercisePlan } from './coaching'
-import { SessionRecord } from './supabase.queries'
-
 export interface SetLog {
   weight: number
   reps: number
   completed: boolean
   skipped?: boolean
+  /** Phase 1/2/3 joint contract (sets.rir): integer 0-5+, null/undefined =
+   *  not logged — the coaching engine infers from rep-range position
+   *  instead. Optional, never required to complete a set. */
+  rir?: number | null
 }
 
 export interface ExerciseLog {
@@ -25,45 +24,5 @@ export type SavedSnapshot = Record<string, {
   weight: number
   reps: number
   notes: string
+  rir?: number | null
 }>
-
-export interface SessionState {
-  split: Split | null
-  coachingContext: CoachingContext | null
-  plan: ExercisePlan[] | null
-  sessions: SessionRecord[] | null
-  exerciseLogs: ExerciseLog[]
-  currentExerciseIndex: number
-  startedAt: string | null
-}
-
-// Global session state (module-level, survives navigation within SPA)
-let _state: SessionState = {
-  split: null,
-  coachingContext: null,
-  plan: null,
-  sessions: null,
-  exerciseLogs: [],
-  currentExerciseIndex: 0,
-  startedAt: null,
-}
-
-export function getState(): SessionState {
-  return _state
-}
-
-export function setState(partial: Partial<SessionState>): void {
-  _state = { ..._state, ...partial }
-}
-
-export function resetSession(): void {
-  _state = {
-    split: null,
-    coachingContext: null,
-    plan: null,
-    sessions: null,
-    exerciseLogs: [],
-    currentExerciseIndex: 0,
-    startedAt: null,
-  }
-}

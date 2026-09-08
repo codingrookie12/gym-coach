@@ -179,10 +179,33 @@ describe('analyzeCoaching — data maturity', () => {
 })
 
 describe('analyzeCoaching — volume landmarks', () => {
-  it('flags a muscle group under MEV when weekly credited sets fall short', () => {
+  it('computes the raw muscleVolume table (under MEV) regardless of data maturity', () => {
+    // programSessions: [] => limited-history — muscleVolume is still the
+    // full, ungated table; only the curated `flags` array is gated (below).
     const { context } = analyzeCoaching(baseInput({ programSessions: [] }))
     expect(context.muscleVolume.some(m => m.muscleGroup === 'Chest' && m.zone === 'under-mev')).toBe(true)
+  })
+
+  it('does NOT surface volume-under-mev/-over-mrv flags before data maturity is established (real bug: a brand-new user was getting an under-MEV flag for all ~17 muscle groups at once)', () => {
+    const { context } = analyzeCoaching(baseInput({ programSessions: [] }))
+    expect(context.dataMaturity).not.toBe('established')
+    expect(context.flags.some(f => f.kind === 'volume-under-mev' || f.kind === 'volume-over-mrv')).toBe(false)
+  })
+
+  it('surfaces volume-under-mev flags, scoped to only today\'s routine\'s muscle groups, once data maturity is established', () => {
+    // 12 sessions, all well outside the 7-day weekly window, so (a)
+    // dataMaturity reads 'established' off the raw count and (b) weekly
+    // credited sets are 0 for every muscle group => every landmark-defined
+    // muscle group (all ~17) reads under-mev in the raw table.
+    const oldSessions = Array.from({ length: 12 }, (_, i) => session(`2026-06-${String(i + 1).padStart(2, '0')}`, [{ weight: 100, reps: 8, rir: 2 }]))
+    const { context } = analyzeCoaching(baseInput({ programSessions: oldSessions }))
+    expect(context.dataMaturity).toBe('established')
+    // Raw table still shows the full spread, including muscles this split
+    // never touches (default routine = bench => Chest/Triceps/Shoulders).
+    expect(context.muscleVolume.some(m => m.muscleGroup === 'Quadriceps' && m.zone === 'under-mev')).toBe(true)
+    // But curated flags only include muscle groups today's routine trains.
     expect(context.flags.some(f => f.kind === 'volume-under-mev' && f.muscleGroup === 'Chest')).toBe(true)
+    expect(context.flags.some(f => f.kind === 'volume-under-mev' && f.muscleGroup === 'Quadriceps')).toBe(false)
   })
 
   it('flags a muscle group over MRV when weekly credited sets exceed it', () => {

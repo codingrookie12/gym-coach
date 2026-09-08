@@ -10,7 +10,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { pageId, changes } = body as {
       pageId: string
-      changes: { weight?: number; reps?: number; notes?: string }
+      changes: { weight?: number; reps?: number; notes?: string; rir?: number | null }
     }
 
     if (!pageId || typeof pageId !== 'string') {
@@ -21,6 +21,7 @@ export async function PATCH(request: NextRequest) {
     if (changes.weight !== undefined) updates.weight = changes.weight
     if (changes.reps !== undefined) updates.reps = changes.reps
     if (changes.notes !== undefined) updates.notes = changes.notes
+    if (changes.rir !== undefined) updates.rir = changes.rir
     if (Object.keys(updates).length === 0) return NextResponse.json({ success: true })
 
     // RLS policy on sets verifies the set belongs to the authenticated user
