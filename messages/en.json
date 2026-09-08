@@ -434,61 +434,6 @@
       "technicalLabel": "TECHNICAL"
     }
   },
-  "coaching": {
-    "flags": {
-      "noHistory": {
-        "technical": "No weight logged for this exercise yet.",
-        "plain": "First time on this one — pick a starting weight."
-      },
-      "progressReady": {
-        "technical": "Hit {topOfRange} reps for 2 sessions — ready to progress {fromWeight} → {toWeight}",
-        "plain": "You crushed it last time — let's go heavier: {fromWeight} → {toWeight}."
-      },
-      "recoveryHold": {
-        "technical": "Ready to progress but only {recoveryGapDays}d recovery — holding weight",
-        "plain": "You trained this recently ({recoveryGapDays}d ago) — holding steady so you can recover."
-      },
-      "weightTooHeavy": {
-        "technical": "Below the {bottomOfRange}-rep floor for 2 sessions at {weight} — recalibrating",
-        "plain": "This weight's been too heavy the last two times — let's dial it back."
-      },
-      "fatigueRepDrop": {
-        "technical": "Reps dropped from {firstSetReps} to {lastSetReps} within the session — possible fatigue",
-        "plain": "You slowed down a lot mid-exercise — might be fatigue."
-      },
-      "fatigueRirTrend": {
-        "technical": "Effort trending up (avg RIR {recentAvgRir}) across recent sessions",
-        "plain": "You've been grinding harder than usual on this one lately."
-      },
-      "stall": {
-        "technical": "No progress for {sessionCount} sessions",
-        "plain": "Stuck at the same weight for a while — try {strategy}."
-      },
-      "deloadRecommended": {
-        "technical": "{fatiguedExerciseCount} exercises showing fatigue signals — deload recommended",
-        "plain": "Your body's asking for a break — take it easier this week."
-      },
-      "volumeUnderMev": {
-        "technical": "{muscleGroup}: {weeklyCreditedSets} sets/wk, below MEV ({mev})",
-        "plain": "You're not training {muscleGroup} enough to grow — add a set or two."
-      },
-      "volumeOverMrv": {
-        "technical": "{muscleGroup}: {weeklyCreditedSets} sets/wk, over MRV ({mrv})",
-        "plain": "You might be overdoing {muscleGroup} — consider trimming volume."
-      }
-    },
-    "stallStrategy": {
-      "dropSet": "a drop set",
-      "pauseReps": "pause reps",
-      "gripAngle": "a different grip angle",
-      "deload": "a deload"
-    },
-    "dataMaturity": {
-      "limitedHistory": "Still learning your baseline",
-      "developing": "Building a picture of your training"
-    },
-    "provenanceInferred": "estimated — no RIR logged"
-  },
   "vocab": {
     "muscleGroups": {
       "chest": "CHEST",
