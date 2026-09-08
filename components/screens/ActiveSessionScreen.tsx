@@ -660,6 +660,14 @@ export default function ActiveSessionScreen({
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function flashSaved() {
+    // Mutually exclusive with the error flash: a fresh success for one
+    // exercise shouldn't leave a stale "SAVE FAILED" badge (up to 2.6s)
+    // lingering alongside it from a different exercise's earlier attempt.
+    if (saveErrorTimerRef.current) {
+      clearTimeout(saveErrorTimerRef.current)
+      saveErrorTimerRef.current = null
+    }
+    setShowSaveError(false)
     setShowSaved(true)
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
     savedTimerRef.current = setTimeout(() => setShowSaved(false), 1800)
@@ -674,6 +682,12 @@ export default function ActiveSessionScreen({
   const saveErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function flashSaveError() {
+    // Mutually exclusive with the success flash — see flashSaved() above.
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current)
+      savedTimerRef.current = null
+    }
+    setShowSaved(false)
     setShowSaveError(true)
     if (saveErrorTimerRef.current) clearTimeout(saveErrorTimerRef.current)
     saveErrorTimerRef.current = setTimeout(() => setShowSaveError(false), 2600)

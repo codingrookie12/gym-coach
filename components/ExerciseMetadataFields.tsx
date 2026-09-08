@@ -7,10 +7,18 @@ export const EQUIPMENT_OPTIONS: Equipment[] = [
   'Bands', 'Kettlebell', 'Bodyweight', 'Other',
 ]
 export const MUSCLE_OPTIONS: Muscle[] = [
-  'Chest', 'Shoulders', 'Triceps', 'Biceps', 'Back', 'Lats',
+  // 'Back' was previously listed here but is not a valid `Muscle` value
+  // (it's the coarse Reports/vocab.muscleGroups label, a different
+  // namespace — see lib/muscleGroups.ts) — only reachable via an `as
+  // Muscle[]` cast that bypassed the type check. Picking it produced an
+  // untranslatable tag (MUSCLE_VOCAB_KEY['Back'] is undefined) and made the
+  // exercise invisible to every Reports muscle-balance/coaching-volume
+  // tally (muscleToGroup/getLandmark have no 'Back' entry either). The
+  // specific back muscles below are the valid, already-present choices.
+  'Chest', 'Shoulders', 'Triceps', 'Biceps', 'Lats',
   'Middle Back', 'Lower Back', 'Abdominals', 'Quadriceps',
   'Hamstrings', 'Glutes', 'Calves',
-] as Muscle[]
+]
 export const SPLIT_OPTIONS: string[] = ['Push', 'Pull', 'Legs', 'None']
 
 interface Props {

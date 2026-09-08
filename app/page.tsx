@@ -997,6 +997,7 @@ export default function App() {
           <ProgressHistoryScreen
             userId={appState.user?.id}
             userProgramSplitId={appState.userProgramSplitId ?? undefined}
+            isActive={activeTab === 'reports'}
           />
         </div>
 

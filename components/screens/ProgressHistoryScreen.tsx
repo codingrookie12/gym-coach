@@ -35,6 +35,18 @@ interface Props {
   onBack?: () => void
   userId?: string
   userProgramSplitId?: string
+  /** GYM-99 fix: app/page.tsx mounts every top-level tab once at app load
+   *  and keeps all four alive via CSS `display` toggling (never unmounting)
+   *  so switching tabs doesn't lose scroll position/state — but that means
+   *  this screen's mount-time `/api/history/progress` fetch used to run
+   *  exactly once, ever, per page load. Finish a workout in the Train tab
+   *  and the Reports tab (mounted since before that workout existed) kept
+   *  showing "NO SESSIONS YET" until a hard page reload. Pass
+   *  `isActive={activeTab === 'reports'}` from a tab host so the fetch
+   *  re-runs on every transition into view; omit it (defaults to `true`)
+   *  for the Library → History entry point, which already gets a fresh
+   *  mount every time it opens. */
+  isActive?: boolean
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -401,7 +413,7 @@ function SignalLine({ flag }: { flag: CoachingFlag }) {
 
 // ─── Main screen ───────────────────────────────────────────────────────────────
 
-export default function ProgressHistoryScreen({ onBack, userId, userProgramSplitId }: Props) {
+export default function ProgressHistoryScreen({ onBack, userId, userProgramSplitId, isActive = true }: Props) {
   const t = useTranslations('screens.progressHistory')
   const coachingContextT = useTranslations('screens.coachingContext')
   const vocabMuscleGroups = useTranslations('vocab.muscleGroups')
@@ -423,7 +435,9 @@ export default function ProgressHistoryScreen({ onBack, userId, userProgramSplit
   const [coachingLoaded, setCoachingLoaded] = useState(false)
 
   useEffect(() => {
+    if (!isActive) return
     let cancelled = false
+    setLoading(true)
     fetch('/api/history/progress')
       .then(r => r.json())
       .then((d: HistoryProgress) => {
@@ -437,7 +451,7 @@ export default function ProgressHistoryScreen({ onBack, userId, userProgramSplit
         setLoading(false)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [isActive])
 
   // GYM-92 fix: resolve muscle-group tags for every exercise_id in this
   // history by querying the DB directly (works uniformly for catalog AND
