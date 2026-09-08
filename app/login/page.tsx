@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
+import { MIN_OTP_LENGTH, MAX_OTP_LENGTH, sanitizeOtpInput } from '@/lib/otp'
 
 function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
   const searchParams = useSearchParams()
@@ -17,6 +18,7 @@ function ErrorFromParams({ onError }: { onError: (msg: string) => void }) {
 type Step = 'email' | 'verify'
 
 const RESEND_SECONDS = 30
+const AUTO_SUBMIT_DEBOUNCE_MS = 400
 
 export default function LoginPage() {
   const router = useRouter()
@@ -101,16 +103,25 @@ export default function LoginPage() {
   }
 
   function handleCodeChange(value: string) {
-    const digits = value.replace(/\D/g, '').slice(0, 6)
-    setCode(digits)
-    if (digits.length === 6 && !verifying) {
-      void verifyCode(digits)
-    }
+    setCode(sanitizeOtpInput(value))
   }
+
+  // Auto-submits once a plausible code has been entered (typed, pasted, or
+  // autofilled) and input has paused briefly — a fixed debounce instead of
+  // an exact-length check, since the real code length isn't known client-side.
+  useEffect(() => {
+    if (step !== 'verify' || verifying) return
+    if (code.length < MIN_OTP_LENGTH) return
+    const t = setTimeout(() => {
+      void verifyCode(code)
+    }, AUTO_SUBMIT_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, step])
 
   async function handleVerifySubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (code.length !== 6 || verifying) return
+    if (code.length < MIN_OTP_LENGTH || verifying) return
     await verifyCode(code)
   }
 
@@ -210,7 +221,7 @@ export default function LoginPage() {
                 Check your email
               </div>
               <div style={{ color: 'var(--text-mid)', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                We sent a 6-digit code to{' '}
+                We sent a verification code to{' '}
                 <span style={{ color: 'var(--text-primary)' }}>{normalizedEmail()}</span>
               </div>
             </div>
@@ -224,8 +235,8 @@ export default function LoginPage() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                pattern="\d{6}"
-                maxLength={6}
+                pattern={`\\d{${MIN_OTP_LENGTH},${MAX_OTP_LENGTH}}`}
+                maxLength={MAX_OTP_LENGTH}
                 placeholder="123456"
                 value={code}
                 onChange={e => handleCodeChange(e.target.value)}
@@ -242,11 +253,11 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={code.length !== 6 || verifying}
+                disabled={code.length < MIN_OTP_LENGTH || verifying}
                 style={{
                   ...primaryButtonStyle,
-                  opacity: code.length !== 6 || verifying ? 0.5 : 1,
-                  cursor: code.length !== 6 || verifying ? 'default' : 'pointer',
+                  opacity: code.length < MIN_OTP_LENGTH || verifying ? 0.5 : 1,
+                  cursor: code.length < MIN_OTP_LENGTH || verifying ? 'default' : 'pointer',
                 }}
               >
                 {verifying ? 'VERIFYING…' : 'VERIFY'}
