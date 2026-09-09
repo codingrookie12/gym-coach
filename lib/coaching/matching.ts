@@ -9,11 +9,21 @@
  * compounding ways: (1) a routine's `Exercise.name` (display label) can
  * differ from its own `Exercise.canonicalName` (e.g. "Standing Low-pulley
  * One-arm Triceps Extension" vs. "Standing Low-Pulley One-Arm Triceps
- * Extension" — a real pair in lib/routines.ts today, differing only in
- * case, which `.toLowerCase()` happens to still catch — but nothing
- * guarantees a future custom-exercise name only differs by case); (2) a
- * custom exercise's name, as typed by whichever user created it, has no
- * guaranteed relationship to the DB's canonical `exercises.name` at all.
+ * Extension" — a real pair that shipped in lib/routines.ts, differing only
+ * in case. This resolver's own case-insensitive fallback below does NOT
+ * actually protect against that pairing in practice: the real exerciseId
+ * used downstream (lib/coaching/data.ts's `fetchExerciseIdsByCanonicalName`
+ * + muscleTagging.ts's `exerciseIdByCanonicalName[ex.canonicalName]`) is a
+ * plain, case-sensitive object-key lookup, not a call into
+ * `resolveExerciseId` — so a canonicalName that only case-mismatches the DB
+ * row still falls through to `unresolvedExerciseId`, which then breaks
+ * `fetchMuscleTagsByExerciseId`'s `.in('id', ...)` query (an `unresolved:...`
+ * sentinel is not a valid UUID, so PostgREST 400s). This exact pairing was
+ * found live and fixed 2026-09 (both routines.ts entries now match the DB's
+ * `exercises.name` verbatim); lib/coaching/__tests__/routines-catalog.test.ts
+ * guards against it recurring. (2) a custom exercise's name, as typed by
+ * whichever user created it, has no guaranteed relationship to the DB's
+ * canonical `exercises.name` at all.
  *
  * The fix: resolve each exercise to its stable `exercises.id` (DB UUID,
  * FK'd from `sets.exercise_id`) exactly ONCE, at the routine/catalog-wiring

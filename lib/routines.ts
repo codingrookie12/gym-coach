@@ -72,7 +72,7 @@ export const PUSH_ROUTINE: Exercise[] = [
   { name: 'Side Lateral Raise',                            canonicalName: 'Side Lateral Raise',                   sets: 3, repRange: [12, 12], backup: null,                                split: 'Push', availableWeights: DB },
   { name: 'Face Pull',                                     canonicalName: 'Face Pull',                            sets: 3, repRange: [12, 15], backup: 'Reverse Machine Flyes',              split: 'Push', availableWeights: CABLE_FULL },
   { name: 'Triceps Pushdown - Rope Attachment',            canonicalName: 'Triceps Pushdown - Rope Attachment',   sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - V-bar Attachment', split: 'Push', availableWeights: CABLE_FULL },
-  { name: 'Standing Low-pulley One-arm Triceps Extension', canonicalName: 'Standing Low-Pulley One-Arm Triceps Extension', split: 'Push', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', availableWeights: CABLE_LIGHT },
+  { name: 'Standing Low-pulley One-arm Triceps Extension', canonicalName: 'Standing Low-pulley One-arm Triceps Extension', split: 'Push', sets: 3, repRange: [10, 12], backup: 'Standing Dumbbell Triceps Extension', availableWeights: CABLE_LIGHT },
 ]
 
 export const PULL_ROUTINE: Exercise[] = [
@@ -85,7 +85,7 @@ export const PULL_ROUTINE: Exercise[] = [
 ]
 
 export const LEGS_ROUTINE: Exercise[] = [
-  { name: 'Hack Squat',           canonicalName: 'Linear Hack Press',    sets: 3, repRange: [8, 10],  backup: 'Barbell Hack Squat',  split: 'Legs', availableWeights: HACK_PRESS },
+  { name: 'Hack Squat',           canonicalName: 'Hack Squat',            sets: 3, repRange: [8, 10],  backup: 'Barbell Hack Squat',  split: 'Legs', availableWeights: HACK_PRESS },
   { name: 'Leg Press',            canonicalName: 'Leg Press',            sets: 3, repRange: [10, 12], backup: 'Hack Squat',          split: 'Legs', availableWeights: LEG_PRESS, weightConvention: 'per side' },
   { name: 'Leg Extensions',       canonicalName: 'Leg Extensions',       sets: 3, repRange: [12, 12], backup: 'Single-leg Leg Extension', split: 'Legs', availableWeights: LEG_EXT },
   { name: 'Seated Leg Curl',      canonicalName: 'Seated Leg Curl',      sets: 3, repRange: [10, 12], backup: 'Lying Leg Curls',     split: 'Legs', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
@@ -270,18 +270,10 @@ const PHUL_UPPER_HYPERTROPHY_ROUTINE: Exercise[] = [
   { name: 'Side Lateral Raise',         canonicalName: 'Side Lateral Raise',         sets: 3, repRange: [12, 15], backup: 'Bent Over Low-pulley Side Lateral', split: 'Upper Hypertrophy', availableWeights: DB },
   { name: 'Face Pull',                  canonicalName: 'Face Pull',                  sets: 3, repRange: [12, 15], backup: null,                 split: 'Upper Hypertrophy', availableWeights: CABLE_FULL },
   { name: 'Preacher Hammer Dumbbell Curl', canonicalName: 'Preacher Hammer Dumbbell Curl', sets: 3, repRange: [10, 12], backup: 'Standing Biceps Cable Curl', split: 'Upper Hypertrophy', availableWeights: DB },
-  { name: 'Standing Low-pulley One-arm Triceps Extension', canonicalName: 'Standing Low-Pulley One-Arm Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - Rope Attachment', split: 'Upper Hypertrophy', availableWeights: CABLE_LIGHT },
+  { name: 'Standing Low-pulley One-arm Triceps Extension', canonicalName: 'Standing Low-pulley One-arm Triceps Extension', sets: 3, repRange: [10, 12], backup: 'Triceps Pushdown - Rope Attachment', split: 'Upper Hypertrophy', availableWeights: CABLE_LIGHT },
 ]
 
 const PHUL_LOWER_HYPERTROPHY_ROUTINE: Exercise[] = [
-  // NOTE: LEGS_ROUTINE's existing 'Hack Squat' entry (above, ~line 88) uses
-  // canonicalName: 'Linear Hack Press', which does NOT resolve against
-  // lib/exercises.json (confirmed — no such entry exists; the catalog's real
-  // name is just 'Hack Squat'). That's a pre-existing bug predating Phase 4,
-  // out of this phase's declared scope (not one of the 8 screens, not the
-  // programs I'm adding) — flagged in the Phase 4 report rather than fixed
-  // here. This new entry uses the real catalog name so it doesn't inherit
-  // the same bug.
   { name: 'Hack Squat',                 canonicalName: 'Hack Squat',                  sets: 3, repRange: [10, 12], backup: 'Barbell Hack Squat', split: 'Lower Hypertrophy', availableWeights: HACK_PRESS },
   { name: 'Leg Extensions',             canonicalName: 'Leg Extensions',             sets: 3, repRange: [12, 15], backup: 'Single-leg Leg Extension', split: 'Lower Hypertrophy', availableWeights: LEG_EXT },
   { name: 'Seated Leg Curl',            canonicalName: 'Seated Leg Curl',            sets: 3, repRange: [10, 15], backup: 'Lying Leg Curls',    split: 'Lower Hypertrophy', availableWeights: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], weightUnit: 'pins' },
