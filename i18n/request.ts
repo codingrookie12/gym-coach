@@ -14,6 +14,16 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
+    // Fixed, not derived from the request: this app has a single real user
+    // (Bogotá) today and no per-user timezone preference stored anywhere.
+    // Silences next-intl's ENVIRONMENT_FALLBACK warning (it otherwise falls
+    // back to the server process's own TZ, which can differ from the
+    // client's and would drift silently if a server ever moved regions).
+    // Actual on-screen date/time formatting in components uses the
+    // browser's local timezone directly (Date/Intl.DateTimeFormat with no
+    // explicit timeZone) — this only affects next-intl's own internal
+    // formatting, e.g. ICU date/time placeholders in translated messages.
+    timeZone: 'America/Bogota',
     messages: (await import(`../messages/${locale}.json`)).default,
   }
 })
