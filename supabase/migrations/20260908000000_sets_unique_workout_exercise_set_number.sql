@@ -1,0 +1,68 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Sets dedup guard — unique index on (workout_id, exercise_id, set_number)
+--
+-- Context: ActiveSessionScreen's mid-session autosave effect had a bug where
+-- the normal weight→reps→RIR entry order on any exercise's LAST set (the
+-- `completed` flag flips true before RIR is entered, since RIR is entered
+-- last per the UI) could cause every completed set in that exercise to be
+-- reinserted a second time on the next autosave pass — a real 5-set exercise
+-- produced 10 rows in gym-coach-dev, with the first 5 left stale (rir: null).
+--
+-- That's fixed client-side (lib/autosavePlan.ts: autosave is now
+-- snapshot-aware and only ever PATCHes an already-saved set, never
+-- re-inserts it) and a SELECT-then-branch guard was added server-side in
+-- app/api/session/write/route.ts as an immediate safety net that doesn't
+-- require this migration. This migration is the STRUCTURAL version of that
+-- same guard — a real DB constraint the write route's insert can eventually
+-- lean on via `.upsert(..., { onConflict: 'workout_id,exercise_id,set_number' })`
+-- instead of a SELECT-then-branch (which isn't race-proof against two truly
+-- concurrent requests; a DB constraint is).
+--
+-- NOT WIRED UP YET. Per CLAUDE.md, migrations in this repo are manual-apply-
+-- only (reviewed then applied by hand in Supabase Studio) — this file is
+-- written for that review, not applied by this change. The write route does
+-- NOT depend on this constraint existing; the SELECT-guard already ships
+-- independently.
+--
+-- ⚠ REVIEW NOTE — read before applying:
+-- 1. The exact bug this migration guards against already wrote duplicate
+--    rows into gym-coach-dev (and possibly production, if any session hit
+--    the trigger condition before this fix shipped). Applying a UNIQUE
+--    index against existing duplicate (workout_id, exercise_id, set_number)
+--    rows will FAIL outright (Postgres refuses to build the index) — that's
+--    intentional fail-fast behavior, not a bug in this migration, but it
+--    means a one-time dedup pass over existing `sets` rows is a
+--    prerequisite, not optional. Recommended approach: keep the row with
+--    the most complete data per duplicate group (matches
+--    lib/autosavePlan.ts's own tie-break — the LATEST write for a given
+--    key wins, since that's the one with a real rir instead of null) and
+--    delete the older duplicate(s):
+--
+--      DELETE FROM sets s USING (
+--        SELECT id, workout_id, exercise_id, set_number,
+--               ROW_NUMBER() OVER (
+--                 PARTITION BY workout_id, exercise_id, set_number
+--                 ORDER BY updated_at DESC, created_at DESC
+--               ) AS rn
+--        FROM sets
+--      ) dupes
+--      WHERE s.id = dupes.id AND dupes.rn > 1;
+--
+--    Run that (or an equivalent reviewed query) and confirm the resulting
+--    row counts look right BEFORE applying the CREATE UNIQUE INDEX below.
+--
+-- 2. Known legitimate-collision risk: nothing today stops the same exercise
+--    from being added to one session twice (e.g. via the mid-session
+--    AddExerciseSheet quick-add, with no existing-name exclusion check) —
+--    that would produce two separate ExerciseLog entries sharing an
+--    exercise_id, each independently numbering its own sets 1..N, which
+--    collides with this constraint. This is a pre-existing app-level
+--    assumption (lib/autosavePlan.ts's snapshot key is
+--    `${exerciseName}:${setNumber}`, which already assumes at most one
+--    occurrence of a given exercise per session) — not something this
+--    migration introduces — but it's worth confirming intentional before
+--    applying a hard DB constraint on it.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE UNIQUE INDEX IF NOT EXISTS sets_workout_exercise_set_number_key
+  ON public.sets (workout_id, exercise_id, set_number);

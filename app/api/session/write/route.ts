@@ -102,17 +102,72 @@ export async function POST(request: NextRequest) {
 
       if (inserts.length === 0) continue
 
-      const { data: inserted, error } = await supabase
+      // GYM defense-in-depth: check for a row that already exists at this
+      // exact (workout_id, exercise_id, set_number) before inserting. This
+      // is a structural safety net independent of the client's
+      // snapshot-dedup logic (lib/autosavePlan.ts) — if that ever regresses
+      // (as it did once already, causing every set in an exercise to be
+      // reinserted after a late RIR edit), this stops the write route from
+      // silently doubling rows. A matching row is updated in place instead
+      // of inserted a second time. There's no DB-level unique constraint
+      // backing this yet (sets has no natural one — see the migration
+      // proposal in supabase/migrations/ for review), so this is a
+      // SELECT-then-branch guard rather than an atomic upsert; it closes
+      // the actual bug (sequential re-autosave of already-saved sets) even
+      // though it isn't fully race-proof against true concurrent writers.
+      const exerciseIds = Array.from(new Set(inserts.map(r => r.exercise_id)))
+      const { data: existingRows, error: existingErr } = await supabase
         .from('sets')
-        .insert(inserts.map(({ _entry: _, ...row }) => row))
-        .select('id')
+        .select('id, exercise_id, set_number')
+        .eq('workout_id', workoutId)
+        .in('exercise_id', exerciseIds)
 
-      if (error) throw error
+      if (existingErr) throw existingErr
 
-      inserted?.forEach((row: any, i: number) => {
-        const pos = entryIndexMap.get(inserts[i]._entry)
-        if (pos !== undefined) pageIds[pos] = row.id
-      })
+      const existingMap = new Map<string, string>() // `${exercise_id}:${set_number}` -> id
+      for (const row of (existingRows ?? []) as { id: string; exercise_id: string; set_number: number }[]) {
+        existingMap.set(`${row.exercise_id}:${row.set_number}`, row.id)
+      }
+
+      const freshInserts = inserts.filter(r => !existingMap.has(`${r.exercise_id}:${r.set_number}`))
+      const duplicateGuardUpdates = inserts.filter(r => existingMap.has(`${r.exercise_id}:${r.set_number}`))
+
+      if (duplicateGuardUpdates.length > 0) {
+        console.warn(
+          `[session/write] dedup guard: ${duplicateGuardUpdates.length} set(s) already existed for this workout/exercise/set_number — updating in place instead of inserting a duplicate row.`
+        )
+      }
+
+      await Promise.all(duplicateGuardUpdates.map(async row => {
+        const id = existingMap.get(`${row.exercise_id}:${row.set_number}`)!
+        const { error: updateErr } = await supabase
+          .from('sets')
+          .update({
+            weight: row.weight,
+            reps: row.reps,
+            unit: row.unit,
+            ...(row.notes !== undefined ? { notes: row.notes } : {}),
+            ...(row.rir !== undefined ? { rir: row.rir } : {}),
+          })
+          .eq('id', id)
+        if (updateErr) throw updateErr
+        const pos = entryIndexMap.get(row._entry)
+        if (pos !== undefined) pageIds[pos] = id
+      }))
+
+      if (freshInserts.length > 0) {
+        const { data: inserted, error } = await supabase
+          .from('sets')
+          .insert(freshInserts.map(({ _entry: _, ...row }) => row))
+          .select('id')
+
+        if (error) throw error
+
+        inserted?.forEach((row: any, i: number) => {
+          const pos = entryIndexMap.get(freshInserts[i]._entry)
+          if (pos !== undefined) pageIds[pos] = row.id
+        })
+      }
 
       const maxWeights = new Map<string, { weight: number; unit: string }>()
       for (const ins of inserts) {

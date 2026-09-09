@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
+import { planAutosave } from '@/lib/autosavePlan'
 import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/ui/NumberPad'
 import ChipGrid from '@/components/ui/ChipGrid'
@@ -693,7 +694,14 @@ export default function ActiveSessionScreen({
     saveErrorTimerRef.current = setTimeout(() => setShowSaveError(false), 2600)
   }
 
-  // Auto-save when all sets of an exercise are done
+  // Auto-save when all sets of an exercise are done.
+  //
+  // GYM: duplicate-set fix — snapshot-aware, mirrors app/page.tsx's
+  // handleSaveSession (see lib/autosavePlan.ts's planAutosave docstring for
+  // the full root-cause writeup). A set already recorded in `snapshot.current`
+  // is only ever patched (via /api/session/update), never re-inserted — so a
+  // late RIR/notes edit re-arming `savedExIndices` below can no longer
+  // reinsert every already-saved set in the exercise a second time.
   useEffect(() => {
     const ex = logs[currentExIdx]
     const allDone = ex.sets.every(s => s.completed || s.skipped)
@@ -704,61 +712,71 @@ export default function ActiveSessionScreen({
     savedExIndices.current.add(currentExIdx)
 
     const today = new Date().toISOString().split('T')[0]
-    const entries: any[] = []
-    const setIndices: number[] = []  // track which set numbers correspond to each entry
-    for (let si = 0; si < ex.sets.length; si++) {
-      const set = ex.sets[si]
-      if (!set.completed) continue
-      entries.push({
-        exercise: ex.exerciseName,
-        date: today,
-        split,
-        weight: set.weight,
-        set: si + 1,
-        reps: set.reps,
-        entry: `${ex.exerciseName} — Set ${si + 1}`,
-        notes: ex.notes || undefined,
-        unit: (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
-        rir: set.rir ?? undefined,
-        // GYM-97 fix #1: without this, /api/session/write's group key
-        // falls back to '' and the insert is silently skipped — see the
-        // prop docstring above.
-        userProgramSplitId,
-      })
-      setIndices.push(si + 1)  // 1-indexed set number
-    }
-    if (entries.length === 0) return
+    const unit = (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins'
+    const { toInsert, insertSetNumbers, toPatch } = planAutosave(
+      ex,
+      { date: today, split, weightUnit: unit, userProgramSplitId },
+      snapshot.current
+    )
+    if (toInsert.length === 0 && toPatch.length === 0) return
 
-    fetch('/api/session/write', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries, ...(startedAt ? { startedAt } : {}) }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        // GYM-97 fix #1 (defense-in-depth): the route now returns
-        // success:false when it can't persist (e.g. missing
-        // userProgramSplitId) instead of lying with success:true. Never
-        // flash "✓ SAVED" — or mark this exercise as saved — on that path;
-        // allow the next logs change to retry the autosave.
-        if (data.success === false) {
+    const writePromise = toInsert.length > 0
+      ? fetch('/api/session/write', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entries: toInsert, ...(startedAt ? { startedAt } : {}) }),
+        }).then(r => r.json())
+      : Promise.resolve(null)
+
+    const patchPromises = toPatch.map(op =>
+      fetch('/api/session/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pageId: op.pageId, changes: op.changes }),
+      }).then(r => r.json())
+    )
+
+    Promise.all([writePromise, Promise.all(patchPromises)])
+      .then(([writeData, patchResults]) => {
+        let anyFailure = false
+
+        if (writeData) {
+          // GYM-97 fix #1 (defense-in-depth): the route returns
+          // success:false when it can't persist (e.g. missing
+          // userProgramSplitId) instead of lying with success:true.
+          if (writeData.success === false) {
+            anyFailure = true
+            console.error('Auto-save reported failure:', writeData.error ?? writeData)
+          } else if (writeData.pageIds && Array.isArray(writeData.pageIds)) {
+            writeData.pageIds.forEach((pageId: string, i: number) => {
+              const key = `${ex.exerciseName}:${insertSetNumbers[i]}`
+              snapshot.current[key] = {
+                pageId,
+                weight: toInsert[i].weight,
+                reps: toInsert[i].reps,
+                notes: toInsert[i].notes ?? '',
+                rir: toInsert[i].rir ?? null,
+              }
+            })
+          }
+        }
+
+        patchResults.forEach((res, i) => {
+          if (res?.success === false) {
+            anyFailure = true
+            console.error('Auto-save patch failed:', res?.error ?? res)
+            return
+          }
+          const op = toPatch[i]
+          snapshot.current[op.key] = { pageId: op.pageId, ...op.resolved }
+        })
+
+        // Never flash "✓ SAVED" — or mark this exercise as fully saved — if
+        // any part of the batch failed; allow the next logs change to retry.
+        if (anyFailure) {
           savedExIndices.current.delete(currentExIdx)
-          console.error('Auto-save reported failure:', data.error ?? data)
           flashSaveError()
           return
-        }
-        // Store set IDs in snapshot keyed by "exerciseName:setNum"
-        if (data.pageIds && Array.isArray(data.pageIds)) {
-          data.pageIds.forEach((pageId: string, i: number) => {
-            const key = `${ex.exerciseName}:${setIndices[i]}`
-            snapshot.current[key] = {
-              pageId,
-              weight: entries[i].weight,
-              reps: entries[i].reps,
-              notes: entries[i].notes ?? '',
-              rir: entries[i].rir ?? null,
-            }
-          })
         }
         flashSaved()
       })
@@ -767,7 +785,7 @@ export default function ActiveSessionScreen({
         console.error('Auto-save failed:', e)
         flashSaveError()
       })
-  }, [logs, currentExIdx, split, exerciseDef, userProgramSplitId])
+  }, [logs, currentExIdx, split, exerciseDef, userProgramSplitId, startedAt])
 
   function toggleUnit() {
     setUnitOverrides(prev => ({
