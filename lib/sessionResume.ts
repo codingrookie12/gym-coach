@@ -24,6 +24,7 @@
 
 import { SessionExercisePlan } from './sessionPlan'
 import { ExerciseLog, SavedSnapshot, SetLog } from './store'
+import { PersistedSession } from './sessionStorage'
 
 export interface DbResumeSet {
   setNumber: number
@@ -133,4 +134,48 @@ export function buildResumeStateFromDb(
   const exIdx = firstIncompleteIdx === -1 ? Math.max(0, plan.length - 1) : firstIncompleteIdx
 
   return { logs, exIdx, snapshot }
+}
+
+// ── Resume-prompt trigger (should we show ResumePromptScreen at all?) ──────
+//
+// This is the decision logic from app/page.tsx's mount-time `detect()`,
+// extracted so it has direct test coverage — separate from
+// buildResumeStateFromDb above, which only reconstructs the *data* once the
+// DB-fallback path has already been decided to fire. Two independent
+// signals, checked in order (local first, since it's free — no network
+// round trip — and carries full per-set data the DB fallback can't):
+//
+//   1. localStorage (`PersistedSession`) — only present for a genuinely
+//      unfinished session: app/page.tsx's handleSaveSession calls
+//      clearSessionFromStorage() on every Finish path (confirmed sync,
+//      partial sync, AND offline-queued), so a completed session never
+//      lingers here to be mistakenly offered as "resume".
+//   2. DB fallback (GYM-98, `/api/session/today`) — that route itself
+//      filters `workouts` on `.is('finished_at', null)`, so a completed
+//      workout can never surface here either; a `found: true` response is
+//      structurally guaranteed to be an in-progress session.
+//
+// Both predicates additionally require the stored/found split to still be
+// one of the program's currently-active splits — a split that was archived
+// or removed since the session was recorded should not resurrect a resume
+// prompt for it.
+
+export function shouldResumeFromLocal(
+  stored: PersistedSession | null,
+  activeSplits: string[]
+): boolean {
+  return !!stored && activeSplits.includes(stored.split)
+}
+
+export interface DbTodayResult {
+  found: boolean
+  split?: string | null
+  userProgramSplitId?: string | null
+}
+
+export function shouldResumeFromDb(
+  dbToday: DbTodayResult | null | undefined,
+  activeSplits: string[]
+): boolean {
+  return !!dbToday?.found && !!dbToday.split && activeSplits.includes(dbToday.split)
 }

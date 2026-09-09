@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/ui/NumberPad'
+import { toggleSessionRpe } from '@/lib/sessionRpe'
 
 interface SessionSwap { oldName: string; newName: string }
 
@@ -201,7 +202,7 @@ export default function PreSaveSummaryScreen({
             return (
               <button
                 key={choice}
-                onClick={() => onSessionRpeChange(isSelected ? null : choice)}
+                onClick={() => onSessionRpeChange(toggleSessionRpe(sessionRpe, choice))}
                 style={{
                   minWidth: '32px',
                   minHeight: '36px',

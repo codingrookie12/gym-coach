@@ -31,14 +31,14 @@ import { permanentlySwapExercise, retryFailedSyncs } from '@/lib/supabase.querie
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
-import { buildResumeStateFromDb } from '@/lib/sessionResume'
+import { buildResumeStateFromDb, shouldResumeFromLocal, shouldResumeFromDb } from '@/lib/sessionResume'
+import { drainOutbox as drainOutboxQueue } from '@/lib/outboxDrain'
 import Toast from '@/components/ui/Toast'
 import {
   loadSessionFromStorage,
   clearSessionFromStorage,
   PersistedSession,
   readOutbox,
-  removeFromOutbox,
   enqueueOutbox,
 } from '@/lib/sessionStorage'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
@@ -168,33 +168,25 @@ export default function App() {
   const [outboxCount, setOutboxCount] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
 
-  // Drain the offline finish-session outbox. Safe to call any time.
+  // Drain the offline finish-session outbox. Safe to call any time — the
+  // reentrancy guard in lib/outboxDrain.ts makes concurrent calls for the
+  // same user a no-op past the first, since this is invoked from two
+  // independent triggers below (mount-time detect() and the online-status
+  // effect) that can both fire in the same tick.
   const drainOutbox = useCallback(async (userId: string) => {
-    const pending = readOutbox(userId)
-    if (!pending.length) return
+    if (!readOutbox(userId).length) return
     setIsSyncing(true)
-    for (const entry of pending) {
-      try {
+    const result = await drainOutboxQueue(userId, {
+      fetchWrite: async (body) => {
         const res = await fetch('/api/session/write', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entry.body),
+          body: JSON.stringify(body),
         })
-        if (res.ok) {
-          removeFromOutbox(userId, entry.id)
-          setOutboxCount(readOutbox(userId).length)
-        } else if (res.status >= 400 && res.status < 500) {
-          // 4xx — malformed payload; drop to avoid infinite retry
-          console.warn('[GYM-49] Outbox entry rejected by server, dropping:', entry.id, res.status)
-          removeFromOutbox(userId, entry.id)
-          setOutboxCount(readOutbox(userId).length)
-        }
-        // 5xx or network error: leave in outbox, retry next time
-      } catch {
-        // Network error — leave in outbox
-        break
-      }
-    }
+        return { ok: res.ok, status: res.status }
+      },
+    })
+    if (result) setOutboxCount(result.remaining)
     setIsSyncing(false)
   }, [])
 
@@ -410,8 +402,8 @@ export default function App() {
 
       // 1. localStorage — fast, full data (per-user keyed)
       const stored = user ? loadSessionFromStorage(user.id) : null
-      if (stored && activeSplits.includes(stored.split)) {
-        const splitId = await resolveSplitIdByName(resolvedUserProgramId, stored.split)
+      if (shouldResumeFromLocal(stored, activeSplits)) {
+        const splitId = await resolveSplitIdByName(resolvedUserProgramId, stored!.split)
         setAppState(prev => ({ ...prev, detectedSession: stored, userProgramSplitId: splitId }))
         setScreen('resume-prompt')
         return
@@ -422,7 +414,7 @@ export default function App() {
       try {
         const res = await fetch('/api/session/today')
         const data = await res.json()
-        if (data.found && activeSplits.includes(data.split)) {
+        if (shouldResumeFromDb(data, activeSplits)) {
           setAppState(prev => ({ ...prev, detectedSplit: data.split, userProgramSplitId: data.userProgramSplitId ?? null }))
           setScreen('resume-prompt')
           return

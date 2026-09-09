@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildResumeStateFromDb, DbResumeExercise } from '../sessionResume'
+import { buildResumeStateFromDb, DbResumeExercise, shouldResumeFromLocal, shouldResumeFromDb } from '../sessionResume'
 import { SessionExercisePlan } from '../sessionPlan'
 import { Exercise } from '../routines'
+import { PersistedSession } from '../sessionStorage'
 
 // Regression coverage for the bug: handleResume() in app/page.tsx checked
 // only `detectedSession` (localStorage) and no-op'd when it was null, even
@@ -145,4 +146,66 @@ describe('buildResumeStateFromDb', () => {
     // First plan item with no DB data is index 0, not 1.
     expect(exIdx).toBe(0)
   })
+})
+
+// ── Resume-prompt trigger logic ─────────────────────────────────────────
+//
+// "Should ResumePromptScreen show at all" is a separate question from the
+// data-reconstruction covered above — this is the decision app/page.tsx's
+// detect() makes on mount, now extracted to shouldResumeFromLocal /
+// shouldResumeFromDb so it has direct coverage.
+
+function makePersistedSession(overrides: Partial<PersistedSession> = {}): PersistedSession {
+  return {
+    date: '2026-09-01',
+    split: 'Push',
+    exIdx: 0,
+    logs: [],
+    snapshot: {},
+    ...overrides,
+  }
+}
+
+describe('shouldResumeFromLocal', () => {
+  it('no prior session in localStorage — does not show', () => {
+    expect(shouldResumeFromLocal(null, ['Push', 'Pull', 'Legs'])).toBe(false)
+  })
+
+  it('a genuine in-progress session for an active split — shows', () => {
+    expect(shouldResumeFromLocal(makePersistedSession({ split: 'Push' }), ['Push', 'Pull'])).toBe(true)
+  })
+
+  it('a stored session whose split was since archived/removed from the program — does not show', () => {
+    expect(shouldResumeFromLocal(makePersistedSession({ split: 'Push' }), ['Pull', 'Legs'])).toBe(false)
+  })
+
+  // A fully-completed prior session is never representable here in the first
+  // place: app/page.tsx's handleSaveSession calls clearSessionFromStorage()
+  // on every Finish path (confirmed sync, partial sync, and offline-queued
+  // alike), so `stored` is structurally null once a session is done —
+  // covered by the `null` case above.
+})
+
+describe('shouldResumeFromDb', () => {
+  it('no DB response — does not show', () => {
+    expect(shouldResumeFromDb(null, ['Push', 'Pull'])).toBe(false)
+  })
+
+  it('DB-fallback detection (GYM-98): localStorage empty, DB has an unfinished workout — shows', () => {
+    expect(shouldResumeFromDb({ found: true, split: 'Pull' }, ['Push', 'Pull'])).toBe(true)
+  })
+
+  it('DB says nothing found for today — does not show', () => {
+    expect(shouldResumeFromDb({ found: false }, ['Push', 'Pull'])).toBe(false)
+  })
+
+  it('found split is no longer an active split in the program — does not show', () => {
+    expect(shouldResumeFromDb({ found: true, split: 'Legs' }, ['Push', 'Pull'])).toBe(false)
+  })
+
+  // A fully-completed prior session cannot reach `found: true` either:
+  // GET /api/session/today filters its `workouts` query on
+  // `.is('finished_at', null)`, so a completed workout is excluded before
+  // this predicate ever sees it — verified directly against that query
+  // shape in app/api/session/today/route.test.ts.
 })
