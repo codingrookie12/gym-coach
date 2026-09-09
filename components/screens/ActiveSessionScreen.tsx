@@ -10,9 +10,10 @@ import { saveSessionToStorage } from '@/lib/sessionStorage'
 import NumberPad from '@/components/ui/NumberPad'
 import ChipGrid from '@/components/ui/ChipGrid'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
+import ExercisePickerSheet from '@/components/ExercisePickerSheet'
 import Toast from '@/components/ui/Toast'
 import { savePendingExercise } from '@/lib/customExercises'
-import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
+import { ExerciseDefinition, excludeOtherSessionNames, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 
 interface ActiveSessionScreenProps {
@@ -582,6 +583,7 @@ export default function ActiveSessionScreen({
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
   const [pendingSwapName, setPendingSwapName] = useState<string | null>(null)
+  const [showSwapPicker, setShowSwapPicker] = useState(false)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
   // GYM-95: pending in-memory logs op with 3s Undo. Mid-session is today-only;
@@ -864,6 +866,7 @@ export default function ActiveSessionScreen({
     if (currentExIdx < plan.length - 1) {
       setCurrentExIdx(i => i + 1)
       setSwapShown(false)
+      setShowSwapPicker(false)
     }
   }
 
@@ -880,6 +883,7 @@ export default function ActiveSessionScreen({
     onSessionSwap?.(oldName, newName)
     setPendingSwapName(null)
     setSwapShown(false)
+    setShowSwapPicker(false)
   }
 
   function getSwapOptions(): string[] {
@@ -897,10 +901,15 @@ export default function ActiveSessionScreen({
     return options
   }
 
+  function getSwapExcludeNames(): string[] {
+    return excludeOtherSessionNames(logs.map(l => l.exerciseName), currentExIdx)
+  }
+
   function navigateToExercise(idx: number) {
     setCurrentExIdx(idx)
     setSwapShown(false)
     setPendingSwapName(null)
+    setShowSwapPicker(false)
     setPadMode(null)
     setActiveSetIdx(null)
   }
@@ -1037,6 +1046,16 @@ export default function ActiveSessionScreen({
           onClose={() => setShowAddSheet(false)}
         />
       )}
+      {showSwapPicker && (
+        <ExercisePickerSheet
+          split={split}
+          excludeNames={getSwapExcludeNames()}
+          swapTarget={findExerciseByName(currentEx.exerciseName) ?? undefined}
+          userId={userId}
+          onSelect={(def) => swapToExercise(def.name)}
+          onClose={() => setShowSwapPicker(false)}
+        />
+      )}
 
       {/* Progress bar */}
       <div className="progress-bar" style={{ flexShrink: 0 }}>
@@ -1155,26 +1174,33 @@ export default function ActiveSessionScreen({
             </div>
           )
 
-          if (!options.length) return (
-            <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-              {t('noAlternatives')}
-            </p>
-          )
           return (
             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {options.map(altName => (
-                <div key={altName} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 500, flex: 1 }}>
-                    {altName}
-                  </span>
-                  <button
-                    onClick={() => setPendingSwapName(altName)}
-                    style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    {t('useNow')}
-                  </button>
-                </div>
-              ))}
+              {options.length === 0 ? (
+                <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  {t('noAlternatives')}
+                </p>
+              ) : (
+                options.map(altName => (
+                  <div key={altName} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 500, flex: 1 }}>
+                      {altName}
+                    </span>
+                    <button
+                      onClick={() => setPendingSwapName(altName)}
+                      style={{ background: 'var(--surface-2)', border: '1px solid var(--accent-border)', borderRadius: '2px', color: 'var(--accent)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {t('useNow')}
+                    </button>
+                  </div>
+                ))
+              )}
+              <button
+                onClick={() => setShowSwapPicker(true)}
+                style={{ background: 'none', border: '1px solid var(--border-2)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '6px 8px', cursor: 'pointer', marginTop: options.length === 0 ? '4px' : 0 }}
+              >
+                {common('browseAll')}
+              </button>
             </div>
           )
         })()}

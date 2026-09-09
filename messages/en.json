@@ -17,6 +17,7 @@
     "hide": "HIDE",
     "skip": "SKIP",
     "useNow": "USE NOW",
+    "browseAll": "BROWSE ALL EXERCISES",
     "notAuthenticated": "Not authenticated",
     "failedToLoad": "Failed to load",
     "genericError": "Something went wrong. Try again.",

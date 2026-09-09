@@ -6,10 +6,11 @@ import { CARDIO_RECOMMENDATION } from '@/lib/routines'
 import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { useCoachingFlagText } from '@/lib/i18n/coachingMessages'
 import AddExerciseSheet from '@/components/AddExerciseSheet'
+import ExercisePickerSheet from '@/components/ExercisePickerSheet'
 import RemoveExerciseSheet from '@/components/RemoveExerciseSheet'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
 import ExerciseProgressionStrip from '@/components/ExerciseProgressionStrip'
-import { ExerciseDefinition, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
+import { ExerciseDefinition, excludeOtherSessionNames, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import type { ExerciseProgressionStrip as ProgressionData } from '@/lib/supabase.queries'
 import { pickPriorityFlag } from '@/lib/coaching/index'
 
@@ -17,6 +18,7 @@ interface WorkoutOverviewScreenProps {
   split: string
   plan: SessionExercisePlan[]
   hasResumable?: boolean
+  userId?: string
   onBegin: () => void
   onResume?: () => void
   onBack: () => void
@@ -50,11 +52,12 @@ function ItemFlags({ item }: { item: SessionExercisePlan }) {
   )
 }
 
-export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBegin, onResume, onBack, onAddExercise, onRemoveFromSessionOnly, onRemoveFromRoutine, onSessionSwap }: WorkoutOverviewScreenProps) {
+export default function WorkoutOverviewScreen({ split, plan, hasResumable, userId, onBegin, onResume, onBack, onAddExercise, onRemoveFromSessionOnly, onRemoveFromRoutine, onSessionSwap }: WorkoutOverviewScreenProps) {
   const t = useTranslations('screens.workoutOverview')
   const common = useTranslations('common')
   const [swappedIndex, setSwappedIndex] = useState<number | null>(null)
   const [pendingSwap, setPendingSwap] = useState<PendingSwap | null>(null)
+  const [swapPickerIndex, setSwapPickerIndex] = useState<number | null>(null)
   const [showAddSheet, setShowAddSheet] = useState(false)
   const [removeTarget, setRemoveTarget] = useState<{ entry: SessionExercisePlan; index: number } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDefinition | null>(null)
@@ -86,6 +89,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
   function toggleSwap(i: number) {
     setSwappedIndex(prev => prev === i ? null : i)
     setPendingSwap(null)
+    setSwapPickerIndex(null)
   }
 
   function requestSwap(exIdx: number, oldName: string, newName: string) {
@@ -97,6 +101,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
     onSessionSwap?.(pendingSwap.oldName, pendingSwap.newName)
     setPendingSwap(null)
     setSwappedIndex(null)
+    setSwapPickerIndex(null)
   }
 
   function getSwapOptions(exercise: SessionExercisePlan['exercise']): string[] {
@@ -112,6 +117,10 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
       options.push(...alts.map(a => a.name))
     }
     return options
+  }
+
+  function getPlanExcludeNames(exIdx: number): string[] {
+    return excludeOtherSessionNames(plan.map(item => item.exercise.name), exIdx)
   }
 
   return (
@@ -269,36 +278,43 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
                     </div>
                   )
 
-                  if (!options.length) return (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
-                      <span className="section-label" style={{ color: 'var(--text-secondary)' }}>{t('noAlternativesFound')}</span>
-                    </div>
-                  )
                   return (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span className="section-label" style={{ marginBottom: '2px' }}>{t('swapForTodayButton')}</span>
-                      {options.map(altName => (
-                        <div
-                          key={altName}
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
-                        >
-                          <button
-                            onClick={() => setDetailExercise(findExerciseByName(altName) ?? null)}
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', flex: 1 }}
-                          >
-                            <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
-                              {altName}
-                            </span>
-                          </button>
-                          <button
-                            className="swap-badge"
-                            onClick={() => requestSwap(i, item.exercise.name, altName)}
-                            style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
-                          >
-                            {t('useToday')}
-                          </button>
-                        </div>
-                      ))}
+                      {options.length === 0 ? (
+                        <span className="section-label" style={{ color: 'var(--text-secondary)' }}>{t('noAlternativesFound')}</span>
+                      ) : (
+                        <>
+                          <span className="section-label" style={{ marginBottom: '2px' }}>{t('swapForTodayButton')}</span>
+                          {options.map(altName => (
+                            <div
+                              key={altName}
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}
+                            >
+                              <button
+                                onClick={() => setDetailExercise(findExerciseByName(altName) ?? null)}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', flex: 1 }}
+                              >
+                                <span className="font-sans" style={{ fontSize: '0.85rem', color: 'var(--text-mid)', fontWeight: 400, textDecoration: 'underline', textDecorationColor: 'var(--border-2)', textUnderlineOffset: '3px' }}>
+                                  {altName}
+                                </span>
+                              </button>
+                              <button
+                                className="swap-badge"
+                                onClick={() => requestSwap(i, item.exercise.name, altName)}
+                                style={{ fontSize: '0.55rem', letterSpacing: '0.06em' }}
+                              >
+                                {t('useToday')}
+                              </button>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      <button
+                        onClick={() => setSwapPickerIndex(i)}
+                        style={{ background: 'none', border: '1px solid var(--border-2)', borderRadius: '2px', color: 'var(--text-mid)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '6px 8px', cursor: 'pointer', marginTop: options.length === 0 ? '4px' : 0 }}
+                      >
+                        {common('browseAll')}
+                      </button>
                     </div>
                   )
                 })()}
@@ -372,6 +388,25 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, onBeg
           onClose={() => setShowAddSheet(false)}
         />
       )}
+
+      {swapPickerIndex !== null && (() => {
+        const target = plan[swapPickerIndex]
+        if (!target) return null
+        return (
+          <ExercisePickerSheet
+            split={split}
+            excludeNames={getPlanExcludeNames(swapPickerIndex)}
+            swapTarget={findExerciseByName(target.exercise.name) ?? undefined}
+            userId={userId}
+            onSelect={(def) => {
+              onSessionSwap?.(target.exercise.name, def.name)
+              setSwapPickerIndex(null)
+              setSwappedIndex(null)
+            }}
+            onClose={() => setSwapPickerIndex(null)}
+          />
+        )
+      })()}
 
       {removeTarget && onRemoveFromSessionOnly && onRemoveFromRoutine && (
         <RemoveExerciseSheet

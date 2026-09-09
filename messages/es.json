@@ -17,6 +17,7 @@
     "hide": "OCULTAR",
     "skip": "OMITIR",
     "useNow": "USAR AHORA",
+    "browseAll": "VER TODOS LOS EJERCICIOS",
     "notAuthenticated": "No autenticado",
     "failedToLoad": "Error al cargar",
     "genericError": "Algo salió mal. Intenta de nuevo.",

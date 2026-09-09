@@ -219,3 +219,23 @@ export function getAlternatives(
     return exMuscles.some(m => primaryMuscles.includes(m))
   }).slice(0, options.limit ?? 3)
 }
+
+/**
+ * Names already elsewhere in a same-session list (today's workout plan, or
+ * the in-progress session's logs), excluding the item at `skipIndex` — the
+ * exercise actively being swapped. Feeds `ExercisePickerSheet`'s
+ * `excludeNames` when a swap opens the full-library browser (GYM UX fix:
+ * "only 3 suggested alternatives, no escape hatch"), so picking a
+ * duplicate into the same workout is disabled the same way
+ * RoutineEditorScreen already disables it — while the row being replaced
+ * itself stays selectable (a same-exercise "swap" is a harmless no-op, not
+ * a duplicate).
+ */
+export function excludeOtherSessionNames(
+  names: (string | null | undefined)[],
+  skipIndex: number
+): string[] {
+  return names
+    .map((n, i) => (i === skipIndex ? null : n))
+    .filter((n): n is string => !!n)
+}

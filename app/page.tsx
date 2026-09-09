@@ -771,6 +771,7 @@ export default function App() {
               split={appState.split}
               plan={appState.plan}
               hasResumable={!!appState.savedLogs}
+              userId={appState.user?.id}
               onBegin={async () => {
                 await flushPlanOp()
                 updateState({ savedLogs: null, savedExIdx: 0, savedSnapshot: {}, workoutStartedAt: new Date().toISOString() })
