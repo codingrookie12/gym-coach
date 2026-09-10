@@ -410,7 +410,9 @@
       "saveButtonEdit": "LISTO",
       "savingButton": "GUARDANDO...",
       "archiveNotice": "Este día tiene entrenamientos registrados y fue archivado",
-      "saveFailed": "Error al guardar"
+      "saveFailed": "Error al guardar",
+      "exerciseAdded": "{name} agregado a {split}",
+      "exerciseRemoved": "{name} eliminado"
     },
     "progressHistory": {
       "pr": "RP",

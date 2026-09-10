@@ -9,7 +9,15 @@ import {
   removeExerciseFromRoutine,
   type RoutineExerciseRow,
 } from '@/lib/userRoutine'
+import {
+  createPendingOpController,
+  restoreExerciseSorted,
+  replaceExercise,
+  dropExercise,
+  type PendingOp,
+} from '@/lib/pendingSplitOp'
 import ExercisePickerSheet from '@/components/ExercisePickerSheet'
+import Toast from '@/components/ui/Toast'
 import { type ExerciseDefinition } from '@/lib/exerciseLibrary'
 
 interface CustomProgramBuilderScreenProps {
@@ -39,6 +47,13 @@ export default function CustomProgramBuilderScreen({
   const [error, setError] = useState<string | null>(null)
   const [pickerSplitIdx, setPickerSplitIdx] = useState<number | null>(null)
   const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null)
+  // GYM-94: edit-mode add/remove exercise writes are deferred behind a 3s
+  // Undo toast — see lib/pendingSplitOp.ts for why this is a controller
+  // instead of RoutineEditorScreen's inline pattern. Only one op is pending
+  // at a time (one toast), scoped by splitId since this screen — unlike
+  // RoutineEditorScreen — has every split's controls visible at once.
+  const [pendingOp, setPendingOp] = useState<PendingOp | null>(null)
+  const pendingOpController = useRef(createPendingOpController(setPendingOp)).current
 
   const supabase = useRef(createSupabaseBrowserClient()).current
   const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -139,6 +154,16 @@ export default function CustomProgramBuilderScreen({
 
   async function handleRemoveSplit(idx: number) {
     const split = splits[idx]
+    // A pending add/remove scoped to THIS split is dropped outright, not
+    // committed — flushing would write an exercise into a split that's
+    // about to be archived/removed. A pending op on any OTHER split still
+    // commits normally so its write isn't silently lost by an unrelated
+    // action elsewhere on the screen.
+    if (pendingOpController.current?.splitId === split.id) {
+      pendingOpController.discard()
+    } else {
+      await pendingOpController.flush()
+    }
     if (mode === 'edit' && programId && !split.id.startsWith('temp-')) {
       try {
         const res = await fetch(`/api/user/programs/${programId}`, {
@@ -175,15 +200,16 @@ export default function CustomProgramBuilderScreen({
     }
   }
 
-  const handleAddExercise = useCallback(async (def: ExerciseDefinition) => {
+  const handleAddExercise = useCallback((def: ExerciseDefinition) => {
     if (pickerSplitIdx === null) return
     const idx = pickerSplitIdx
     const split = splits[idx]
     setPickerSplitIdx(null)
 
     const sortOrder = split.exercises.length
+    const tempId = `temp-${Date.now()}`
     const tempRow: RoutineExerciseRow = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       exercise_name: def.name,
       canonical_name: def.name,
       sets: 3,
@@ -196,35 +222,83 @@ export default function CustomProgramBuilderScreen({
       equipment: def.equipment ?? null,
     }
 
+    // Optimistic: append to UI immediately.
     setSplits(prev => prev.map((s, i) =>
       i === idx ? { ...s, exercises: [...s.exercises, tempRow] } : s
     ))
 
-    if (mode === 'edit' && !split.id.startsWith('temp-')) {
+    // Splits not yet persisted (create mode, or a split added this session
+    // that hasn't round-tripped to the server) have nothing to write here —
+    // the whole program is serialized in one POST at Save time, so "picker
+    // tap alone never persists" (GYM-94) already holds without a toast.
+    if (mode !== 'edit' || split.id.startsWith('temp-')) return
+
+    const splitId = split.id
+    const flush = async () => {
       try {
-        const realRow = await addExerciseToRoutine(supabase, userId, split.id, {
+        const realRow = await addExerciseToRoutine(supabase, userId, splitId, {
           name: def.name,
           equipment: def.equipment ?? undefined,
         }, sortOrder, 'manual-add')
-        setSplits(prev => prev.map((s, i) =>
-          i === idx ? { ...s, exercises: s.exercises.map(e => e.id === tempRow.id ? realRow : e) } : s
+        setSplits(prev => prev.map(s =>
+          s.id === splitId ? { ...s, exercises: replaceExercise(s.exercises, tempId, realRow) } : s
         ))
-      } catch {
-        setSplits(prev => prev.map((s, i) =>
-          i === idx ? { ...s, exercises: s.exercises.filter(e => e.id !== tempRow.id) } : s
+      } catch (err) {
+        console.error('handleAddExercise flush failed:', err)
+        setSplits(prev => prev.map(s =>
+          s.id === splitId ? { ...s, exercises: dropExercise(s.exercises, tempId) } : s
         ))
       }
     }
-  }, [pickerSplitIdx, splits, mode, supabase, userId])
+    const undo = () => {
+      setSplits(prev => prev.map(s =>
+        s.id === splitId ? { ...s, exercises: dropExercise(s.exercises, tempId) } : s
+      ))
+    }
 
-  async function handleRemoveExercise(splitIdx: number, exerciseName: string) {
+    pendingOpController.start({
+      splitId,
+      message: t('exerciseAdded', { name: def.name, split: split.name }),
+      flush,
+      undo,
+    })
+  }, [pickerSplitIdx, splits, mode, supabase, userId, pendingOpController, t])
+
+  function handleRemoveExercise(splitIdx: number, exerciseName: string) {
     const split = splits[splitIdx]
+    const row = split.exercises.find(e => e.exercise_name === exerciseName)
+    if (!row) return
+
+    // Optimistic: remove from UI immediately.
     setSplits(prev => prev.map((s, i) =>
       i === splitIdx ? { ...s, exercises: s.exercises.filter(e => e.exercise_name !== exerciseName) } : s
     ))
-    if (mode === 'edit' && !split.id.startsWith('temp-')) {
-      removeExerciseFromRoutine(supabase, userId, split.id, exerciseName).catch(() => {})
+
+    if (mode !== 'edit' || split.id.startsWith('temp-')) return
+
+    const splitId = split.id
+    const flush = async () => {
+      try {
+        await removeExerciseFromRoutine(supabase, userId, splitId, exerciseName)
+      } catch (err) {
+        console.error('handleRemoveExercise flush failed:', err)
+        setSplits(prev => prev.map(s =>
+          s.id === splitId ? { ...s, exercises: restoreExerciseSorted(s.exercises, row) } : s
+        ))
+      }
     }
+    const undo = () => {
+      setSplits(prev => prev.map(s =>
+        s.id === splitId ? { ...s, exercises: restoreExerciseSorted(s.exercises, row) } : s
+      ))
+    }
+
+    pendingOpController.start({
+      splitId,
+      message: t('exerciseRemoved', { name: exerciseName }),
+      flush,
+      undo,
+    })
   }
 
   function handleSetsChange(splitIdx: number, exerciseId: string, value: number) {
@@ -248,8 +322,17 @@ export default function CustomProgramBuilderScreen({
     ))
   }
 
+  // Edit mode's Save has no API round-trip of its own (below) — it just
+  // navigates away, trusting that every routine write already landed. Flush
+  // first so a still-pending add/remove commits instead of being lost.
+  const handleCancel = useCallback(async () => {
+    await pendingOpController.flush()
+    onCancel()
+  }, [pendingOpController, onCancel])
+
   async function handleSave() {
     if (!canSave || saving) return
+    await pendingOpController.flush()
     setSaving(true)
     try {
       if (mode === 'create') {
@@ -306,7 +389,7 @@ export default function CustomProgramBuilderScreen({
 
   return (
     <div className="screen-enter flex flex-col" style={{ height: '100%', background: 'var(--bg)' }}>
-      <BuilderHeader onCancel={onCancel} />
+      <BuilderHeader onCancel={handleCancel} />
 
       {activeSession && (
         <div style={{ padding: '10px 20px', background: 'var(--rust)', flexShrink: 0 }}>
@@ -522,6 +605,15 @@ export default function CustomProgramBuilderScreen({
             onClose={() => setPickerSplitIdx(null)}
           />
         </div>
+      )}
+
+      {/* Undo toast — GYM-94: covers edit-mode add/remove exercise */}
+      {pendingOp && (
+        <Toast
+          message={pendingOp.message}
+          onUndo={() => pendingOpController.undo()}
+          onTimeout={() => { pendingOpController.flush() }}
+        />
       )}
     </div>
   )
