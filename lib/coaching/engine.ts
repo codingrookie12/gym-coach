@@ -64,7 +64,7 @@ function snapWeightDown(latestMaxWeight: number, availableWeights: number[] | un
   return Math.max(latestMaxWeight - fallbackIncrement, 0)
 }
 
-function defaultIncrement(exerciseName: string, weightUnit: 'lbs' | 'pins' | undefined): number {
+function defaultIncrement(exerciseName: string, weightUnit: 'lbs' | 'pins' | 'kg' | undefined): number {
   if (weightUnit === 'pins') return 1
   const lower = exerciseName.toLowerCase()
   return lower.includes('dumbbell') || lower.includes('cable') ? 2.5 : 5

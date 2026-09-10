@@ -217,7 +217,7 @@ export interface RoutineExerciseWithMuscles {
   exerciseId: string
   exerciseName: string
   repRange: [number, number]
-  weightUnit?: 'lbs' | 'pins'
+  weightUnit?: 'lbs' | 'pins' | 'kg'
   availableWeights?: number[]
   programNote?: string
   primaryMuscles: MuscleGroupKey[]

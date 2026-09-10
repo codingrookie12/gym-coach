@@ -48,7 +48,7 @@ export interface UserRoutineExercise {
   repRangeMin: number
   repRangeMax: number
   backupName: string | null
-  weightUnit: 'lbs' | 'pins'
+  weightUnit: 'lbs' | 'pins' | 'kg'
   weightConvention: string | null
   equipment: string | null
   programNote: string | null
@@ -168,7 +168,7 @@ export async function getUserProgram(
       repRangeMin: ex.rep_range_min as number,
       repRangeMax: ex.rep_range_max as number,
       backupName: (ex.backup_name as string | null) ?? null,
-      weightUnit: ex.weight_unit as 'lbs' | 'pins',
+      weightUnit: ex.weight_unit as 'lbs' | 'pins' | 'kg',
       weightConvention: (ex.weight_convention as string | null) ?? null,
       equipment: (ex.equipment as string | null) ?? null,
       programNote: (ex.program_note as string | null) ?? null,
@@ -556,7 +556,7 @@ export async function getRoutineAsExercises(
     repRange: [row.rep_range_min as number, row.rep_range_max as number] as [number, number],
     backup: (row.backup_name as string | null) ?? null,
     split: splitName,
-    weightUnit: (row.weight_unit as 'lbs' | 'pins'),
+    weightUnit: (row.weight_unit as 'lbs' | 'pins' | 'kg'),
     weightConvention: (row.weight_convention as string | null) ?? undefined,
     programNote: (row.program_note as string | null) ?? undefined,
     availableWeights: row.equipment ? getAvailableWeightsForEquipment(row.equipment as string) : [],

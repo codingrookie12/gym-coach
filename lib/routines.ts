@@ -9,7 +9,7 @@ export interface Exercise {
   split: Split
   weightConvention?: string
   availableWeights?: number[]
-  weightUnit?: 'lbs' | 'pins'
+  weightUnit?: 'lbs' | 'pins' | 'kg'
   programNote?: string
 }
 

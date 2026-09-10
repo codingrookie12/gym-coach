@@ -11,7 +11,7 @@ export interface RoutineExerciseRow {
   rep_range_min: number
   rep_range_max: number
   backup_name: string | null
-  weight_unit: 'lbs' | 'pins'
+  weight_unit: 'lbs' | 'pins' | 'kg'
   weight_convention: string | null
   sort_order: number
   equipment: string | null
@@ -48,7 +48,7 @@ export async function addExerciseToRoutine(
   supabase: Supabase,
   userId: string,
   splitId: string,
-  exercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' },
+  exercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' | 'kg' },
   sortOrder: number,
   addedVia: AddedVia,
 ): Promise<RoutineExerciseRow> {
@@ -85,7 +85,7 @@ export async function swapExerciseInRoutine(
   userId: string,
   splitId: string,
   oldExerciseName: string,
-  newExercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' },
+  newExercise: { name: string; equipment?: string; weightUnit?: 'lbs' | 'pins' | 'kg' },
 ): Promise<RoutineExerciseRow> {
   const { data, error } = await supabase
     .from('user_routine_exercises')

@@ -47,7 +47,7 @@ export interface TemplateExercise {
   sets: number
   repRange: [number, number]
   backup: string | null
-  weightUnit?: 'lbs' | 'pins'
+  weightUnit?: 'lbs' | 'pins' | 'kg'
   weightConvention?: string
   programNote?: string            // e.g. 5/3/1 wave info — preserved into user_routine_exercises.program_note
 }

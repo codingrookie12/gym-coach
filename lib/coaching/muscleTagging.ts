@@ -21,7 +21,7 @@ export interface RoutineExerciseInput {
   name: string
   canonicalName: string
   repRange: [number, number]
-  weightUnit?: 'lbs' | 'pins'
+  weightUnit?: 'lbs' | 'pins' | 'kg'
   availableWeights?: number[]
   programNote?: string
 }
