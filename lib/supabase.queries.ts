@@ -461,6 +461,40 @@ export async function fetchExerciseProgression(
   return out
 }
 
+/**
+ * PreSaveSummaryScreen's end-of-session "make default?" confirm — persists a
+ * session-only exercise swap into the user's permanent routine.
+ *
+ * Bug found + fixed during the session-lifecycle write-path audit: this
+ * used to run the UPDATE with no `.select()`, so a call that matched ZERO
+ * rows (e.g. `oldExerciseName` no longer exists in the routine under that
+ * name — most plausibly because a chained mid-session swap already moved
+ * it, or the routine was edited elsewhere between the swap and this
+ * confirm) returned `{ error: null }` from Postgrest — a silent no-op
+ * reported to the caller as success. PreSaveSummaryScreen has no way to
+ * distinguish "swapped" from "matched nothing, wrote nothing" and would
+ * mark the row `defaultsDone` (showing "Saved") regardless. Selecting the
+ * updated row back and throwing when none comes back makes a no-op surface
+ * as the failure it is, the same way lib/userRoutine.ts's
+ * swapExerciseInRoutine (a related but separate write path — the
+ * CustomProgramBuilderScreen/GYM-94 in-routine swap, not this one) already
+ * does.
+ *
+ * Also re-stamps added_via to 'manual-swap' (GYM-94's provenance contract:
+ * every write to user_routine_exercises must declare its origin — see
+ * lib/userRoutine.ts's AddedVia docstring and CLAUDE.md's GYM-94 rule).
+ * This update used to leave the column untouched, so a row's added_via kept
+ * whatever value it had before this swap (e.g. 'template-clone') even
+ * though the row's exercise identity had just changed out from under it —
+ * silently misrepresenting the row's true origin. swapExerciseInRoutine
+ * already re-stamps this correctly; this brings the two write paths in
+ * line. (Not consolidated into a single call to swapExerciseInRoutine
+ * itself: that helper additionally requires the new exercise's
+ * equipment/weightUnit metadata, which this call site — working only from
+ * the session's oldName/newName swap record — doesn't have resolved;
+ * threading that through is a real data-flow change, flagged separately
+ * rather than guessed at here.)
+ */
 export async function permanentlySwapExercise(
   supabase: Supabase,
   userId: string,
@@ -468,12 +502,16 @@ export async function permanentlySwapExercise(
   oldExerciseName: string,
   newExerciseName: string
 ): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('user_routine_exercises')
-    .update({ exercise_name: newExerciseName, canonical_name: newExerciseName })
+    .update({ exercise_name: newExerciseName, canonical_name: newExerciseName, added_via: 'manual-swap' })
     .eq('user_id', userId)
     .eq('user_program_split_id', splitId)
     .eq('exercise_name', oldExerciseName)
+    .select('id')
   if (error) throw error
+  if (!data || (data as unknown[]).length === 0) {
+    throw new Error(`permanentlySwapExercise: no routine row found for "${oldExerciseName}" — nothing was swapped`)
+  }
 }
 

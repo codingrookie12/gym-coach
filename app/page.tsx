@@ -33,7 +33,9 @@ import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { buildResumeStateFromDb, shouldResumeFromLocal, shouldResumeFromDb } from '@/lib/sessionResume'
 import { computeFinishSaveChanges } from '@/lib/finishSaveDiff'
+import { mergeSessionSwap } from '@/lib/sessionSwaps'
 import { drainOutbox as drainOutboxQueue } from '@/lib/outboxDrain'
+import { drainPendingFinishes as drainPendingFinishesQueue } from '@/lib/finishDrain'
 import Toast from '@/components/ui/Toast'
 import {
   loadSessionFromStorage,
@@ -41,6 +43,8 @@ import {
   PersistedSession,
   readOutbox,
   enqueueOutbox,
+  readPendingFinishes,
+  enqueuePendingFinish,
 } from '@/lib/sessionStorage'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import OfflineIndicator from '@/components/OfflineIndicator'
@@ -191,14 +195,42 @@ export default function App() {
     setIsSyncing(false)
   }, [])
 
+  // Drain the pending-finish queue (see lib/sessionStorage.ts's
+  // "Pending-finish queue" docstring for the bug this closes). Gated on the
+  // write outbox being empty first — a finish attempted before its
+  // session's own sets have actually synced would just no-op against a
+  // `workouts` row that doesn't exist yet (matches zero rows, no error),
+  // getting removed from the queue as if it succeeded while never actually
+  // setting `finished_at`.
+  const drainFinishes = useCallback(async (userId: string) => {
+    if (!readPendingFinishes(userId).length) return
+    await drainPendingFinishesQueue(userId, {
+      fetchFinish: async (body) => {
+        const res = await fetch('/api/session/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        return { ok: res.ok, status: res.status }
+      },
+    })
+  }, [])
+
+  const drainOutboxThenFinishes = useCallback(async (userId: string) => {
+    await drainOutbox(userId)
+    if (readOutbox(userId).length === 0) {
+      await drainFinishes(userId)
+    }
+  }, [drainOutbox, drainFinishes])
+
   // Drain on reconnect
   useEffect(() => {
     const userId = appState.user?.id
     if (online && userId) {
       setOutboxCount(readOutbox(userId).length)
-      drainOutbox(userId)
+      drainOutboxThenFinishes(userId)
     }
-  }, [online, appState.user?.id, drainOutbox])
+  }, [online, appState.user?.id, drainOutboxThenFinishes])
 
   // GYM-95: pending in-memory plan op (add or remove) with 3s Undo window.
   // Mirrors GYM-94's PendingOp pattern but for `appState.plan` instead of
@@ -265,7 +297,7 @@ export default function App() {
   function handleSessionSwap(oldName: string, newName: string) {
     setAppState(prev => ({
       ...prev,
-      sessionSwaps: [...prev.sessionSwaps, { oldName, newName }],
+      sessionSwaps: mergeSessionSwap(prev.sessionSwaps, oldName, newName),
       plan: prev.plan
         ? prev.plan.map(p =>
             p.exercise.name === oldName
@@ -391,11 +423,22 @@ export default function App() {
           retryFailedSyncs(supabase, user.id, pending).catch(() => {})
         }
 
-        // Drain any offline-finish outbox entries queued while offline (GYM-49)
+        // Drain any offline-finish outbox entries queued while offline
+        // (GYM-49), and any pending /api/session/finish calls that couldn't
+        // be confirmed (offline, or a transient failure — see
+        // lib/sessionStorage.ts's "Pending-finish queue" docstring).
+        // Awaited here — unlike the online-status effect's fire-and-forget
+        // drain above — specifically to close the race where an
+        // already-fully-logged-but-not-yet-finished workout would otherwise
+        // get offered as "resume" by the DB-fallback check just below,
+        // since `/api/session/today` treats any `finished_at IS NULL` row
+        // as an in-progress session (see lib/sessionResume.ts's invariant
+        // comment on shouldResumeFromDb).
         const outboxPending = readOutbox(user.id)
+        const finishPending = readPendingFinishes(user.id)
         setOutboxCount(outboxPending.length)
-        if (outboxPending.length) {
-          drainOutbox(user.id)
+        if (outboxPending.length || finishPending.length) {
+          await drainOutboxThenFinishes(user.id)
         }
       }
 
@@ -453,6 +496,16 @@ export default function App() {
     const sessionRpe = appState.sessionRpe
     const today = new Date().toISOString().split('T')[0]
     const snapshot = appState.savedSnapshot
+
+    // Built once, reused by every branch below that needs to queue a durable
+    // retry for /api/session/finish (see lib/sessionStorage.ts's
+    // "Pending-finish queue" docstring for the bug this closes). `null` when
+    // there's no split id to finish against — matches the pre-existing
+    // behavior of that case (finish would 400 either way; nothing to
+    // usefully retry).
+    const finishPayload = appState.userProgramSplitId
+      ? { date: today, userProgramSplitId: appState.userProgramSplitId, sessionRpe }
+      : null
 
     const patchPromises: Promise<any>[] = []
     const newEntries: any[] = []
@@ -512,8 +565,14 @@ export default function App() {
     let syncStatus: 'confirmed' | 'partial' | 'queued' = 'confirmed'
 
     if (writeBody && !navigator.onLine) {
-      // Definitely offline — skip the fetch entirely and queue
-      if (appState.user) enqueueOutbox(appState.user.id, writeBody)
+      // Definitely offline — skip the fetch entirely and queue. The finish
+      // call would fail exactly the same way (no network), so queue it too
+      // rather than attempting and silently dropping it as the pre-fix code
+      // did — see lib/sessionStorage.ts's "Pending-finish queue" docstring.
+      if (appState.user) {
+        enqueueOutbox(appState.user.id, writeBody)
+        if (finishPayload) enqueuePendingFinish(appState.user.id, finishPayload)
+      }
       setOutboxCount(appState.user ? readOutbox(appState.user.id).length : 1)
       if (appState.user) clearSessionFromStorage(appState.user.id)
       updateState({
@@ -538,11 +597,15 @@ export default function App() {
       ])
       writeResponse = wr
     } catch {
-      // Network error mid-session (went offline after check) — queue
+      // Network error mid-session (went offline after check) — queue.
+      // Finish would fail the same way, so it's queued unconditionally here
+      // (not just when there were new entries) — see lib/sessionStorage.ts's
+      // "Pending-finish queue" docstring.
       if (writeBody && appState.user) {
         enqueueOutbox(appState.user.id, writeBody)
         setOutboxCount(readOutbox(appState.user.id).length)
       }
+      if (finishPayload && appState.user) enqueuePendingFinish(appState.user.id, finishPayload)
       if (appState.user) clearSessionFromStorage(appState.user.id)
       updateState({
         exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},
@@ -560,11 +623,25 @@ export default function App() {
 
     if (syncStatus === 'confirmed' && appState.user) clearSessionFromStorage(appState.user.id)
 
-    fetch('/api/session/finish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: today, userProgramSplitId: appState.userProgramSplitId, sessionRpe }),
-    }).catch(() => {})
+    // Fire-and-forget, but no longer silently: a non-2xx response or a
+    // thrown network error queues a durable retry instead of leaving
+    // `finished_at` permanently NULL — see lib/sessionStorage.ts's
+    // "Pending-finish queue" docstring for the resume/Start-Fresh
+    // cascade-delete this was previously exposed to.
+    if (finishPayload) {
+      const userId = appState.user?.id
+      fetch('/api/session/finish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finishPayload),
+      })
+        .then(res => {
+          if (!res.ok && userId) enqueuePendingFinish(userId, finishPayload)
+        })
+        .catch(() => {
+          if (userId) enqueuePendingFinish(userId, finishPayload)
+        })
+    }
 
     updateState({
       exerciseLogs: logs, savedLogs: null, savedExIdx: 0, savedSnapshot: {},

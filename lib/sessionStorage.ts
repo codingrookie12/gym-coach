@@ -103,3 +103,75 @@ export function removeFromOutbox(userId: string, id: string): void {
   const current = readOutbox(userId)
   writeOutbox(userId, current.filter(e => e.id !== id))
 }
+
+// ── Pending-finish queue ──────────────────────────────────────────────────
+//
+// Bug found during the session-lifecycle write-path audit: unlike the
+// `/api/session/write` payload above, the `/api/session/finish` call in
+// app/page.tsx's handleSaveSession was fire-and-forget — offline, it was
+// never even attempted (only `writeBody` was queued into the outbox above);
+// online, a failed request (network blip, 5xx, or even a 400) was silently
+// swallowed with no retry. Either way `workouts.finished_at` permanently
+// stayed NULL for an otherwise fully-logged session. Since
+// `/api/session/today` resumes any workout with `finished_at IS NULL`, and
+// "Start Fresh" on that resume prompt hard-deletes the workout row (which
+// cascades to every `sets` row via `ON DELETE CASCADE` — see
+// supabase/migrations/20260423000000_initial_schema.sql), this was a real
+// path to silently losing an entire already-completed, already-saved
+// workout. This queue makes the finish call durable the same way the write
+// payload already is: queued on failure, drained on reconnect/next boot
+// (lib/finishDrain.ts), matched on 2xx, dropped on 4xx, retried on 5xx or
+// network error — see finishDrain.ts's docstring for the exact semantics.
+//
+// A list (not a single slot) because a user can finish more than one
+// session in a day (e.g. AM/PM split) — a second finish must not clobber a
+// first one that hasn't drained yet.
+
+const PENDING_FINISH_KEY = 'gym_coach_pending_finish'
+const pendingFinishKeyFor = (userId: string) => `${PENDING_FINISH_KEY}:${userId}`
+
+export interface PendingFinishEntry {
+  id: string                      // client-generated, for idempotent removal
+  queuedAt: string                // ISO timestamp
+  body: {
+    date: string
+    userProgramSplitId: string
+    sessionRpe?: number | null
+  }
+}
+
+export function readPendingFinishes(userId: string): PendingFinishEntry[] {
+  try {
+    const raw = localStorage.getItem(pendingFinishKeyFor(userId))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function writePendingFinishes(userId: string, entries: PendingFinishEntry[]): void {
+  try {
+    localStorage.setItem(pendingFinishKeyFor(userId), JSON.stringify(entries))
+  } catch {
+    // Quota or unavailable — leave existing state intact rather than
+    // overwriting with a corrupted partial.
+  }
+}
+
+export function enqueuePendingFinish(userId: string, body: PendingFinishEntry['body']): PendingFinishEntry {
+  const entry: PendingFinishEntry = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    queuedAt: new Date().toISOString(),
+    body,
+  }
+  const current = readPendingFinishes(userId)
+  writePendingFinishes(userId, [...current, entry])
+  return entry
+}
+
+export function removePendingFinish(userId: string, id: string): void {
+  const current = readPendingFinishes(userId)
+  writePendingFinishes(userId, current.filter(e => e.id !== id))
+}
