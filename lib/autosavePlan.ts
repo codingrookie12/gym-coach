@@ -22,9 +22,9 @@ export interface AutosavePatchEntry {
   pageId: string
   /** `${exerciseName}:${setNumber}` — the SavedSnapshot key this patch belongs to. */
   key: string
-  changes: { weight?: number; reps?: number; notes?: string; rir?: number | null }
+  changes: { weight?: number; reps?: number; notes?: string; rir?: number | null; equipmentInstanceId?: string | null }
   /** Fully-resolved current values, to cache back into the snapshot once the patch succeeds. */
-  resolved: { weight: number; reps: number; notes: string; rir: number | null }
+  resolved: { weight: number; reps: number; notes: string; rir: number | null; equipmentInstanceId: string | null }
 }
 
 export interface AutosavePlan {
@@ -60,11 +60,13 @@ export function planAutosave(
     weightUnit: 'Lbs' | 'Kg' | 'Pins'
     userProgramSplitId?: string
     /** See AutosaveWriteEntry.equipmentInstanceId — stamped onto every new
-     *  insert produced by this call. Not applied to patches: an
-     *  already-saved set's instance tag isn't currently editable
-     *  after the fact (no UI path re-selects it retroactively), so patches
-     *  only ever touch weight/reps/notes/rir, matching /api/session/update's
-     *  existing contract unchanged. */
+     *  insert produced by this call. Also compared against each already-saved
+     *  set's snapshot value below: ActiveSessionScreen's equipment-instance
+     *  selector CAN re-select an instance on an already-saved (isDone)
+     *  exercise via the overview modal's navigate-back path, and
+     *  handleSelectInstance re-arms savedExIndices for that case exactly like
+     *  confirmReps/selectRir/updateNotes do — so a changed value here must
+     *  produce a patch, not silently vanish. */
     equipmentInstanceId?: string | null
   },
   snapshot: SavedSnapshot
@@ -85,19 +87,28 @@ export function planAutosave(
       const repsChanged = set.reps !== prior.reps
       const notesChanged = (ex.notes ?? '') !== prior.notes
       const rirChanged = (set.rir ?? null) !== (prior.rir ?? null)
-      if (!weightChanged && !repsChanged && !notesChanged && !rirChanged) continue
+      const currentInstanceId = opts.equipmentInstanceId ?? null
+      const instanceChanged = currentInstanceId !== (prior.equipmentInstanceId ?? null)
+      if (!weightChanged && !repsChanged && !notesChanged && !rirChanged && !instanceChanged) continue
 
       const changes: AutosavePatchEntry['changes'] = {}
       if (weightChanged) changes.weight = set.weight
       if (repsChanged) changes.reps = set.reps
       if (notesChanged) changes.notes = ex.notes ?? ''
       if (rirChanged) changes.rir = set.rir ?? null
+      if (instanceChanged) changes.equipmentInstanceId = currentInstanceId
 
       toPatch.push({
         pageId: prior.pageId,
         key,
         changes,
-        resolved: { weight: set.weight, reps: set.reps, notes: ex.notes ?? '', rir: set.rir ?? null },
+        resolved: {
+          weight: set.weight,
+          reps: set.reps,
+          notes: ex.notes ?? '',
+          rir: set.rir ?? null,
+          equipmentInstanceId: currentInstanceId,
+        },
       })
       continue
     }

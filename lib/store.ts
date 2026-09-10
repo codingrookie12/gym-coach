@@ -42,4 +42,9 @@ export type SavedSnapshot = Record<string, {
   reps: number
   notes: string
   rir?: number | null
+  /** Equipment instance tagged when this set was last saved (see
+   *  ExerciseLog.equipmentInstanceId) — undefined/null both mean untagged.
+   *  Compared against the current exercise-level value in planAutosave to
+   *  detect a retroactive instance change on an already-saved exercise. */
+  equipmentInstanceId?: string | null
 }>

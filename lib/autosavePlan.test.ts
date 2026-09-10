@@ -175,7 +175,10 @@ describe('planAutosave — equipment-instance/kg passthrough (equipment-type int
     // Same shape as the GYM duplicate-set regression above, but exercising
     // the new equipment-instance/kg fields together — the dedup key is still
     // purely `${exerciseName}:${setNumber}` in the snapshot, so neither field
-    // should be able to defeat it.
+    // should be able to defeat it. The snapshot already records 'instance-9'
+    // as the previously-saved instance (matching opts below), so only the
+    // RIR change should produce a patch — an unrelated instance field must
+    // not spuriously fan a single-set RIR edit out into 5 patches.
     const ex = makeExercise()
     const snapshot: SavedSnapshot = {}
     ex.sets.forEach((set, i) => {
@@ -185,6 +188,7 @@ describe('planAutosave — equipment-instance/kg passthrough (equipment-type int
         reps: set.reps,
         notes: ex.notes ?? '',
         rir: i === 4 ? null : set.rir, // set 5 saved before its RIR existed
+        equipmentInstanceId: 'instance-9',
       }
     })
 
@@ -200,5 +204,112 @@ describe('planAutosave — equipment-instance/kg passthrough (equipment-type int
     expect(plan.toInsert).toHaveLength(0)
     expect(plan.toPatch).toHaveLength(1)
     expect(plan.toPatch[0]).toMatchObject({ pageId: 'set-id-5', changes: { rir: 3 } })
+    expect(plan.toPatch[0].changes).not.toHaveProperty('equipmentInstanceId')
+  })
+})
+
+describe('planAutosave — retroactive instance re-selection on an already-saved exercise (equipment-instance re-save fix)', () => {
+  function snapshotFor(ex: ExerciseLog, instanceId: string | null): SavedSnapshot {
+    const snapshot: SavedSnapshot = {}
+    ex.sets.forEach((set, i) => {
+      snapshot[`${ex.exerciseName}:${i + 1}`] = {
+        pageId: `set-id-${i + 1}`,
+        weight: set.weight,
+        reps: set.reps,
+        notes: ex.notes ?? '',
+        rir: set.rir ?? null,
+        equipmentInstanceId: instanceId,
+      }
+    })
+    return snapshot
+  }
+
+  it('changing an already-saved exercise\'s instance produces a PATCH (not an insert) carrying equipmentInstanceId', () => {
+    const ex = makeExercise()
+    const snapshot = snapshotFor(ex, 'instance-1')
+
+    // handleSelectInstance re-selects a different machine — weight/reps/notes/rir untouched.
+    const plan = planAutosave(ex, { ...opts, equipmentInstanceId: 'instance-2' }, snapshot)
+
+    expect(plan.toInsert).toHaveLength(0)
+    expect(plan.toPatch).toHaveLength(5)
+    plan.toPatch.forEach(p => {
+      expect(p.changes).toMatchObject({ equipmentInstanceId: 'instance-2' })
+      // Only the instance changed — no unrelated fields should show up as "changed".
+      expect(p.changes).not.toHaveProperty('weight')
+      expect(p.changes).not.toHaveProperty('reps')
+      expect(p.changes).not.toHaveProperty('notes')
+      expect(p.changes).not.toHaveProperty('rir')
+      expect(p.resolved.equipmentInstanceId).toBe('instance-2')
+    })
+  })
+
+  it('re-selecting the SAME instance is a no-op (idempotent, matches every other unchanged-field case)', () => {
+    const ex = makeExercise()
+    const snapshot = snapshotFor(ex, 'instance-1')
+
+    const plan = planAutosave(ex, { ...opts, equipmentInstanceId: 'instance-1' }, snapshot)
+
+    expect(plan.toInsert).toHaveLength(0)
+    expect(plan.toPatch).toHaveLength(0)
+  })
+
+  it('clearing a previously-tagged instance (selecting "none") produces a patch with equipmentInstanceId: null', () => {
+    const ex = makeExercise()
+    const snapshot = snapshotFor(ex, 'instance-1')
+
+    const plan = planAutosave(ex, { ...opts, equipmentInstanceId: null }, snapshot)
+
+    expect(plan.toPatch).toHaveLength(5)
+    plan.toPatch.forEach(p => {
+      expect(p.changes.equipmentInstanceId).toBeNull()
+      expect(p.resolved.equipmentInstanceId).toBeNull()
+    })
+  })
+
+  it('tagging an instance for the first time on a previously-untagged, already-saved exercise produces a patch', () => {
+    const ex = makeExercise()
+    // Snapshot predates the equipment-instance feature entirely — no
+    // equipmentInstanceId key at all, exactly like real pre-existing rows.
+    const snapshot: SavedSnapshot = {}
+    ex.sets.forEach((set, i) => {
+      snapshot[`${ex.exerciseName}:${i + 1}`] = {
+        pageId: `set-id-${i + 1}`,
+        weight: set.weight,
+        reps: set.reps,
+        notes: ex.notes ?? '',
+        rir: set.rir ?? null,
+      }
+    })
+
+    const plan = planAutosave(ex, { ...opts, equipmentInstanceId: 'instance-1' }, snapshot)
+
+    expect(plan.toPatch).toHaveLength(5)
+    plan.toPatch.forEach(p => expect(p.changes.equipmentInstanceId).toBe('instance-1'))
+  })
+
+  it('regression: re-arming savedExIndices via an instance-only change behaves exactly like re-arming via selectRir/updateNotes — no duplicate insert, exactly one patch per already-saved set', () => {
+    // Mirrors the "second pass, after the late RIR edit" regression above,
+    // but the re-arming trigger is an instance change instead of RIR. This is
+    // the exact re-save pattern handleSelectInstance now uses
+    // (savedExIndices.current.delete(currentExIdx)) — proving it's as safe
+    // against the GYM duplicate-set bug as the sibling handlers already are.
+    const ex = makeExercise()
+    const snapshot = snapshotFor(ex, 'instance-1')
+
+    // User navigates back to this already-saved exercise and re-selects the
+    // machine — nothing else about the sets changes.
+    const exAfterInstanceChange = makeExercise({ equipmentInstanceId: 'instance-2' })
+
+    const plan = planAutosave(exAfterInstanceChange, { ...opts, equipmentInstanceId: 'instance-2' }, snapshot)
+
+    // The core assertion, same as the RIR regression: nothing gets
+    // re-inserted. Duplicating all 5 rows would show up here as toInsert.length === 5.
+    expect(plan.toInsert).toHaveLength(0)
+    expect(plan.toPatch).toHaveLength(5)
+    plan.toPatch.forEach((p, i) => {
+      expect(p.pageId).toBe(`set-id-${i + 1}`)
+      expect(p.changes).toEqual({ equipmentInstanceId: 'instance-2' })
+    })
   })
 })

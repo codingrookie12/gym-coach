@@ -845,6 +845,7 @@ export default function ActiveSessionScreen({
                 reps: toInsert[i].reps,
                 notes: toInsert[i].notes ?? '',
                 rir: toInsert[i].rir ?? null,
+                equipmentInstanceId: toInsert[i].equipmentInstanceId ?? null,
               }
             })
           }
@@ -911,6 +912,12 @@ export default function ActiveSessionScreen({
       next[currentExIdx] = { ...next[currentExIdx], equipmentInstanceId: instanceId }
       return next
     })
+    // Instance selection changed under an already-saved exercise — allow
+    // re-save so the corrected equipment tag reaches the DB instead of the
+    // stale pre-change value (see the write route's server-side dedup
+    // guard: it updates the existing row in place, it does not create a
+    // duplicate).
+    savedExIndices.current.delete(currentExIdx)
   }
 
   function handleInstanceCreated(instance: EquipmentInstance) {
