@@ -496,9 +496,16 @@ export default function App() {
             reps: set.reps,
             entry: `${exLog.exerciseName} — Set ${si + 1}`,
             notes: exLog.notes || undefined,
-            unit: (planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins',
+            // Prefer the log's own already-resolved unit (set by
+            // ActiveSessionScreen's kg/lbs toggle — see lib/store.ts's
+            // ExerciseLog.unit docstring) so an in-session unit override
+            // reaches the DB even for a set saved via this Finish-time path
+            // rather than mid-session autosave. Falls back to the routine's
+            // static default exactly as before for any log that never set it.
+            unit: exLog.unit ?? ((planItem?.exercise.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins'),
             userProgramSplitId: appState.userProgramSplitId ?? undefined,
             rir: set.rir ?? undefined,
+            ...(exLog.equipmentInstanceId ? { equipmentInstanceId: exLog.equipmentInstanceId } : {}),
           })
         }
       }

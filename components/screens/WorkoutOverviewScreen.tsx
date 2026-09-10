@@ -13,6 +13,7 @@ import ExerciseProgressionStrip from '@/components/ExerciseProgressionStrip'
 import { ExerciseDefinition, excludeOtherSessionNames, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import type { ExerciseProgressionStrip as ProgressionData } from '@/lib/supabase.queries'
 import { pickPriorityFlag } from '@/lib/coaching/index'
+import { weightUnitLabelKey } from '@/lib/setUnit'
 
 interface WorkoutOverviewScreenProps {
   split: string
@@ -201,7 +202,7 @@ export default function WorkoutOverviewScreen({ split, plan, hasResumable, userI
                         <>
                           <span style={{ color: 'var(--border-2)', fontSize: '0.6rem' }}>·</span>
                           <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--accent)' }}>
-                            {item.targetWeight} {item.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')}
+                            {item.targetWeight} {common(weightUnitLabelKey(item.exercise.weightUnit))}
                           </span>
                         </>
                       ) : (

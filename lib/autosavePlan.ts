@@ -9,9 +9,13 @@ export interface AutosaveWriteEntry {
   reps: number
   entry: string
   notes?: string
-  unit: 'Lbs' | 'Pins'
+  unit: 'Lbs' | 'Kg' | 'Pins'
   rir?: number
   userProgramSplitId?: string
+  /** Equipment instance (lib/equipmentInstances.ts) this set was logged on,
+   *  if the user tagged one this session — see lib/store.ts's ExerciseLog
+   *  docstring. Undefined/null = untagged, identical to today's behavior. */
+  equipmentInstanceId?: string | null
 }
 
 export interface AutosavePatchEntry {
@@ -50,7 +54,19 @@ export interface AutosavePlan {
  */
 export function planAutosave(
   ex: ExerciseLog,
-  opts: { date: string; split: string; weightUnit: 'Lbs' | 'Pins'; userProgramSplitId?: string },
+  opts: {
+    date: string
+    split: string
+    weightUnit: 'Lbs' | 'Kg' | 'Pins'
+    userProgramSplitId?: string
+    /** See AutosaveWriteEntry.equipmentInstanceId — stamped onto every new
+     *  insert produced by this call. Not applied to patches: an
+     *  already-saved set's instance tag isn't currently editable
+     *  after the fact (no UI path re-selects it retroactively), so patches
+     *  only ever touch weight/reps/notes/rir, matching /api/session/update's
+     *  existing contract unchanged. */
+    equipmentInstanceId?: string | null
+  },
   snapshot: SavedSnapshot
 ): AutosavePlan {
   const toInsert: AutosaveWriteEntry[] = []
@@ -98,6 +114,7 @@ export function planAutosave(
       unit: opts.weightUnit,
       rir: set.rir ?? undefined,
       userProgramSplitId: opts.userProgramSplitId,
+      ...(opts.equipmentInstanceId ? { equipmentInstanceId: opts.equipmentInstanceId } : {}),
     })
     insertSetNumbers.push(setNumber)
   }

@@ -33,6 +33,15 @@ export interface DbResumeSet {
   notes: string
   rir: number | null
   pageId: string
+  /** DB's own `sets.unit` ('Lbs'|'Kg'|'Pins') for this row, when the caller
+   *  selected it (GET /api/session/today/details does). Reconstructed onto
+   *  the rebuilt ExerciseLog's `unit` field below — without this, a session
+   *  toggled to kg before localStorage was lost would resume relabeled as
+   *  Lbs while still holding real kg numbers (see lib/store.ts's
+   *  ExerciseLog.unit docstring). Optional/undefined for any caller that
+   *  hasn't been updated to select it — same fallback-to-routine-default
+   *  behavior as before this field existed. */
+  unit?: 'Lbs' | 'Kg' | 'Pins' | null
 }
 
 export interface DbResumeExercise {
@@ -122,12 +131,22 @@ export function buildResumeStateFromDb(
       return { weight: dbSet.weight, reps: dbSet.reps, completed: true, skipped: false, rir: dbSet.rir }
     })
 
+    // Any set's unit works as the exercise-wide value — a single exercise
+    // never mixes units within one session in practice (toggleMassUnit
+    // converts every set in the exercise together). Undefined `unit` on
+    // every set (a caller that hasn't started selecting the column yet)
+    // correctly falls through to `undefined` here, matching pre-existing
+    // behavior exactly (ActiveSessionScreen/app/page.tsx already fall back
+    // to the routine's static default whenever ExerciseLog.unit is unset).
+    const resumedUnit = dbEx.sets.find(s => s.unit)?.unit ?? undefined
+
     return {
       exerciseName: item.exercise.name,
       canonicalName,
       backupName: item.exercise.backup,
       sets,
       notes: dbEx.sets.find(s => s.notes)?.notes ?? '',
+      ...(resumedUnit ? { unit: resumedUnit } : {}),
     }
   })
 

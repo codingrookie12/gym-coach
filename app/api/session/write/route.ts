@@ -15,11 +15,23 @@ interface SessionEntry {
   reps: number
   entry: string
   notes?: string
-  unit?: 'Lbs' | 'Pins'
+  unit?: 'Lbs' | 'Kg' | 'Pins'
   userProgramSplitId?: string
   /** Phase 1/2/3 joint contract (sets.rir): integer 0-5+, omitted/null =
    *  not logged. See lib/coaching/types.ts's RirValue docstring. */
   rir?: number | null
+  /** Equipment instance (lib/equipmentInstances.ts) this set was logged on —
+   *  optional, additive `sets.equipment_instance_id` FK column. Only ever
+   *  included in the actual insert/update payload when present (see below) —
+   *  the column is on a migration Johnnatan applies manually
+   *  (supabase/migrations/20260909000000_equipment_model.sql) and isn't
+   *  live everywhere yet, so omitting the key entirely when unset keeps this
+   *  route working unchanged against a database that hasn't run it. Nobody
+   *  can actually populate this field client-side before that migration
+   *  ships anyway (the equipment_instances table it references doesn't
+   *  exist yet either), so this is a documented dependency, not a runtime
+   *  guess — see components/EquipmentInstanceSheet.tsx. */
+  equipmentInstanceId?: string | null
 }
 
 export async function POST(request: NextRequest) {
@@ -77,6 +89,7 @@ export async function POST(request: NextRequest) {
         unit: string
         notes?: string
         rir?: number
+        equipment_instance_id?: string
         _entry: SessionEntry
       }
 
@@ -96,6 +109,7 @@ export async function POST(request: NextRequest) {
           unit: entry.unit ?? 'Lbs',
           ...(entry.notes ? { notes: entry.notes } : {}),
           ...(entry.rir !== undefined && entry.rir !== null ? { rir: entry.rir } : {}),
+          ...(entry.equipmentInstanceId ? { equipment_instance_id: entry.equipmentInstanceId } : {}),
           _entry: entry,
         })
       }
@@ -148,6 +162,7 @@ export async function POST(request: NextRequest) {
             unit: row.unit,
             ...(row.notes !== undefined ? { notes: row.notes } : {}),
             ...(row.rir !== undefined ? { rir: row.rir } : {}),
+            ...(row.equipment_instance_id !== undefined ? { equipment_instance_id: row.equipment_instance_id } : {}),
           })
           .eq('id', id)
         if (updateErr) throw updateErr

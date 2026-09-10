@@ -45,3 +45,61 @@ export function resolvePersistedUnit(
   const resolved = exerciseLogUnit ?? routineDefaultUnit ?? 'lbs'
   return resolved === 'kg' ? 'Kg' : 'Lbs'
 }
+
+/**
+ * Maps a (possibly capitalized/DB-form) weight unit to the `common.*` i18n
+ * key that labels it on screen — `common.lbs` / `common.kg` / `common.pins`.
+ * Pulled out as one shared function so the several screens that render
+ * `unit === 'pins' ? common('pins') : common('lbs')` (a binary check that
+ * silently mislabels 'kg' as 'lbs') don't each need their own 3-way switch —
+ * see components/screens/ActiveSessionScreen.tsx and siblings for callers.
+ * Unrecognized/undefined input defaults to 'lbs', matching every existing
+ * call site's prior fallback behavior.
+ */
+export function weightUnitLabelKey(
+  unit: WeightUnit | 'Lbs' | 'Kg' | 'Pins' | undefined | null
+): 'lbs' | 'kg' | 'pins' {
+  switch (unit) {
+    case 'kg':
+    case 'Kg':
+      return 'kg'
+    case 'pins':
+    case 'Pins':
+      return 'pins'
+    default:
+      return 'lbs'
+  }
+}
+
+/** Toggles between the two mass-based display units. Never returns 'pins' —
+ *  abstract-scale exercises don't offer this toggle (see ActiveSessionScreen). */
+export function nextMassUnit(unit: 'lbs' | 'kg'): 'lbs' | 'kg' {
+  return unit === 'kg' ? 'lbs' : 'kg'
+}
+
+/**
+ * Resolves which mass unit ActiveSessionScreen should currently display/
+ * toggle for an exercise, in priority order:
+ *   1. `sessionOverride` — this render's in-memory toggle state
+ *      (`massUnitOverrides[currentExIdx]`), if the user has touched the
+ *      toggle at all THIS mount.
+ *   2. `logUnit` — the exercise log's own already-resolved unit
+ *      (lib/store.ts's ExerciseLog.unit), set by a PRIOR toggle. Critical
+ *      for session resume: a fresh component mount resets `sessionOverride`
+ *      to empty, but a resumed log's sets may already hold real kg values
+ *      from before the resume — falling through to the routine's static
+ *      default here would relabel those already-converted numbers as "Lbs"
+ *      (the exact mismatch lib/weightConversion.ts's header warns about).
+ *   3. `routineDefaultUnit` — the routine's static default, exactly
+ *      reproducing today's behavior for any exercise nobody has touched.
+ */
+export function resolveActiveMassUnit(
+  sessionOverride: 'lbs' | 'kg' | undefined,
+  logUnit: 'Lbs' | 'Kg' | 'Pins' | undefined | null,
+  routineDefaultUnit: WeightUnit | undefined | null
+): 'lbs' | 'kg' {
+  if (sessionOverride) return sessionOverride
+  if (logUnit === 'Kg') return 'kg'
+  if (logUnit === 'Lbs') return 'lbs'
+  return routineDefaultUnit === 'kg' ? 'kg' : 'lbs'
+}

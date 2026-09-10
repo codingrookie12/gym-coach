@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { getAllExercises, Exercise, Split } from '@/lib/routines'
 import NumberPad from '@/components/ui/NumberPad'
 import LoadingScreen from '@/components/LoadingScreen'
+import { weightUnitLabelKey } from '@/lib/setUnit'
 
 interface ManageWeightsScreenProps {
   onBack: () => void
@@ -243,7 +244,7 @@ export default function ManageWeightsScreen({ onBack }: ManageWeightsScreenProps
                             {displayWeight !== null ? `${displayWeight}` : '—'}
                           </span>
                           {displayWeight !== null && (
-                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{ex.weightUnit === 'pins' ? common('pins') : common('lbs')}</span>
+                            <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{common(weightUnitLabelKey(ex.weightUnit))}</span>
                           )}
                           <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--border-2)', marginLeft: '6px' }}>
                             ✎

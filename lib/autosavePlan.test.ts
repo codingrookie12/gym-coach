@@ -146,3 +146,59 @@ describe('planAutosave — GYM duplicate-set regression', () => {
     expect(plan.insertSetNumbers).toEqual([5])
   })
 })
+
+describe('planAutosave — equipment-instance/kg passthrough (equipment-type integration)', () => {
+  it('stamps equipmentInstanceId onto every new insert when opts provides one', () => {
+    const ex = makeExercise()
+    const plan = planAutosave(ex, { ...opts, equipmentInstanceId: 'instance-1' }, {})
+
+    expect(plan.toInsert).toHaveLength(5)
+    plan.toInsert.forEach(entry => expect(entry.equipmentInstanceId).toBe('instance-1'))
+  })
+
+  it('omits equipmentInstanceId entirely (no key at all) when not provided — zero behavior change for untagged exercises', () => {
+    const ex = makeExercise()
+    const plan = planAutosave(ex, opts, {})
+
+    plan.toInsert.forEach(entry => expect(entry).not.toHaveProperty('equipmentInstanceId'))
+  })
+
+  it('accepts "Kg" as a valid weightUnit and passes it through to every insert unchanged', () => {
+    const ex = makeExercise()
+    const plan = planAutosave(ex, { ...opts, weightUnit: 'Kg' }, {})
+
+    expect(plan.toInsert).toHaveLength(5)
+    plan.toInsert.forEach(entry => expect(entry.unit).toBe('Kg'))
+  })
+
+  it('regression: the exact weight->reps->RIR late-edit duplicate-insert bug does not reappear when equipmentInstanceId/Kg are present', () => {
+    // Same shape as the GYM duplicate-set regression above, but exercising
+    // the new equipment-instance/kg fields together — the dedup key is still
+    // purely `${exerciseName}:${setNumber}` in the snapshot, so neither field
+    // should be able to defeat it.
+    const ex = makeExercise()
+    const snapshot: SavedSnapshot = {}
+    ex.sets.forEach((set, i) => {
+      snapshot[`${ex.exerciseName}:${i + 1}`] = {
+        pageId: `set-id-${i + 1}`,
+        weight: set.weight,
+        reps: set.reps,
+        notes: ex.notes ?? '',
+        rir: i === 4 ? null : set.rir, // set 5 saved before its RIR existed
+      }
+    })
+
+    const exAfterRir = makeExercise()
+    exAfterRir.sets[4] = { ...exAfterRir.sets[4], rir: 3 }
+
+    const plan = planAutosave(
+      exAfterRir,
+      { ...opts, weightUnit: 'Kg', equipmentInstanceId: 'instance-9' },
+      snapshot
+    )
+
+    expect(plan.toInsert).toHaveLength(0)
+    expect(plan.toPatch).toHaveLength(1)
+    expect(plan.toPatch[0]).toMatchObject({ pageId: 'set-id-5', changes: { rir: 3 } })
+  })
+})

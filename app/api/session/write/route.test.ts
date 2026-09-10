@@ -157,3 +157,84 @@ describe('POST /api/session/write', () => {
     expect(data.pageIds.sort()).toEqual(['existing-set-1', 'set-1'])
   })
 })
+
+describe('POST /api/session/write — equipment-instance/kg passthrough (equipment-type integration)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getUserMock.mockResolvedValue({ data: { user: { id: 'user-1' } } } as any)
+    getExerciseIdMock.mockResolvedValue('exercise-1')
+    getOrCreateWorkoutMock.mockResolvedValue('workout-1')
+    existingSetsRows = []
+  })
+
+  it('includes equipment_instance_id in the insert payload when the entry provides one', async () => {
+    const res = await POST(makeRequest({
+      entries: [
+        {
+          exercise: 'Seated Leg Curl', date: '2026-09-09', split: 'Legs', weight: 5, set: 1, reps: 10,
+          entry: 'Seated Leg Curl — Set 1', userProgramSplitId: 'split-1', unit: 'Pins',
+          equipmentInstanceId: 'instance-1',
+        },
+      ],
+    }))
+    const data = await res.json()
+
+    expect(data.success).toBe(true)
+    expect(setsInsertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ equipment_instance_id: 'instance-1', unit: 'Pins' })])
+    )
+  })
+
+  it('never includes the equipment_instance_id key at all when the entry omits it — zero behavior change for untagged writes', async () => {
+    const res = await POST(makeRequest({
+      entries: [
+        {
+          exercise: 'Bench Press', date: '2026-09-09', split: 'Push', weight: 135, set: 1, reps: 8,
+          entry: 'Bench Press — Set 1', userProgramSplitId: 'split-1',
+        },
+      ],
+    }))
+    await res.json()
+
+    const insertedRows = (setsInsertMock.mock.calls[0] as any[])[0] as any[]
+    expect(insertedRows[0]).not.toHaveProperty('equipment_instance_id')
+  })
+
+  it('accepts "Kg" as a valid unit and writes it through unchanged', async () => {
+    const res = await POST(makeRequest({
+      entries: [
+        {
+          exercise: 'Bench Press', date: '2026-09-09', split: 'Push', weight: 60, set: 1, reps: 8,
+          entry: 'Bench Press — Set 1', userProgramSplitId: 'split-1', unit: 'Kg',
+        },
+      ],
+    }))
+    const data = await res.json()
+    expect(data.success).toBe(true)
+    expect(setsInsertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ unit: 'Kg', weight: 60 })])
+    )
+  })
+
+  it('dedup guard still updates in place (never a duplicate insert) when the entry carries an equipment_instance_id', async () => {
+    existingSetsRows = [{ id: 'existing-set-9', exercise_id: 'exercise-1', set_number: 1 }]
+
+    const res = await POST(makeRequest({
+      entries: [
+        {
+          exercise: 'Seated Leg Curl', date: '2026-09-09', split: 'Legs', weight: 6, set: 1, reps: 10,
+          entry: 'Seated Leg Curl — Set 1', userProgramSplitId: 'split-1', unit: 'Pins',
+          equipmentInstanceId: 'instance-1',
+        },
+      ],
+    }))
+    const data = await res.json()
+
+    expect(data.success).toBe(true)
+    expect(data.pageIds).toEqual(['existing-set-9'])
+    expect(setsInsertMock).not.toHaveBeenCalled()
+    expect(setsUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ weight: 6, equipment_instance_id: 'instance-1' })
+    )
+  })
+})

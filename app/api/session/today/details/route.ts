@@ -31,15 +31,26 @@ export async function GET(request: NextRequest) {
 
     if (!workout) return NextResponse.json({ found: false })
 
+    // `unit` selected alongside the rest — equipment-type/unit-conversion
+    // pass (2026-09-09): a DB-fallback resume (this route) must reconstruct
+    // the exercise's already-resolved unit the same way the localStorage
+    // resume path does (lib/store.ts's ExerciseLog.unit), or a session that
+    // was toggled to kg before localStorage was lost would come back
+    // relabeled as Lbs while still holding real kg numbers — see lib/
+    // sessionResume.ts's buildResumeStateFromDb. `equipment_instance_id` is
+    // deliberately NOT selected here: that column is on a migration not yet
+    // applied everywhere (supabase/migrations/20260909000000_equipment_
+    // model.sql) — selecting an unknown column would 500 this route for
+    // every resume, on every environment, not just ones using the feature.
     const { data: setRows } = await supabase
       .from('sets')
-      .select('id, set_number, weight, reps, notes, rir, exercises(name)')
+      .select('id, set_number, weight, reps, notes, rir, unit, exercises(name)')
       .eq('workout_id', workout.id as string)
       .order('set_number', { ascending: true })
 
     const exerciseMap = new Map<string, {
       exerciseName: string
-      sets: { setNumber: number; weight: number; reps: number; notes: string; rir: number | null; pageId: string }[]
+      sets: { setNumber: number; weight: number; reps: number; notes: string; rir: number | null; pageId: string; unit: string | null }[]
     }>()
 
     for (const row of setRows ?? []) {
@@ -53,6 +64,7 @@ export async function GET(request: NextRequest) {
         notes: (row.notes as string) ?? '',
         rir: (row.rir as number | null) ?? null,
         pageId: row.id as string,
+        unit: (row.unit as string | null) ?? null,
       })
     }
 

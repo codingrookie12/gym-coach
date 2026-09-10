@@ -6,6 +6,7 @@ import {
   convertMass,
   roundMass,
   convertPresetWeight,
+  convertPresetLadder,
   formatWeightDisplay,
   convertAbstractUnitsToMass,
 } from '../weightConversion'
@@ -111,6 +112,42 @@ describe('convertPresetWeight — kg preset-grid conversion (regression coverage
   it('never returns the raw unconverted lbs number when converting to kg (the exact regression shape)', () => {
     const converted = convertPresetWeight(135, 'kg')
     expect(converted).not.toBe(135)
+  })
+})
+
+describe('convertPresetLadder — regression coverage for the live-verification duplicate-chip bug', () => {
+  it('reproduces the exact live-found collision: the barbell ladder\'s 25 and 30 lbs both round to 12.5 kg, and 80/85 both round to 37.5 kg — deduped to one chip each', () => {
+    const BARBELL = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 110, 120, 130, 140, 150]
+    const converted = convertPresetLadder(BARBELL, 'kg')
+
+    // No duplicates at all.
+    expect(new Set(converted).size).toBe(converted.length)
+    // The specific collisions found live are still present exactly once.
+    expect(converted.filter(v => v === 12.5)).toHaveLength(1)
+    expect(converted.filter(v => v === 37.5)).toHaveLength(1)
+  })
+
+  it('preserves ascending order (first-seen order matches input order for an already-sorted ladder)', () => {
+    const ladder = [10, 20, 30, 40]
+    const converted = convertPresetLadder(ladder, 'kg')
+    const sorted = [...converted].sort((a, b) => a - b)
+    expect(converted).toEqual(sorted)
+  })
+
+  it('is a no-op (values unchanged) for lbs, only dropping true duplicates if any existed in the source', () => {
+    const ladder = [45, 90, 135]
+    expect(convertPresetLadder(ladder, 'lbs')).toEqual([45, 90, 135])
+  })
+
+  it('never produces the raw unconverted lbs numbers when converting to kg', () => {
+    const ladder = [135, 225]
+    const converted = convertPresetLadder(ladder, 'kg')
+    expect(converted).not.toContain(135)
+    expect(converted).not.toContain(225)
+  })
+
+  it('handles an empty ladder', () => {
+    expect(convertPresetLadder([], 'kg')).toEqual([])
   })
 })
 

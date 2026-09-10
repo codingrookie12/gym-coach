@@ -6,6 +6,7 @@ import { SessionExercisePlan } from '@/lib/sessionPlan'
 import { ExerciseLog } from '@/lib/store'
 import NumberPad from '@/components/ui/NumberPad'
 import { toggleSessionRpe } from '@/lib/sessionRpe'
+import { weightUnitLabelKey } from '@/lib/setUnit'
 
 interface SessionSwap { oldName: string; newName: string }
 
@@ -157,7 +158,7 @@ export default function PreSaveSummaryScreen({
                             {(() => {
                               // Match plan by canonicalName to handle swapped exercises
                               const matchedPlan = plan.find(p => p.exercise.canonicalName === ex.canonicalName) ?? plan[exIdx]
-                              return matchedPlan?.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')
+                              return common(weightUnitLabelKey(matchedPlan?.exercise.weightUnit))
                             })()}
                           </span>
                         </button>

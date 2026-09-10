@@ -90,6 +90,35 @@ export function convertPresetWeight(lbsWeight: number, unit: MassUnit): number {
 }
 
 /**
+ * Converts a whole lbs-denominated preset ladder (e.g. lib/routines.ts's
+ * `availableWeights`) to a display unit via `convertPresetWeight`, then
+ * dedupes — preserving first-seen order.
+ *
+ * Live-verification finding (Playwright, gym-coach-dev, 2026-09-09): a dense
+ * lbs ladder (5lb steps) converted through the 2.5-unit kg rounding grid
+ * produces genuine duplicate values — e.g. 25 lbs and 30 lbs both round to
+ * 12.5 kg. Left undeduped, that broke components/ui/ChipGrid.tsx (which
+ * keys each chip by its value) with a duplicate-key warning, and showed the
+ * user two chips reading the same number. Deduping is correct, not lossy:
+ * once two source values round to the identical displayed number, they
+ * really do offer the same outcome — collapsing them to one chip is the
+ * accurate representation. No-op (but still deduped) for 'lbs', matching
+ * `convertPresetWeight`'s own no-op-for-lbs behavior.
+ */
+export function convertPresetLadder(lbsLadder: number[], unit: MassUnit): number[] {
+  const seen = new Set<number>()
+  const result: number[] = []
+  for (const w of lbsLadder) {
+    const converted = convertPresetWeight(w, unit)
+    if (!seen.has(converted)) {
+      seen.add(converted)
+      result.push(converted)
+    }
+  }
+  return result
+}
+
+/**
  * Formats a weight for on-screen display: 1 decimal max, trailing zero
  * stripped (61.23 -> "61.2", 45.0 -> "45"). Stored/confirmed values keep
  * their full `roundMass` precision — this only affects rendered text, not

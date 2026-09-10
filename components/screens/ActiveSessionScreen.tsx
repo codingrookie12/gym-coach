@@ -15,6 +15,11 @@ import Toast from '@/components/ui/Toast'
 import { savePendingExercise } from '@/lib/customExercises'
 import { ExerciseDefinition, excludeOtherSessionNames, findExerciseByName, getAlternatives, getUniqueEquipment } from '@/lib/exerciseLibrary'
 import ExerciseDetailSheet from '@/components/ExerciseDetailSheet'
+import EquipmentInstanceSheet from '@/components/EquipmentInstanceSheet'
+import { resolveEquipmentType } from '@/lib/equipmentType'
+import { convertMass, convertPresetLadder, roundMass } from '@/lib/weightConversion'
+import { resolvePersistedUnit, nextMassUnit, weightUnitLabelKey, resolveActiveMassUnit } from '@/lib/setUnit'
+import { EquipmentInstance, getEquipmentInstances, resolveInstanceMass } from '@/lib/equipmentInstances'
 
 interface ActiveSessionScreenProps {
   userId: string
@@ -354,18 +359,41 @@ function BackGuardModal({ onResume, onGoBack }: { onResume: () => void; onGoBack
 
 // ── Weight Input ──────────────────────────────────────────────────────────────
 function WeightInput({
-  activeSetIdx, currentEx, currentPlan, activeUnit, onConfirm, onCancel,
+  activeSetIdx, currentEx, currentPlan, activeUnit, instanceCalibrationHint, onConfirm, onCancel,
 }: {
   activeSetIdx: number
   currentEx: ExerciseLog
   currentPlan: SessionExercisePlan
-  activeUnit: 'lbs' | 'pins'
+  activeUnit: 'lbs' | 'pins' | 'kg'
+  /** Informational only (see lib/equipmentInstances.ts's resolveInstanceMass)
+   *  — a specific pin-stack instance's calibrated real-mass estimate for the
+   *  currently-entered pin count, or null when abstract-scale/uncalibrated/
+   *  no instance selected. Never changes what gets stored (still a raw pin
+   *  count) — see lib/setUnit.ts's resolvePersistedUnit docstring. */
+  instanceCalibrationHint?: string | null
   onConfirm: (v: number) => void
   onCancel: () => void
 }) {
   const t = useTranslations('screens.activeSession')
+  const common = useTranslations('common')
   const numberPadT = useTranslations('numberPad')
-  const availableWeights = currentPlan.exercise.availableWeights
+  const rawAvailableWeights = currentPlan.exercise.availableWeights
+  // availableWeights (lib/routines.ts's ladders) are always lbs-denominated —
+  // convert+snap to real loadable values when displaying in kg. Never
+  // reconvert on a value the user types directly (NumberPad path below).
+  //
+  // Live-verification finding (Playwright, gym-coach-dev, 2026-09-09): a
+  // dense lbs ladder (5lb steps) converted through the 2.5-unit kg rounding
+  // grid produces genuine duplicate values — e.g. 25 lbs and 30 lbs both
+  // round to 12.5 kg — which both confuses the chip grid (two chips read
+  // "12.5") and throws a React duplicate-key warning (ChipGrid keys chips by
+  // value). Deduping is correct, not lossy: two source lbs values that round
+  // to the identical displayed kg number really do offer the user the same
+  // outcome once converted, so collapsing them to one chip is the accurate
+  // representation, not an approximation.
+  const availableWeights = activeUnit === 'kg'
+    ? rawAvailableWeights ? convertPresetLadder(rawAvailableWeights, 'kg') : undefined
+    : rawAvailableWeights
   const currentWeight = currentEx.sets[activeSetIdx].weight
   const [showCustom, setShowCustom] = useState(false)
 
@@ -381,7 +409,7 @@ function WeightInput({
             onCancel()
           }
         }}
-        label={numberPadT('weightLabel', { setNumber: activeSetIdx + 1, unit: activeUnit })}
+        label={numberPadT('weightLabel', { setNumber: activeSetIdx + 1, unit: common(weightUnitLabelKey(activeUnit)) })}
         maxValue={999}
         allowDecimal={true}
       />
@@ -402,6 +430,11 @@ function WeightInput({
           onCustomValue={() => setShowCustom(true)}
           maxWidth={320}
         />
+        {instanceCalibrationHint && (
+          <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '14px' }}>
+            {instanceCalibrationHint}
+          </p>
+        )}
       </div>
       <div style={{ padding: '0 24px 32px' }}>
         <button className="btn-secondary" onClick={onCancel}>{t('cancel')}</button>
@@ -578,7 +611,24 @@ export default function ActiveSessionScreen({
   const [padMode, setPadMode] = useState<PadMode>(null)
   const [flashSet, setFlashSet] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
-  const [unitOverrides, setUnitOverrides] = useState<Record<number, 'lbs' | 'pins'>>({})
+  // Mass-based (barbell/dumbbell/plate-loaded) in-session lbs<->kg override,
+  // per exercise index — replaces the old lbs/pins `unitOverrides`. See
+  // toggleMassUnit() below: converts already-entered weights (not just the
+  // display) so what's shown always matches what gets persisted (lib/
+  // weightConversion.ts's documented "convert-then-snap, never relabel"
+  // contract). Abstract-scale (pin-stack) exercises don't use this — they
+  // always display/persist 'pins' (lib/setUnit.ts's resolvePersistedUnit is
+  // authoritative there), with equipment-instance selection as their
+  // equivalent affordance instead (instanceOverrides below).
+  const [massUnitOverrides, setMassUnitOverrides] = useState<Record<number, 'lbs' | 'kg'>>({})
+  // Equipment-instance (lib/equipmentInstances.ts) tagged per exercise index,
+  // THIS session only — see components/EquipmentInstanceSheet.tsx's
+  // docstring for why this doesn't persist a routine-level default (yet).
+  // Untouched (no key) = identical to today's behavior.
+  const [instanceOverrides, setInstanceOverrides] = useState<Record<number, string | null>>({})
+  const [equipmentInstances, setEquipmentInstances] = useState<EquipmentInstance[]>([])
+  const [loadingInstances, setLoadingInstances] = useState(false)
+  const [showInstanceSheet, setShowInstanceSheet] = useState(false)
   const [overviewVisible, setOverviewVisible] = useState(false)
   const [backGuardVisible, setBackGuardVisible] = useState(false)
   const [swapShown, setSwapShown] = useState(false)
@@ -625,6 +675,20 @@ export default function ActiveSessionScreen({
       : []
   ))
 
+  // Fetched once per session — cheap, read-only, backs both the equipment-
+  // instance sheet and the calibration hint below. A user who never opens
+  // an abstract-scale exercise never sees any effect of this.
+  useEffect(() => {
+    let cancelled = false
+    setLoadingInstances(true)
+    getEquipmentInstances(userId).then(list => {
+      if (!cancelled) setEquipmentInstances(list)
+    }).finally(() => {
+      if (!cancelled) setLoadingInstances(false)
+    })
+    return () => { cancelled = true }
+  }, [userId])
+
   const currentEx = logs[currentExIdx]
   const currentPlan: SessionExercisePlan = currentExIdx < plan.length ? plan[currentExIdx] : {
     exercise: {
@@ -643,8 +707,26 @@ export default function ActiveSessionScreen({
     flags: [],
   }
   const exerciseDef = currentPlan.exercise
-  const defaultUnit = exerciseDef.weightUnit ?? 'lbs'
-  const activeUnit = unitOverrides[currentExIdx] ?? defaultUnit
+  // Precedence rule 2 (lib/equipmentType.ts's resolveEquipmentType docstring):
+  // no `exercises.equipment_type` column data is wired into SessionExercisePlan
+  // yet (that requires the still-unapplied migration + a sessionPlan query
+  // change — out of scope here), so this falls back to the pre-existing
+  // weightUnit==='pins' signal — reproducing today's implicit behavior
+  // exactly for any exercise nobody interacts with.
+  const equipmentType = resolveEquipmentType({ weightUnit: exerciseDef.weightUnit })
+  // See lib/setUnit.ts's resolveActiveMassUnit docstring — critically, this
+  // consults currentEx.unit (not just the routine's static default) so a
+  // resumed session (fresh mount, massUnitOverrides starts empty) whose log
+  // already carries a prior toggle's resolved 'Kg' keeps showing Kg, since
+  // the set weights stored in that log are already real kg values.
+  const activeMassUnit: 'lbs' | 'kg' = resolveActiveMassUnit(
+    massUnitOverrides[currentExIdx],
+    currentEx.unit,
+    exerciseDef.weightUnit
+  )
+  const activeUnit: 'lbs' | 'kg' | 'pins' = equipmentType === 'abstract-scale' ? 'pins' : activeMassUnit
+  const currentInstanceId = instanceOverrides[currentExIdx] ?? currentEx.equipmentInstanceId ?? null
+  const currentInstance = equipmentInstances.find(i => i.id === currentInstanceId) ?? null
 
   // Persist session to localStorage on every change for resume detection
   useEffect(() => {
@@ -714,10 +796,15 @@ export default function ActiveSessionScreen({
     savedExIndices.current.add(currentExIdx)
 
     const today = new Date().toISOString().split('T')[0]
-    const unit = (exerciseDef.weightUnit === 'pins' ? 'Pins' : 'Lbs') as 'Lbs' | 'Pins'
+    // ex.unit is set by toggleMassUnit() below when the user has actively
+    // toggled this session (already fully resolved, incl. equipment type) —
+    // prefer it so what's displayed always matches what's persisted. Falling
+    // back to resolvePersistedUnit(undefined, ...) reproduces today's
+    // behavior exactly for any exercise nobody toggles (see lib/setUnit.ts).
+    const unit = ex.unit ?? resolvePersistedUnit(undefined, exerciseDef.weightUnit, equipmentType)
     const { toInsert, insertSetNumbers, toPatch } = planAutosave(
       ex,
-      { date: today, split, weightUnit: unit, userProgramSplitId },
+      { date: today, split, weightUnit: unit, userProgramSplitId, equipmentInstanceId: ex.equipmentInstanceId },
       snapshot.current
     )
     if (toInsert.length === 0 && toPatch.length === 0) return
@@ -787,13 +874,47 @@ export default function ActiveSessionScreen({
         console.error('Auto-save failed:', e)
         flashSaveError()
       })
-  }, [logs, currentExIdx, split, exerciseDef, userProgramSplitId, startedAt])
+  }, [logs, currentExIdx, split, exerciseDef, equipmentType, userProgramSplitId, startedAt])
 
-  function toggleUnit() {
-    setUnitOverrides(prev => ({
-      ...prev,
-      [currentExIdx]: (prev[currentExIdx] ?? defaultUnit) === 'pins' ? 'lbs' : 'pins',
-    }))
+  // Mass-based lbs<->kg toggle. Converts every already-entered weight in
+  // this exercise (not just the display) — a physical weight is the same
+  // weight regardless of when it was logged, so leaving stale numbers in
+  // the old unit while flipping the label would be exactly the
+  // "relabel-without-converting" bug lib/weightConversion.ts's header warns
+  // about. Never offered for abstract-scale exercises (see the `equipmentType
+  // === 'mass-based'` gate at the call site) — 'pins' never enters this path.
+  function toggleMassUnit() {
+    const from = activeMassUnit
+    const to = nextMassUnit(from)
+    setMassUnitOverrides(prev => ({ ...prev, [currentExIdx]: to }))
+    setLogs(prev => {
+      const next = [...prev]
+      const ex = next[currentExIdx]
+      next[currentExIdx] = {
+        ...ex,
+        sets: ex.sets.map(s => (s.weight > 0 ? { ...s, weight: roundMass(convertMass(s.weight, from, to)) } : s)),
+        unit: resolvePersistedUnit(to, exerciseDef.weightUnit, equipmentType),
+      }
+      return next
+    })
+    // Weights changed under already-saved sets — allow re-save so the
+    // corrected weight+unit reaches the DB instead of the stale pre-toggle
+    // pair (see the write route's server-side dedup guard: it updates the
+    // existing row in place, it does not create a duplicate).
+    savedExIndices.current.delete(currentExIdx)
+  }
+
+  function handleSelectInstance(instanceId: string | null) {
+    setInstanceOverrides(prev => ({ ...prev, [currentExIdx]: instanceId }))
+    setLogs(prev => {
+      const next = [...prev]
+      next[currentExIdx] = { ...next[currentExIdx], equipmentInstanceId: instanceId }
+      return next
+    })
+  }
+
+  function handleInstanceCreated(instance: EquipmentInstance) {
+    setEquipmentInstances(prev => [...prev, instance].sort((a, b) => a.name.localeCompare(b.name)))
   }
 
   function openRepPad(setIdx: number) { setActiveSetIdx(setIdx); setPadMode('reps') }
@@ -1130,12 +1251,21 @@ export default function ActiveSessionScreen({
           <span className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--text-mid)' }}>
             {exerciseDef.sets}×{exerciseDef.repRange[0] === exerciseDef.repRange[1] ? exerciseDef.repRange[0] : `${exerciseDef.repRange[0]}–${exerciseDef.repRange[1]}`} {t('reps').toLowerCase()}
           </span>
-          <button
-            onClick={toggleUnit}
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
-          >
-            {activeUnit === 'pins' ? t('unitPins') : t('unitLbs')}
-          </button>
+          {equipmentType === 'mass-based' ? (
+            <button
+              onClick={toggleMassUnit}
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
+            >
+              {activeUnit === 'kg' ? t('unitKg') : t('unitLbs')}
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowInstanceSheet(true)}
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '2px', color: 'var(--text-secondary)', fontFamily: 'Space Mono, monospace', fontSize: '0.55rem', letterSpacing: '0.08em', padding: '3px 8px', cursor: 'pointer' }}
+            >
+              {t('machineButton')}{currentInstance ? ` · ${currentInstance.name}` : ''}
+            </button>
+          )}
           <button className="swap-badge" onClick={() => setSwapShown(s => !s)}>
             {swapShown ? t('hide') : common('swap')}
           </button>
@@ -1270,7 +1400,7 @@ export default function ActiveSessionScreen({
                           {set.weight > 0 ? set.weight : '—'}
                         </span>
                         {set.weight > 0 && activeUnit !== 'pins' && (
-                          <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t('unitLbs').toLowerCase()}</span>
+                          <span className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t(activeUnit === 'kg' ? 'unitKg' : 'unitLbs').toLowerCase()}</span>
                         )}
                       </div>
                     </button>
@@ -1377,8 +1507,29 @@ export default function ActiveSessionScreen({
           currentEx={currentEx}
           currentPlan={currentPlan}
           activeUnit={activeUnit}
+          instanceCalibrationHint={(() => {
+            if (activeUnit !== 'pins' || !currentInstance?.calibration) return null
+            const pins = currentEx.sets[activeSetIdx].weight
+            if (!pins || pins <= 0) return null
+            const mass = resolveInstanceMass(currentInstance, pins, currentInstance.calibration.weightPerUnitMassUnit)
+            if (mass === null) return null
+            const rounded = Math.round(mass * 10) / 10
+            return t('estimatedMass', { weight: rounded, unit: common(currentInstance.calibration.weightPerUnitMassUnit) })
+          })()}
           onConfirm={confirmWeight}
           onCancel={() => { setPadMode(null); setActiveSetIdx(null) }}
+        />
+      )}
+      {showInstanceSheet && (
+        <EquipmentInstanceSheet
+          userId={userId}
+          exerciseName={currentEx.exerciseName}
+          currentInstanceId={currentInstanceId}
+          instances={equipmentInstances}
+          loading={loadingInstances}
+          onSelect={handleSelectInstance}
+          onCreated={handleInstanceCreated}
+          onClose={() => setShowInstanceSheet(false)}
         />
       )}
       {detailExercise && (

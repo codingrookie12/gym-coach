@@ -186,6 +186,53 @@ describe('shouldResumeFromLocal', () => {
   // covered by the `null` case above.
 })
 
+describe('buildResumeStateFromDb — unit reconstruction (equipment-type/unit-conversion integration)', () => {
+  // Regression coverage: a session toggled to kg (ActiveSessionScreen's
+  // toggleMassUnit) before localStorage was lost (fresh device, cleared
+  // storage) must resume still labeled/treated as kg — the underlying
+  // dbSet.weight values are already real kg numbers, so falling back to the
+  // routine's static 'lbs' default here would relabel them, exactly the
+  // mismatch lib/weightConversion.ts's header warns about (see
+  // lib/setUnit.ts's resolveActiveMassUnit, which this feeds).
+  it('reconstructs ExerciseLog.unit from the DB rows\' own unit when present', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Barbell Squat', canonicalName: 'Barbell Squat', sets: 2, weightUnit: 'lbs' })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      {
+        exerciseName: 'Barbell Squat',
+        sets: [
+          { setNumber: 1, weight: 60, reps: 5, notes: '', rir: 2, pageId: 'set-1', unit: 'Kg' },
+          { setNumber: 2, weight: 60, reps: 5, notes: '', rir: 2, pageId: 'set-2', unit: 'Kg' },
+        ],
+      },
+    ]
+
+    const { logs } = buildResumeStateFromDb(plan, dbData)
+    expect(logs[0].unit).toBe('Kg')
+  })
+
+  it('leaves ExerciseLog.unit undefined when the DB rows carry no unit (a caller that has not selected the column yet) — identical to pre-existing behavior', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Barbell Squat', canonicalName: 'Barbell Squat', sets: 1, weightUnit: 'lbs' })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      { exerciseName: 'Barbell Squat', sets: [{ setNumber: 1, weight: 225, reps: 5, notes: '', rir: 2, pageId: 'set-1' }] },
+    ]
+
+    const { logs } = buildResumeStateFromDb(plan, dbData)
+    expect(logs[0].unit).toBeUndefined()
+  })
+
+  it('an exercise the DB has no record of at all gets no unit field either (untouched exercise, identical to before)', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Squat', canonicalName: 'Squat', sets: 3 })),
+    ]
+    const { logs } = buildResumeStateFromDb(plan, [])
+    expect(logs[0].unit).toBeUndefined()
+  })
+})
+
 describe('shouldResumeFromDb', () => {
   it('no DB response — does not show', () => {
     expect(shouldResumeFromDb(null, ['Push', 'Pull'])).toBe(false)

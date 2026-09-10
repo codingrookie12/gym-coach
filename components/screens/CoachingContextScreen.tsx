@@ -9,6 +9,7 @@ import { loadCoachingPlan, SessionExercisePlan } from '@/lib/sessionPlan'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useCoachingFlagText } from '@/lib/i18n/coachingMessages'
 import LoadingScreen from '@/components/LoadingScreen'
+import { weightUnitLabelKey } from '@/lib/setUnit'
 
 interface CoachingContextScreenProps {
   split: string
@@ -230,8 +231,8 @@ export default function CoachingContextScreen({
                           {weightDecisions[item.exerciseId] != null ? (
                             <p className="font-mono" style={{ fontSize: '0.6rem', color: weightDecisions[item.exerciseId] ? 'var(--accent)' : 'var(--text-mid)', margin: '6px 0 0 0' }}>
                               {weightDecisions[item.exerciseId]
-                                ? t('droppingTo', { weight: `${item.targetWeight} ${item.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')}` })
-                                : t('keepWeightValue', { weight: `${weightFlag.params.weight} ${item.exercise.weightUnit === 'pins' ? common('pins') : common('lbs')}` })}
+                                ? t('droppingTo', { weight: `${item.targetWeight} ${common(weightUnitLabelKey(item.exercise.weightUnit))}` })
+                                : t('keepWeightValue', { weight: `${weightFlag.params.weight} ${common(weightUnitLabelKey(item.exercise.weightUnit))}` })}
                             </p>
                           ) : (
                             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>

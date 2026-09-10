@@ -22,6 +22,7 @@
     "failedToLoad": "Error al cargar",
     "genericError": "Algo salió mal. Intenta de nuevo.",
     "lbs": "lbs",
+    "kg": "kg",
     "pins": "clavijas",
     "sets": "series",
     "skipped": "omitidas",
@@ -63,6 +64,16 @@
   },
   "chipGrid": {
     "customValue": "VALOR PERSONALIZADO"
+  },
+  "equipmentInstance": {
+    "title": "¿QUÉ MÁQUINA?",
+    "noSpecificMachine": "Sin máquina específica",
+    "addMachine": "+ AGREGAR MÁQUINA",
+    "machineNamePlaceholder": "ej. Gold's Gym — Prensa de Piernas #2",
+    "knowsCalibrationLabel": "Sé cuánto pesa una clavija/nivel",
+    "weightPerUnitPlaceholder": "Peso por clavija",
+    "calibrationHint": "({weight} {unit}/clavija)",
+    "create": "AGREGAR"
   },
   "reports": {
     "title": "REPORTES",
@@ -241,9 +252,12 @@
       "nextUp": "SIGUIENTE",
       "pin": "CLAVIJA",
       "weight": "PESO",
+      "estimatedMass": "≈ {weight} {unit} en esta máquina",
       "notesPlaceholder": "Notas para la próxima vez...",
       "unitLbs": "Lbs",
+      "unitKg": "Kg",
       "unitPins": "Clavijas",
+      "machineButton": "MÁQUINA",
       "rirLabel": "RIR",
       "rirExplainerAriaLabel": "¿Qué significa RIR?",
       "rirExplainerText": "RIR = Repeticiones en Reserva — cuántas repeticiones más podrías haber hecho antes de fallar. 0 = no quedaba ninguna. 5+ = esa serie se sintió fácil.",

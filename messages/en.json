@@ -22,6 +22,7 @@
     "failedToLoad": "Failed to load",
     "genericError": "Something went wrong. Try again.",
     "lbs": "lbs",
+    "kg": "kg",
     "pins": "pins",
     "sets": "sets",
     "skipped": "skipped",
@@ -63,6 +64,16 @@
   },
   "chipGrid": {
     "customValue": "CUSTOM VALUE"
+  },
+  "equipmentInstance": {
+    "title": "WHICH MACHINE?",
+    "noSpecificMachine": "No specific machine",
+    "addMachine": "+ ADD MACHINE",
+    "machineNamePlaceholder": "e.g. Gold's Gym — Leg Press #2",
+    "knowsCalibrationLabel": "I know what one pin/level weighs",
+    "weightPerUnitPlaceholder": "Weight per pin",
+    "calibrationHint": "({weight} {unit}/pin)",
+    "create": "ADD"
   },
   "reports": {
     "title": "REPORTS",
@@ -241,9 +252,12 @@
       "nextUp": "NEXT UP",
       "pin": "PIN",
       "weight": "WEIGHT",
+      "estimatedMass": "≈ {weight} {unit} on this machine",
       "notesPlaceholder": "Notes for next time...",
       "unitLbs": "Lbs",
+      "unitKg": "Kg",
       "unitPins": "Pins",
+      "machineButton": "MACHINE",
       "rirLabel": "RIR",
       "rirExplainerAriaLabel": "What does RIR mean?",
       "rirExplainerText": "RIR = Reps in Reserve — how many more reps you could have done before failure. 0 = none left in the tank. 5+ = that set felt easy.",
