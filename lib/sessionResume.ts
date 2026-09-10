@@ -42,6 +42,17 @@ export interface DbResumeSet {
    *  hasn't been updated to select it — same fallback-to-routine-default
    *  behavior as before this field existed. */
   unit?: 'Lbs' | 'Kg' | 'Pins' | null
+  /** DB's own `sets.equipment_instance_id` for this row, when the caller
+   *  selected it (GET /api/session/today/details does, once the equipment-
+   *  instance migration — supabase/migrations/20260909000000_equipment_
+   *  model.sql — has actually been applied; see that route for the
+   *  column-may-not-exist-yet guard). Reconstructed onto the rebuilt
+   *  ExerciseLog's `equipmentInstanceId` field the same way `unit` is
+   *  above — without this, an instance tagged before localStorage was lost
+   *  would resume untagged. Optional/undefined for any caller that hasn't
+   *  selected the column (including pre-migration, when it can't exist) —
+   *  same fallback-to-untagged behavior as before this field existed. */
+  equipmentInstanceId?: string | null
 }
 
 export interface DbResumeExercise {
@@ -127,6 +138,11 @@ export function buildResumeStateFromDb(
         reps: dbSet.reps,
         notes: dbSet.notes,
         rir: dbSet.rir,
+        // Conditional, like `unit` below — omit the key entirely (rather
+        // than always writing null) so a caller that hasn't selected the
+        // column yet (every environment pre-migration) produces the exact
+        // same snapshot shape as before this field existed.
+        ...(dbSet.equipmentInstanceId ? { equipmentInstanceId: dbSet.equipmentInstanceId } : {}),
       }
       return { weight: dbSet.weight, reps: dbSet.reps, completed: true, skipped: false, rir: dbSet.rir }
     })
@@ -140,6 +156,16 @@ export function buildResumeStateFromDb(
     // to the routine's static default whenever ExerciseLog.unit is unset).
     const resumedUnit = dbEx.sets.find(s => s.unit)?.unit ?? undefined
 
+    // Same one-value-represents-the-exercise reasoning as resumedUnit above:
+    // equipmentInstanceId is exercise-scoped (lib/store.ts's
+    // ExerciseLog.equipmentInstanceId), not per-set, and a single exercise
+    // never mixes instances within one session (handleSelectInstance sets it
+    // for the whole exercise at once). Undefined on every set (no caller
+    // selecting the column yet — true for every environment before the
+    // equipment-instance migration is applied) correctly falls through to
+    // undefined here, identical to pre-existing (untagged) behavior.
+    const resumedInstanceId = dbEx.sets.find(s => s.equipmentInstanceId)?.equipmentInstanceId ?? undefined
+
     return {
       exerciseName: item.exercise.name,
       canonicalName,
@@ -147,6 +173,7 @@ export function buildResumeStateFromDb(
       sets,
       notes: dbEx.sets.find(s => s.notes)?.notes ?? '',
       ...(resumedUnit ? { unit: resumedUnit } : {}),
+      ...(resumedInstanceId ? { equipmentInstanceId: resumedInstanceId } : {}),
     }
   })
 

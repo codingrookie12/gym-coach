@@ -37,20 +37,39 @@ export async function GET(request: NextRequest) {
     // resume path does (lib/store.ts's ExerciseLog.unit), or a session that
     // was toggled to kg before localStorage was lost would come back
     // relabeled as Lbs while still holding real kg numbers — see lib/
-    // sessionResume.ts's buildResumeStateFromDb. `equipment_instance_id` is
-    // deliberately NOT selected here: that column is on a migration not yet
-    // applied everywhere (supabase/migrations/20260909000000_equipment_
-    // model.sql) — selecting an unknown column would 500 this route for
-    // every resume, on every environment, not just ones using the feature.
-    const { data: setRows } = await supabase
+    // sessionResume.ts's buildResumeStateFromDb.
+    //
+    // `equipment_instance_id` is selected the same way, but it's on a
+    // migration Johnnatan applies manually (supabase/migrations/
+    // 20260909000000_equipment_model.sql) and isn't live everywhere yet.
+    // Unlike the write-path's conditional-key pattern (app/api/session/
+    // write/route.ts — a column is simply omitted from the insert/update
+    // payload when its value is unset), a SELECT can't omit a column
+    // per-row: PostgREST fails the WHOLE query (error code 42703, "column
+    // does not exist") when the column isn't there at all. So this selects
+    // it optimistically and falls back to the same query without it on a
+    // 42703 — every resume keeps working unchanged against a database that
+    // hasn't run the migration yet, and starts carrying instance data the
+    // moment it has, with no further code change needed.
+    const baseSetsSelect = 'id, set_number, weight, reps, notes, rir, unit'
+    // eslint-disable-next-line prefer-const -- reassigned in the fallback below
+    let { data: setRows, error: setsError } = (await supabase
       .from('sets')
-      .select('id, set_number, weight, reps, notes, rir, unit, exercises(name)')
+      .select(`${baseSetsSelect}, equipment_instance_id, exercises(name)`)
       .eq('workout_id', workout.id as string)
-      .order('set_number', { ascending: true })
+      .order('set_number', { ascending: true })) as { data: any[] | null; error: { code?: string } | null }
+
+    if (setsError?.code === '42703') {
+      ;({ data: setRows } = await supabase
+        .from('sets')
+        .select(`${baseSetsSelect}, exercises(name)`)
+        .eq('workout_id', workout.id as string)
+        .order('set_number', { ascending: true }))
+    }
 
     const exerciseMap = new Map<string, {
       exerciseName: string
-      sets: { setNumber: number; weight: number; reps: number; notes: string; rir: number | null; pageId: string; unit: string | null }[]
+      sets: { setNumber: number; weight: number; reps: number; notes: string; rir: number | null; pageId: string; unit: string | null; equipmentInstanceId: string | null }[]
     }>()
 
     for (const row of setRows ?? []) {
@@ -65,6 +84,7 @@ export async function GET(request: NextRequest) {
         rir: (row.rir as number | null) ?? null,
         pageId: row.id as string,
         unit: (row.unit as string | null) ?? null,
+        equipmentInstanceId: ((row as any).equipment_instance_id as string | null | undefined) ?? null,
       })
     }
 

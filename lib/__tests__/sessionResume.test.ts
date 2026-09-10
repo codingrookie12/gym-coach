@@ -233,6 +233,71 @@ describe('buildResumeStateFromDb — unit reconstruction (equipment-type/unit-co
   })
 })
 
+describe('buildResumeStateFromDb — equipmentInstanceId reconstruction (equipment-type/unit-conversion integration)', () => {
+  // Regression coverage, mirrors the unit-reconstruction block above: a set
+  // tagged with an equipment instance (ActiveSessionScreen's
+  // handleSelectInstance) before localStorage was lost must resume still
+  // carrying that tag, both on the rebuilt ExerciseLog (so the instance
+  // selector shows the right machine) and in the SavedSnapshot (so a
+  // subsequent re-save at Finish-time or mid-session autosave correctly
+  // diffs against it instead of treating it as untagged and re-patching).
+  it('reconstructs ExerciseLog.equipmentInstanceId from the DB rows\' own value when present', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Leg Press', canonicalName: 'Leg Press', sets: 2 })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      {
+        exerciseName: 'Leg Press',
+        sets: [
+          { setNumber: 1, weight: 400, reps: 10, notes: '', rir: 2, pageId: 'set-1', equipmentInstanceId: 'instance-1' },
+          { setNumber: 2, weight: 400, reps: 10, notes: '', rir: 2, pageId: 'set-2', equipmentInstanceId: 'instance-1' },
+        ],
+      },
+    ]
+
+    const { logs, snapshot } = buildResumeStateFromDb(plan, dbData)
+    expect(logs[0].equipmentInstanceId).toBe('instance-1')
+    expect(snapshot['Leg Press:1']).toMatchObject({ equipmentInstanceId: 'instance-1' })
+    expect(snapshot['Leg Press:2']).toMatchObject({ equipmentInstanceId: 'instance-1' })
+  })
+
+  it('leaves ExerciseLog.equipmentInstanceId undefined when the DB rows carry none (a caller that has not selected the column yet, or the migration is unapplied) — identical to pre-existing behavior', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Leg Press', canonicalName: 'Leg Press', sets: 1 })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      { exerciseName: 'Leg Press', sets: [{ setNumber: 1, weight: 400, reps: 10, notes: '', rir: 2, pageId: 'set-1' }] },
+    ]
+
+    const { logs, snapshot } = buildResumeStateFromDb(plan, dbData)
+    expect(logs[0].equipmentInstanceId).toBeUndefined()
+    // The snapshot entry must have the exact same shape it had before this
+    // field existed — no `equipmentInstanceId: null` key spuriously added.
+    expect(snapshot['Leg Press:1']).toEqual({ pageId: 'set-1', weight: 400, reps: 10, notes: '', rir: 2 })
+  })
+
+  it('an exercise the DB has no record of at all gets no equipmentInstanceId field either (untouched exercise, identical to before)', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Squat', canonicalName: 'Squat', sets: 3 })),
+    ]
+    const { logs } = buildResumeStateFromDb(plan, [])
+    expect(logs[0].equipmentInstanceId).toBeUndefined()
+  })
+
+  it('null equipmentInstanceId on every set (explicitly untagged) is treated the same as unset — no field on the rebuilt ExerciseLog', () => {
+    const plan: SessionExercisePlan[] = [
+      makePlanItem(makeExercise({ name: 'Leg Press', canonicalName: 'Leg Press', sets: 1 })),
+    ]
+    const dbData: DbResumeExercise[] = [
+      { exerciseName: 'Leg Press', sets: [{ setNumber: 1, weight: 400, reps: 10, notes: '', rir: 2, pageId: 'set-1', equipmentInstanceId: null }] },
+    ]
+
+    const { logs, snapshot } = buildResumeStateFromDb(plan, dbData)
+    expect(logs[0].equipmentInstanceId).toBeUndefined()
+    expect(snapshot['Leg Press:1']).toEqual({ pageId: 'set-1', weight: 400, reps: 10, notes: '', rir: 2 })
+  })
+})
+
 describe('shouldResumeFromDb', () => {
   it('no DB response — does not show', () => {
     expect(shouldResumeFromDb(null, ['Push', 'Pull'])).toBe(false)

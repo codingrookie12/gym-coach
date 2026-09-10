@@ -32,6 +32,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { buildResumeStateFromDb, shouldResumeFromLocal, shouldResumeFromDb } from '@/lib/sessionResume'
+import { computeFinishSaveChanges } from '@/lib/finishSaveDiff'
 import { drainOutbox as drainOutboxQueue } from '@/lib/outboxDrain'
 import Toast from '@/components/ui/Toast'
 import {
@@ -465,18 +466,9 @@ export default function App() {
         const prior = snapshot[key]
 
         if (prior) {
-          const weightChanged = set.weight !== prior.weight
-          const repsChanged = set.reps !== prior.reps
-          const notesChanged = (exLog.notes ?? '') !== prior.notes
-          const rirChanged = (set.rir ?? null) !== (prior.rir ?? null)
+          const changes = computeFinishSaveChanges(set, exLog, prior)
 
-          if (weightChanged || repsChanged || notesChanged || rirChanged) {
-            const changes: { weight?: number; reps?: number; notes?: string; rir?: number | null } = {}
-            if (weightChanged) changes.weight = set.weight
-            if (repsChanged) changes.reps = set.reps
-            if (notesChanged) changes.notes = exLog.notes ?? ''
-            if (rirChanged) changes.rir = set.rir ?? null
-
+          if (changes) {
             patchPromises.push(
               fetch('/api/session/update', {
                 method: 'PATCH',
