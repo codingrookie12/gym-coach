@@ -262,6 +262,10 @@ export default function CustomProgramBuilderScreen({
               name: e.exercise_name,
               sets: e.sets,
               repRange: [e.rep_range_min, e.rep_range_max],
+              // Custom exercises aren't in the static catalog the server
+              // falls back to (lib/exercises.json) — send the equipment tag
+              // straight from picker state so it isn't silently dropped.
+              equipment: e.equipment,
             })),
           })),
         }

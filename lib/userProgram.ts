@@ -329,6 +329,12 @@ export interface CreateBlankProgramInput {
       name: string
       sets: number
       repRange: [number, number]
+      /** Equipment tag from the client's picker selection. Required for
+       *  custom (is_custom=true) exercises — `findExerciseByName` below only
+       *  searches the static lib/exercises.json catalog, so it can't recover
+       *  equipment for a user-created exercise. Falls back to the catalog
+       *  lookup when omitted (older clients / curated-name matches). */
+      equipment?: string | null
     }>
   }>
 }
@@ -369,6 +375,10 @@ export async function createBlankProgram(
     const splitId = splitIdByOrder.get(splitIdx)
     if (!splitId) return
     split.exercises.forEach((ex, i) => {
+      // Custom (is_custom=true) exercises live in Supabase, not in the
+      // static catalog `findExerciseByName` searches — so the client's own
+      // `ex.equipment` (from the picker's ExerciseDefinition) is the primary
+      // source. The catalog lookup is only a fallback for older payloads.
       const def = findExerciseByName(ex.name)
       exerciseRows.push({
         user_id: userId,
@@ -381,7 +391,7 @@ export async function createBlankProgram(
         backup_name: null,
         weight_unit: 'lbs',
         weight_convention: null,
-        equipment: def?.equipment ?? null,
+        equipment: ex.equipment ?? def?.equipment ?? null,
         program_note: null,
         sort_order: i,
         added_via: 'custom-program-create',
