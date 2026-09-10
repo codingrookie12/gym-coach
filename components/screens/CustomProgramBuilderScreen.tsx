@@ -111,7 +111,13 @@ export default function CustomProgramBuilderScreen({
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'rename', name: value.trim() }),
-        }).catch(() => {})
+        }).then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        }).catch(err => {
+          console.error('handleProgramNameChange failed:', err)
+          setError(t('renameFailed'))
+          setTimeout(() => setError(null), 3000)
+        })
       }, 1000)
     }
   }
@@ -127,7 +133,13 @@ export default function CustomProgramBuilderScreen({
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'rename-split', splitId: split.id, name: value.trim() }),
-        }).catch(() => {})
+        }).then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        }).catch(err => {
+          console.error('handleSplitNameChange failed:', err)
+          setError(t('renameFailed'))
+          setTimeout(() => setError(null), 3000)
+        })
       }, 1000))
     }
   }
@@ -142,11 +154,16 @@ export default function CustomProgramBuilderScreen({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add-split', name }),
         })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         if (data.splitId) {
           setSplits(prev => [...prev, { id: data.splitId, name, exercises: [], expanded: true }])
         }
-      } catch {}
+      } catch (err) {
+        console.error('handleAddSplit failed:', err)
+        setError(t('addSplitFailed'))
+        setTimeout(() => setError(null), 3000)
+      }
     } else {
       setSplits(prev => [...prev, { id: `temp-${Date.now()}`, name, exercises: [], expanded: true }])
     }
@@ -171,12 +188,23 @@ export default function CustomProgramBuilderScreen({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'remove-split', splitId: split.id }),
         })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         if (data.archived) {
           setError(t('archiveNotice'))
           setTimeout(() => setError(null), 3000)
         }
-      } catch {}
+      } catch (err) {
+        // Server-side state is unknown/unchanged — don't drop the split from
+        // local state, or a still-live (or even successfully-archived) split
+        // with real workout history behind it would silently vanish from the
+        // UI while remaining fully intact server-side.
+        console.error('handleRemoveSplit failed:', err)
+        setError(t('removeSplitFailed'))
+        setTimeout(() => setError(null), 3000)
+        setConfirmDeleteIdx(null)
+        return
+      }
     }
     setSplits(prev => prev.filter((_, i) => i !== idx))
     setConfirmDeleteIdx(null)
@@ -185,6 +213,7 @@ export default function CustomProgramBuilderScreen({
   async function handleReorder(idx: number, direction: 'up' | 'down') {
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1
     if (targetIdx < 0 || targetIdx >= splits.length) return
+    const snapshot = splits
     const newSplits = [...splits]
     const temp = newSplits[idx]
     newSplits[idx] = newSplits[targetIdx]
@@ -192,11 +221,19 @@ export default function CustomProgramBuilderScreen({
     setSplits(newSplits)
     if (mode === 'edit' && programId) {
       const splitIds = newSplits.filter(s => !s.id.startsWith('temp-')).map(s => s.id)
-      fetch(`/api/user/programs/${programId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reorder-splits', splitIds }),
-      }).catch(() => {})
+      try {
+        const res = await fetch(`/api/user/programs/${programId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reorder-splits', splitIds }),
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      } catch (err) {
+        console.error('handleReorder failed:', err)
+        setSplits(snapshot)
+        setError(t('reorderFailed'))
+        setTimeout(() => setError(null), 3000)
+      }
     }
   }
 

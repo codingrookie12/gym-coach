@@ -121,7 +121,8 @@
     "cancelButton": "CANCEL",
     "loading": "LOADING...",
     "programSummary": "{splitCount, plural, one {# split} other {# splits}} · {exerciseCount, plural, one {# exercise} other {# exercises}}",
-    "backButton": "← BACK"
+    "backButton": "← BACK",
+    "selectFailed": "Something went wrong. Try again."
   },
   "explorer": {
     "title": "EXPLORE PROGRAMS",
@@ -287,7 +288,8 @@
       "sessionRpeOptional": "Optional — helps tailor your next session",
       "sessionRpeSkip": "SKIP",
       "replacePermanentlyBody": "Your routine will always use {newName} in its place.",
-      "setIndex": "SET {setNumber}"
+      "setIndex": "SET {setNumber}",
+      "setDefaultFailed": "Failed to set default — try again"
     },
     "sessionSummary": {
       "sessionComplete": "SESSION COMPLETE",
@@ -330,7 +332,8 @@
       "total": "{count} TOTAL",
       "browse": "BROWSE →",
       "customNeedsMetadata": "{count, plural, one {CUSTOM · # NEEDS METADATA} other {CUSTOM · # NEED METADATA}}",
-      "daysAbbrev": "D"
+      "daysAbbrev": "D",
+      "switchFailed": "Switch failed — try again"
     },
     "exerciseBrowser": {
       "browse": "BROWSE",
@@ -412,7 +415,11 @@
       "archiveNotice": "This split has logged workouts and was archived",
       "saveFailed": "Failed to save",
       "exerciseAdded": "{name} added to {split}",
-      "exerciseRemoved": "{name} removed"
+      "exerciseRemoved": "{name} removed",
+      "renameFailed": "Rename failed — try again",
+      "reorderFailed": "Reorder failed — try again",
+      "removeSplitFailed": "Remove failed — try again",
+      "addSplitFailed": "Add split failed — try again"
     },
     "progressHistory": {
       "pr": "PR",

@@ -12,7 +12,7 @@
  * stateful client component.
  */
 import { describe, it, expect } from 'vitest'
-import { computeFinishSaveChanges } from './finishSaveDiff'
+import { computeFinishSaveChanges, resolveFinishSyncStatus } from './finishSaveDiff'
 import { ExerciseLog, SavedSnapshot } from './store'
 
 function makeExercise(overrides?: Partial<ExerciseLog>): ExerciseLog {
@@ -158,5 +158,41 @@ describe('computeFinishSaveChanges — equipmentInstanceId (mirrors planAutosave
 
     expect(changes).toEqual({ rir: 3 })
     expect(changes).not.toHaveProperty('equipmentInstanceId')
+  })
+})
+
+/**
+ * Audit finding, pre-dating this session's write-path fixes: handleSaveSession
+ * awaited its /api/session/update PATCH promises via a bare
+ * `Promise.all(patchPromises)` whose settled values were destructured away
+ * (`const [, wr] = await Promise.all([...])`) and never inspected. Since
+ * fetch() only rejects on a genuine network failure — never on a non-2xx
+ * status — a PATCH that reached the server and failed there (500, a stale
+ * pageId) resolved cleanly and was silently discarded: the user's
+ * pre-save correction never landed, the DB kept the stale pre-edit value,
+ * and syncStatus still reported a clean 'confirmed'. Fixed by having each
+ * patch promise resolve to its own ok/failure boolean (app/page.tsx) and
+ * folding that into the final status here.
+ */
+describe('resolveFinishSyncStatus — BUG FIX: a swallowed PATCH failure must not report as confirmed', () => {
+  it('all patches ok: insert status passes through unchanged (confirmed)', () => {
+    expect(resolveFinishSyncStatus('confirmed', false)).toBe('confirmed')
+  })
+
+  it('all patches ok: insert status passes through unchanged (partial)', () => {
+    expect(resolveFinishSyncStatus('partial', false)).toBe('partial')
+  })
+
+  it('a failed patch downgrades an otherwise-confirmed insert to partial', () => {
+    expect(resolveFinishSyncStatus('confirmed', true)).toBe('partial')
+  })
+
+  it('a failed patch alongside an already-partial insert stays partial', () => {
+    expect(resolveFinishSyncStatus('partial', true)).toBe('partial')
+  })
+
+  it('queued always wins — a failed patch never escalates an offline/queued session', () => {
+    expect(resolveFinishSyncStatus('queued', true)).toBe('queued')
+    expect(resolveFinishSyncStatus('queued', false)).toBe('queued')
   })
 })

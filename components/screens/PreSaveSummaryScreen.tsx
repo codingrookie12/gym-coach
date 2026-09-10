@@ -46,6 +46,7 @@ export default function PreSaveSummaryScreen({
   const [pendingDefault, setPendingDefault] = useState<SessionSwap | null>(null)
   const [settingDefault, setSettingDefault] = useState(false)
   const [defaultsDone, setDefaultsDone] = useState<Set<string>>(new Set())
+  const [defaultError, setDefaultError] = useState<string | null>(null)
 
   function openEdit(exIdx: number, setIdx: number, field: 'weight' | 'reps') {
     setEditTarget({ exIdx, setIdx, field })
@@ -67,9 +68,16 @@ export default function PreSaveSummaryScreen({
   async function confirmSetDefault(swap: SessionSwap) {
     if (!onSetDefault) return
     setSettingDefault(true)
+    setDefaultError(null)
     try {
       await onSetDefault(swap.oldName, swap.newName)
       setDefaultsDone(prev => new Set(Array.from(prev).concat(swap.oldName)))
+    } catch (err) {
+      // Never mark this as "SAVED" on a failed write — the row must stay
+      // retryable, or the user is told their explicit "make default" choice
+      // took effect when the routine's permanent exercise never changed.
+      console.error('confirmSetDefault failed:', err)
+      setDefaultError(t('setDefaultFailed'))
     } finally {
       setSettingDefault(false)
       setPendingDefault(null)
@@ -229,6 +237,11 @@ export default function PreSaveSummaryScreen({
       {sessionSwaps.length > 0 && onSetDefault && (
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span className="section-label">{t('sessionSwapsHeading')}</span>
+          {defaultError && (
+            <p className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', margin: 0, lineHeight: 1.5 }}>
+              {defaultError}
+            </p>
+          )}
           {sessionSwaps.map(swap => {
             const done = defaultsDone.has(swap.oldName)
             const isPending = pendingDefault?.oldName === swap.oldName

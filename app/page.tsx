@@ -32,7 +32,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { removeExerciseFromRoutine } from '@/lib/userRoutine'
 import { ExerciseLog, SavedSnapshot } from '@/lib/store'
 import { buildResumeStateFromDb, shouldResumeFromLocal, shouldResumeFromDb } from '@/lib/sessionResume'
-import { computeFinishSaveChanges } from '@/lib/finishSaveDiff'
+import { computeFinishSaveChanges, resolveFinishSyncStatus } from '@/lib/finishSaveDiff'
 import { mergeSessionSwap } from '@/lib/sessionSwaps'
 import { drainOutbox as drainOutboxQueue } from '@/lib/outboxDrain'
 import { drainPendingFinishes as drainPendingFinishesQueue } from '@/lib/finishDrain'
@@ -507,7 +507,12 @@ export default function App() {
       ? { date: today, userProgramSplitId: appState.userProgramSplitId, sessionRpe }
       : null
 
-    const patchPromises: Promise<any>[] = []
+    // Each entry resolves to whether that PATCH actually succeeded — never
+    // a bare Response/rejection — so a non-2xx (fetch doesn't throw on
+    // those) can't be silently discarded the way it used to be when this
+    // array's settled values were destructured away unchecked. See
+    // resolveFinishSyncStatus's docstring for the audit finding this closes.
+    const patchPromises: Promise<boolean>[] = []
     const newEntries: any[] = []
 
     for (const exLog of logs) {
@@ -528,6 +533,11 @@ export default function App() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pageId: prior.pageId, changes }),
               })
+                .then(res => res.ok)
+                .catch(err => {
+                  console.error('Finish-time patch failed:', err)
+                  return false
+                })
             )
           }
         } else {
@@ -584,8 +594,9 @@ export default function App() {
     }
 
     let writeResponse: Response | null = null
+    let anyPatchFailed = false
     try {
-      const [, wr] = await Promise.all([
+      const [patchResults, wr] = await Promise.all([
         Promise.all(patchPromises),
         writeBody
           ? fetch('/api/session/write', {
@@ -596,6 +607,7 @@ export default function App() {
           : Promise.resolve(null),
       ])
       writeResponse = wr
+      anyPatchFailed = patchResults.some(ok => !ok)
     } catch {
       // Network error mid-session (went offline after check) — queue.
       // Finish would fail the same way, so it's queued unconditionally here
@@ -620,6 +632,7 @@ export default function App() {
       if (!data.success) throw new Error(data.error ?? 'Save failed')
       syncStatus = data.skipped?.length > 0 ? 'partial' : 'confirmed'
     }
+    syncStatus = resolveFinishSyncStatus(syncStatus, anyPatchFailed)
 
     if (syncStatus === 'confirmed' && appState.user) clearSessionFromStorage(appState.user.id)
 
@@ -985,8 +998,13 @@ export default function App() {
               onSave={handleSaveSession}
               onBack={() => navigate('active-session')}
               onSetDefault={appState.user && appState.userProgramSplitId ? async (oldName, newName) => {
+                // Let a failure (network blip, or a genuine zero-row no-op
+                // now that permanentlySwapExercise throws on one) propagate
+                // to PreSaveSummaryScreen's confirmSetDefault — it decides
+                // whether to show "SAVED" or a retryable error, and must
+                // never be lied to with a swallowed rejection.
                 const supabase = createSupabaseBrowserClient()
-                await permanentlySwapExercise(supabase, appState.user!.id, appState.userProgramSplitId!, oldName, newName).catch(() => {})
+                await permanentlySwapExercise(supabase, appState.user!.id, appState.userProgramSplitId!, oldName, newName)
               } : undefined}
             />
           )}

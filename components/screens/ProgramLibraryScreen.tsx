@@ -33,6 +33,7 @@ export default function ProgramLibraryScreen({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [explorerMode, setExplorerMode] = useState(initialMode === 'explorer')
+  const [selectError, setSelectError] = useState(false)
 
   const ownedTemplateIds = new Set(
     userPrograms.map(p => p.sourceTemplateId).filter((id): id is string => id !== null)
@@ -50,12 +51,22 @@ export default function ProgramLibraryScreen({
   }
 
   async function handleSelectProgram(userProgramId: string) {
-    await fetch('/api/user/program', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userProgramId }),
-    })
-    onSelect?.(userProgramId)
+    setSelectError(false)
+    try {
+      const res = await fetch('/api/user/program', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userProgramId }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      onSelect?.(userProgramId)
+    } catch (err) {
+      // Don't fire onSelect on a failed write — most callers reload
+      // immediately after, which would silently re-show the OLD active
+      // program with no explanation of why the selection "didn't take."
+      console.error('handleSelectProgram failed:', err)
+      setSelectError(true)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -131,6 +142,12 @@ export default function ProgramLibraryScreen({
 
       {/* Scrollable content */}
       <div className="scroll-area" style={{ flex: 1, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+        {selectError && (
+          <div className="font-mono" style={{ fontSize: '0.65rem', color: 'var(--rust)', letterSpacing: '0.06em', padding: '10px 14px', background: 'var(--rust-dim)', border: '1px solid var(--rust-border)', borderRadius: '2px' }}>
+            {t('selectFailed')}
+          </div>
+        )}
 
         {/* MY PROGRAMS section */}
         <section>

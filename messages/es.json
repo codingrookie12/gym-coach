@@ -121,7 +121,8 @@
     "cancelButton": "CANCELAR",
     "loading": "CARGANDO...",
     "programSummary": "{splitCount, plural, one {# día} other {# días}} · {exerciseCount, plural, one {# ejercicio} other {# ejercicios}}",
-    "backButton": "← ATRÁS"
+    "backButton": "← ATRÁS",
+    "selectFailed": "Algo salió mal. Intenta de nuevo."
   },
   "explorer": {
     "title": "EXPLORAR PROGRAMAS",
@@ -287,7 +288,8 @@
       "sessionRpeOptional": "Opcional — ayuda a ajustar tu próxima sesión",
       "sessionRpeSkip": "OMITIR",
       "replacePermanentlyBody": "Tu rutina siempre usará {newName} en su lugar.",
-      "setIndex": "SERIE {setNumber}"
+      "setIndex": "SERIE {setNumber}",
+      "setDefaultFailed": "Error al establecer el predeterminado — intenta de nuevo"
     },
     "sessionSummary": {
       "sessionComplete": "SESIÓN COMPLETADA",
@@ -330,7 +332,8 @@
       "total": "{count} EN TOTAL",
       "browse": "EXPLORAR →",
       "customNeedsMetadata": "{count, plural, one {PERSONALIZADO · # NECESITA DATOS} other {PERSONALIZADO · # NECESITAN DATOS}}",
-      "daysAbbrev": "D"
+      "daysAbbrev": "D",
+      "switchFailed": "Error al cambiar — intenta de nuevo"
     },
     "exerciseBrowser": {
       "browse": "EXPLORAR",
@@ -412,7 +415,11 @@
       "archiveNotice": "Este día tiene entrenamientos registrados y fue archivado",
       "saveFailed": "Error al guardar",
       "exerciseAdded": "{name} agregado a {split}",
-      "exerciseRemoved": "{name} eliminado"
+      "exerciseRemoved": "{name} eliminado",
+      "renameFailed": "Error al renombrar — intenta de nuevo",
+      "reorderFailed": "Error al reordenar — intenta de nuevo",
+      "removeSplitFailed": "Error al eliminar — intenta de nuevo",
+      "addSplitFailed": "Error al agregar el día — intenta de nuevo"
     },
     "progressHistory": {
       "pr": "RP",

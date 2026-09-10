@@ -57,6 +57,7 @@ export default function ExerciseLibraryScreen({
   const vocabLevel = useTranslations('vocab.programLevel')
   const [userPrograms, setUserPrograms] = useState<UserProgramSummary[]>([])
   const [switching, setSwitching] = useState<string | null>(null)
+  const [switchError, setSwitchError] = useState(false)
   const [historySummary, setHistorySummary] = useState<HistorySummary | null>(null)
 
   useEffect(() => {
@@ -111,6 +112,14 @@ export default function ExerciseLibraryScreen({
             <span className="section-label">{t('programs')}</span>
           </div>
 
+          {switchError && (
+            <div style={{ padding: '8px 20px 0' }}>
+              <span className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--rust)', letterSpacing: '0.06em' }}>
+                {t('switchFailed')}
+              </span>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '10px', padding: '10px 16px 14px', overflowX: 'auto' }}>
             {userPrograms.map(program => {
               const isActive = program.id === activeProgramId
@@ -125,15 +134,22 @@ export default function ExerciseLibraryScreen({
                   onClick={async () => {
                     if (isActive) return
                     setSwitching(program.id)
+                    setSwitchError(false)
                     try {
-                      await fetch('/api/user/program', {
+                      const res = await fetch('/api/user/program', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userProgramId: program.id }),
                       })
+                      if (!res.ok) throw new Error(`HTTP ${res.status}`)
                       onSelectProgram?.(program.id)
-                    } catch {
+                    } catch (err) {
+                      // onSelectProgram triggers a full reload — never call it
+                      // on a failed write, or the reload would silently
+                      // re-show the OLD active program with no explanation.
+                      console.error('Program switch failed:', err)
                       setSwitching(null)
+                      setSwitchError(true)
                     }
                   }}
                   style={{

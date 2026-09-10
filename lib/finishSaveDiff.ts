@@ -43,3 +43,35 @@ export function computeFinishSaveChanges(
   if (instanceChanged) changes.equipmentInstanceId = currentInstanceId
   return changes
 }
+
+export type SessionSyncStatus = 'confirmed' | 'partial' | 'queued'
+
+/**
+ * handleSaveSession fires one /api/session/update PATCH per already-saved
+ * set the user corrected in PreSaveSummaryScreen (see computeFinishSaveChanges
+ * above), but — audit finding, pre-dating this session's write-path fixes —
+ * used to await those PATCH requests via a bare `Promise.all(patchPromises)`
+ * whose settled Response values were destructured away and never inspected.
+ * `fetch()` only rejects on a genuine network failure, not on a non-2xx
+ * status, so a PATCH that reached the server and failed there (500, a stale
+ * pageId, etc.) resolved cleanly and was silently discarded — the
+ * correction never landed, the original (pre-edit) value stayed in the DB,
+ * and the user was still shown a clean "confirmed" sync status.
+ *
+ * This combines the insert-write's status with whether any patch failed.
+ * A patch failure never escalates to 'queued' — the set's last-known-good
+ * value already exists in the DB, so there's nothing to durably retry the
+ * way a dropped INSERT would need — but it must never be reported as a
+ * clean 'confirmed' either, since the user's correction silently didn't
+ * take. 'partial' is the existing status SessionSummaryScreen already
+ * renders as a visible warning (see its `data.skipped?.length > 0` use for
+ * the analogous insert-side case).
+ */
+export function resolveFinishSyncStatus(
+  insertStatus: SessionSyncStatus,
+  anyPatchFailed: boolean
+): SessionSyncStatus {
+  if (insertStatus === 'queued') return 'queued'
+  if (anyPatchFailed) return 'partial'
+  return insertStatus
+}

@@ -33,11 +33,12 @@ export default function ProgramExplorerScreen({
       })
       const data = await res.json()
       if (!res.ok || !data.programId) throw new Error(data.error ?? 'Clone failed')
-      await fetch('/api/user/program', {
+      const selectRes = await fetch('/api/user/program', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userProgramId: data.programId }),
       })
+      if (!selectRes.ok) throw new Error(`HTTP ${selectRes.status}`)
       onAdd(data.programId)
     } catch (err) {
       console.error('handleAdd failed:', err)
