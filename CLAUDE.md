@@ -78,3 +78,5 @@ Source: [conversation / user / Canny / research]
 **Notion** — update decisions log at end of every working session when schema, naming, or architecture changes. Never update mid-session.
 
 **Vercel** — project `gym-coach`, team `sanchez92j-1216s-projects` — auto-deploys on push to `main`. All env vars marked sensitive.
+
+**Live browser verification — use the committed e2e suite, don't reinvent it.** `npm run test:e2e` (Playwright, `playwright.config.ts` + `e2e/`) runs against **gym-coach-dev**, never production, with disposable `@gym-test.invalid` users minted and torn down automatically. See `e2e/README.md` for setup, the auth pattern, and what's covered. Before this suite existed, ad-hoc `npx -p playwright node <throwaway>.mjs` scripts got reinvented per session — don't go back to that; extend `e2e/` instead. CI wiring is dormant pending `DEV_SUPABASE_*` secrets (see that README's "CI" section) — until then this is a local/on-demand suite.

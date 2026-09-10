@@ -15,6 +15,8 @@ export default defineConfig({
     // .worktrees/ holds other branches' checkouts (e.g. redesign/phase1-foundation)
     // with their own Playwright e2e specs — vitest was picking those up too and
     // failing them (wrong test runner), unrelated to this repo's own test run.
-    exclude: ['**/node_modules/**', '**/.worktrees/**'],
+    // e2e/ is this repo's own Playwright suite (playwright.config.ts) — same
+    // "wrong test runner" problem, now local instead of only in a worktree.
+    exclude: ['**/node_modules/**', '**/.worktrees/**', '**/e2e/**'],
   },
 })

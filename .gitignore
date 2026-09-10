@@ -41,5 +41,11 @@ next-env.d.ts
 # git worktrees (e.g. redesign/phase1-foundation) — expected to exist locally, never committed
 /.worktrees/
 
+# Playwright e2e (playwright.config.ts) — run artifacts, never committed
+/e2e/report/
+/test-results/
+/playwright-report/
+/blob-report/
+
 # personal photo exports, unrelated to app code
 /Proof/
