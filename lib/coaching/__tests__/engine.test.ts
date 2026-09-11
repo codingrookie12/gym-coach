@@ -54,6 +54,60 @@ describe('analyzeCoaching — no history', () => {
     expect(plan[0].targetWeightOrigin).toBe('structural')
     expect(plan[0].flags.some(f => f.kind === 'no-history')).toBe(false)
   })
+
+  // Real bug found live 2026-09-11: an exercise shared between two splits of
+  // the same program (very common — see lib/routines.ts's templates, e.g.
+  // Face Pull on both Push and OHP Day) was flagged `no-history` the first
+  // time its CURRENT split had no sessions yet, even though it had real,
+  // recent sets logged under a sibling split — visible one screen later on
+  // WorkoutOverviewScreen (which queries by name, across every split), never
+  // on CoachingContextScreen (which only consulted `sessions`, this split's
+  // own history). `programSessions` (cross-split, already fetched for
+  // volume tallying) must also be consulted per-exercise.
+  it('does not flag no-history when the exercise has real sessions only under a sibling split', () => {
+    const siblingSplitSession = session('2026-08-18', [
+      { weight: 150, reps: 8, rir: 2 },
+      { weight: 150, reps: 8, rir: 2 },
+      { weight: 150, reps: 8, rir: 2 },
+    ])
+    const { plan } = analyzeCoaching(
+      baseInput({
+        sessions: [], // this split's own history: none yet
+        programSessions: [siblingSplitSession], // logged under a different split
+      })
+    )
+    expect(plan[0].flags.some(f => f.kind === 'no-history')).toBe(false)
+    expect(plan[0].targetWeight).toBe(150)
+  })
+
+  it('still reports no previous session for THIS split even when a sibling split carries the exercise', () => {
+    const siblingSplitSession = session('2026-08-18', [{ weight: 150, reps: 8, rir: 2 }])
+    const { context } = analyzeCoaching(
+      baseInput({
+        sessions: [],
+        programSessions: [siblingSplitSession],
+      })
+    )
+    // "Last session" / recovery-gap tracking stays single-split — a sibling
+    // split's history closing the no-history gap must not also silently
+    // claim this split itself was trained recently.
+    expect(context.lastSessionDate).toBeNull()
+  })
+
+  it('does not double-count a session present in both `sessions` and `programSessions`', () => {
+    // Same workoutId in both arrays (this split's own recent session also
+    // falls inside the volume-tallying window) — merging must dedupe by
+    // workoutId, not treat it as two separate sessions for stall counting.
+    const shared = session('2026-08-20', [{ weight: 150, reps: 8, rir: 2 }])
+    const { plan } = analyzeCoaching(
+      baseInput({
+        sessions: [shared],
+        programSessions: [shared],
+      })
+    )
+    // A single 150lb session should not trigger a 3-session stall flag.
+    expect(plan[0].flags.some(f => f.kind === 'stall')).toBe(false)
+  })
 })
 
 describe('analyzeCoaching — progression', () => {

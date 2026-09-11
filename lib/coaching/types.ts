@@ -233,14 +233,24 @@ export interface AnalyzeCoachingInput {
    *  drives `plan` (today's target weights/flags). Same single-split scope
    *  the old engine's `routine` parameter had. */
   routine: RoutineExerciseWithMuscles[]
-  /** This split's own session history — drives per-exercise
-   *  progression/stall/weight-too-heavy/fatigue, same single-split scope the
-   *  old engine had. */
+  /** This split's own session history — drives `lastSessionDate`/
+   *  `recoveryGapDays` (the "LAST SESSION" card + recovery-hold gating),
+   *  which are genuinely single-split signals ("when did I last train THIS
+   *  split"). Per-exercise progression/stall/weight-too-heavy/fatigue/
+   *  no-history is NOT limited to this array — engine.ts merges it with
+   *  `programSessions` before matching by exerciseId, since the same
+   *  exercise routinely repeats across multiple splits in one program (see
+   *  lib/routines.ts's templates) and a sibling split's recent history for
+   *  that exercise is real, relevant data, not noise. */
   sessions: CoachingSession[]
   /** All of the user's recent sessions across the WHOLE program (every
-   *  split, not just this one) — drives weekly muscle-volume tallying, which
-   *  is inherently cross-split (a muscle trained Monday's Push and
-   *  Thursday's Pull both count toward one weekly total). Superset of
+   *  split, not just this one) — drives weekly muscle-volume tallying
+   *  (inherently cross-split: a muscle trained Monday's Push and Thursday's
+   *  Pull both count toward one weekly total) AND, merged with `sessions`,
+   *  every per-exercise flag above — closes the gap where an exercise
+   *  shared between two splits showed real history on WorkoutOverviewScreen
+   *  (name-based, not split-scoped) but "no history" on
+   *  CoachingContextScreen (previously `sessions`-only). Superset of
    *  `sessions` when the split being planned is itself recent; callers may
    *  pass the same array for both if the whole program is a single split. */
   programSessions: CoachingSession[]

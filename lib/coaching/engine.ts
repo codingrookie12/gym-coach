@@ -19,6 +19,7 @@ import {
   CoachingContext,
   CoachingFlag,
   CoachingResult,
+  CoachingSession,
   DEFAULT_EXPERIENCE_LEVEL,
   ExercisePlan,
   RirReading,
@@ -86,6 +87,29 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
   const lastSession = sessions[0] ?? null
   const recoveryGapDays = lastSession ? daysBetween(today, lastSession.date) : null
 
+  // Per-exercise history (progression/stall/weight-too-heavy/fatigue/
+  // no-history) is deliberately NOT limited to `sessions` (this split's own
+  // history) — a huge fraction of real programs repeat the same exercise
+  // across multiple splits (Face Pull on both Push and OHP Day, Seated Leg
+  // Curl on both Legs and Deadlift Day, etc. — see lib/routines.ts's
+  // bundled templates). A user who trained an exercise three days ago on a
+  // sibling split has real, relevant history for it — `sessions` alone
+  // can't see that, so every such exercise wrongly flagged `no-history` the
+  // very first time its CURRENT split's own id had no sessions yet, even
+  // though WorkoutOverviewScreen's exercise-progression-strip (queried by
+  // name, across every split) showed the real numbers one screen later.
+  // `programSessions` (already fetched for cross-split volume tallying) is
+  // the fix: merge it in here, deduped by workoutId so a session that's in
+  // both (this split's own recent history is also within the volume
+  // window) isn't double-counted by the consecutive-session/stall logic
+  // below. `lastSession`/`recoveryGapDays` above stay `sessions`-only on
+  // purpose — "last time you trained THIS split" is a real, distinct signal
+  // from "have I ever done this specific exercise."
+  const sessionsByWorkoutId = new Map<string, CoachingSession>()
+  for (const s of sessions) sessionsByWorkoutId.set(s.workoutId, s)
+  for (const s of programSessions) if (!sessionsByWorkoutId.has(s.workoutId)) sessionsByWorkoutId.set(s.workoutId, s)
+  const exerciseHistorySessions = sortSessionsDesc(Array.from(sessionsByWorkoutId.values()))
+
   const landmarksVersion = landmarks[0]?.version ?? 0
   const versions = { landmarksVersion, setCreditingVersion: setCreditingRule.version }
 
@@ -96,7 +120,7 @@ export function analyzeCoaching(input: AnalyzeCoachingInput): CoachingResult {
     const flags: CoachingFlag[] = []
     const exerciseId = exercise.exerciseId
 
-    const exerciseSessions = sessions
+    const exerciseSessions = exerciseHistorySessions
       .map(s => ({ date: s.date, sets: s.exercises[exerciseId]?.sets }))
       .filter((s): s is { date: string; sets: NonNullable<typeof s.sets> } => !!s.sets && s.sets.length > 0)
 
